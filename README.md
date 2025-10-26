@@ -1,4 +1,4 @@
-# TaiwanSheng (TWS) 🇹🇼➡️🇨🇳
+# TaiwanSheng (TWS) 
 ## 区块链就地解放台湾！—— TaiwanSheng 开源项目白皮书
 
 > **献礼台湾光复纪念日**
