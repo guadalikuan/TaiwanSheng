@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TWS - 节点覆盖网络</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet 地图引擎 -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        body { background-color: #000; color: #0f0; font-family: 'Courier New', Courier, monospace; margin: 0; padding: 0; overflow: hidden; }
+        #map { width: 100vw; height: 100vh; z-index: 1; filter: contrast(1.2) brightness(0.8); }
+        
+        /* 自定义脉冲光点 */
+        .pulse-icon {
+            background: rgba(255, 0, 0, 0.8);
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        /* 覆盖层 UI */
+        .overlay { position: absolute; z-index: 1000; pointer-events: none; }
+        .scan-line {
+            width: 100%; height: 2px; background: rgba(0, 255, 0, 0.3);
+            position: absolute; top: 0; left: 0; z-index: 999;
+            animation: scan 4s linear infinite;
+        }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+    </style>
+</head>
+<body>
+
+    <!-- 扫描线特效 -->
+    <div class="scan-line"></div>
+
+    <!-- 顶部数据板 -->
+    <div class="overlay top-4 left-4 bg-black/80 border border-green-900 p-4 rounded max-w-xs backdrop-blur-sm">
+        <div class="text-xs text-gray-500 mb-1">OPERATIONAL AREA: TAIWAN</div>
+        <div class="text-2xl font-bold text-red-500 mb-2 tracking-widest">ZONE COVERAGE</div>
+        <div class="flex justify-between text-sm text-green-400 border-b border-gray-800 pb-2 mb-2">
+            <span>ACTIVE NODES:</span>
+            <span id="node-count" class="font-bold">12,458</span>
+        </div>
+        <div class="space-y-1 h-32 overflow-hidden" id="log-container">
+            <!-- 动态日志 -->
+        </div>
+    </div>
+
+    <!-- 底部警告 -->
+    <div class="overlay bottom-4 right-4 text-right">
+        <div class="text-xs text-red-500 bg-red-900/20 px-2 py-1 border border-red-800 animate-pulse">
+            WARNING: HIGH LATENCY IN TAIPEI SECTOR
+        </div>
+    </div>
+
+    <!-- 地图容器 -->
+    <div id="map"></div>
+
+    <script>
+        // 初始化地图，中心点设在台湾中部，缩放适中
+        // 使用 CartoDB Dark Matter 瓦片图，营造黑客/军事风格
+        const map = L.map('map', {
+            zoomControl: false,
+            attributionControl: false,
+            scrollWheelZoom: false,
+            dragging: false, // 锁定地图，像雷达屏幕一样
+            doubleClickZoom: false
+        }).setView([23.6978, 120.9605], 8);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        // 目标城市坐标热点 (纬度, 经度)
+        const hotspots = [
+            { name: 'Taipei (Xinyi)', lat: 25.0330, lng: 121.5654 },
+            { name: 'New Taipei', lat: 25.0120, lng: 121.4654 },
+            { name: 'Taichung', lat: 24.1477, lng: 120.6736 },
+            { name: 'Kaohsiung', lat: 22.6273, lng: 120.3014 },
+            { name: 'Tainan', lat: 22.9997, lng: 120.2270 },
+            { name: 'Hsinchu (Science Park)', lat: 24.8138, lng: 120.9675 }, // 竹科重点
+            { name: 'Taoyuan (Airport)', lat: 25.0724, lng: 121.2272 }
+        ];
+
+        let totalNodes = 12458;
+        const nodeDisplay = document.getElementById('node-count');
+        const logContainer = document.getElementById('log-container');
+
+        // 随机生成坐标函数 (在热点城市周围随机偏移)
+        function getRandomLocation() {
+            const city = hotspots[Math.floor(Math.random() * hotspots.length)];
+            // 随机偏移 0.01 - 0.05 度
+            const offsetLat = (Math.random() - 0.5) * 0.08;
+            const offsetLng = (Math.random() - 0.5) * 0.08;
+            return {
+                lat: city.lat + offsetLat,
+                lng: city.lng + offsetLng,
+                city: city.name
+            };
+        }
+
+        // 自定义脉冲图标
+        const pulseIcon = L.divIcon({
+            className: 'pulse-icon',
+            iconSize: [12, 12],
+            iconAnchor: [6, 6] 
+        });
+
+        // 模拟实时新增节点
+        function addNode() {
+            const loc = getRandomLocation();
+            
+            // 在地图上添加标记
+            L.marker([loc.lat, loc.lng], { icon: pulseIcon }).addTo(map);
+            
+            // 更新数字
+            totalNodes++;
+            nodeDisplay.innerText = totalNodes.toLocaleString();
+            
+            // 更新日志
+            const logItem = document.createElement('div');
+            logItem.className = "text-xs text-gray-400 font-mono";
+            // 生成假掩码ID
+            const id = Math.random().toString(36).substring(2, 8).toUpperCase();
+            logItem.innerHTML = `<span class="text-green-500">[CONNECT]</span> ${loc.city} :: USR-${id}`;
+            
+            logContainer.insertBefore(logItem, logContainer.firstChild);
+            if (logContainer.children.length > 6) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+
+        // 初始加载一批点，营造已有很多人使用的假象
+        for(let i=0; i<50; i++) {
+            const loc = getRandomLocation();
+            L.marker([loc.lat, loc.lng], { icon: pulseIcon }).addTo(map);
+        }
+
+        // 启动循环，随机间隔增加新点
+        setInterval(() => {
+            addNode();
+        }, 800); // 每0.8秒增加一个，速度适中，制造紧迫感
+
+    </script>
+</body>
+</html>

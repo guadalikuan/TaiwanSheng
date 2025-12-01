@@ -1,0 +1,35 @@
+{
+  "name": "tws",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:prod": "vite build --mode production",
+    "preview": "vite preview",
+    "lint": "echo \"lint script not configured\"",
+    "docker:build": "docker build -t tws-app .",
+    "docker:run": "docker run -p 80:80 tws-app",
+    "docker:compose": "docker-compose up -d",
+    "docker:compose:down": "docker-compose down"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.447.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.9.6",
+    "ethers": "^6.13.0",
+    "bip39": "^3.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.7",
+    "@types/react-dom": "^18.3.3",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "vite": "^5.4.2"
+  }
+}

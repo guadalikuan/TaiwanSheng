@@ -1,0 +1,334 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --gold: #fbbf24;
+  --cyan: #06b6d4;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: #020617;
+}
+
+body {
+  font-family: 'Courier New', Courier, monospace;
+  background-color: #000;
+  color: #e2e8f0;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+::selection {
+  background-color: #7f1d1d;
+  color: #fff;
+}
+
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.animate-scan {
+  animation: scan 4s linear infinite;
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 0 200;
+  }
+  100% {
+    stroke-dasharray: 200 0;
+  }
+}
+
+.animate-dash {
+  animation: dash 2s linear infinite;
+}
+
+.clip-path-polygon {
+  clip-path: polygon(0 0, 95% 0, 100% 50%, 95% 100%, 0 100%);
+}
+
+@keyframes glitch {
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+  100% {
+    transform: translate(0);
+  }
+}
+
+.glitch-active {
+  animation: glitch 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+  color: #ff0000;
+  text-shadow: 2px 0 #fff, -2px 0 #ff0000;
+}
+
+@keyframes pulse {
+  0% {
+    text-shadow: 0 0 10px #8b0000;
+  }
+  50% {
+    text-shadow: 0 0 25px #ff0000;
+  }
+  100% {
+    text-shadow: 0 0 10px #8b0000;
+  }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+.omega-clock {
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  text-shadow: 0 0 30px rgba(255, 0, 0, 0.6);
+}
+
+.map-panel {
+  position: relative;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  border: 1px solid rgba(248, 113, 113, 0.15);
+  background: rgba(2, 6, 23, 0.85);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.map-panel .leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  filter: contrast(1.1) brightness(0.7);
+}
+
+.leaflet-control-container {
+  display: none;
+}
+
+.tw-map-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.tw-scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: rgba(34, 197, 94, 0.35);
+  animation: tw-scan 4s linear infinite;
+  pointer-events: none;
+  z-index: 20;
+}
+
+@keyframes tw-scan {
+  0% {
+    top: 0%;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+.tw-pulse-icon {
+  background: rgba(248, 113, 113, 0.95);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(248, 113, 113, 0.9), 0 0 24px rgba(248, 113, 113, 0.6);
+  animation: taiwan-pulse 2.2s ease-out infinite;
+}
+
+@keyframes taiwan-pulse {
+  0% {
+    transform: scale(0.4);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.mainland-map-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.mainland-map-container .leaflet-container {
+  filter: contrast(1.1) brightness(0.6) sepia(0.4) saturate(1.4);
+}
+
+.mainland-beacon-icon {
+  background: rgba(251, 191, 36, 0.95);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.9), 0 0 28px rgba(250, 204, 21, 0.7);
+  animation: mainland-glow 3s ease-in-out infinite;
+}
+
+@keyframes mainland-glow {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0.95;
+  }
+}
+
+.map-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #fbbf24 !important;
+  font-family: 'Courier New', Courier, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* 闪烁动画 (blink) */
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.blink {
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+/* 跑马灯动画 (marquee) */
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+  display: inline-block;
+}
+
+/* 移动端安全区域适配 */
+@supports (padding: max(0px)) {
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  
+  .pt-safe {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+  
+  .px-safe {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* 滚动条隐藏 (用于筛选栏) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* 慢速旋转动画 (用于CLAIM按钮) */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+/* 雷达扫描动画 (用于 NetworkRadar) */
+@keyframes radar-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-radar-sweep {
+  animation: radar-sweep 4s linear infinite;
+}
+
+/* FadeIn 动画 (用于 ArsenalEntry) */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out;
+}
+

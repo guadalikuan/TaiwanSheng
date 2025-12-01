@@ -1,0 +1,58 @@
+[
+  {
+    "address": "0x5Ea39E296eC63e57Ab73a15a8aB6d160F4A5Da3e",
+    "username": "testuser",
+    "passwordHash": "$2a$10$OgvkHgfhoYGAIm3GNwY6C.QcvPmM4j.s3N.Tqm5/0ij4AvOtsna1G",
+    "encryptedMnemonic": "U2FsdGVkX1+Gz0GHRr/DilPkREG5PYV/1B+EPKXYJ4FfMh7ITH7ny8Sny2o3X5hsmxwOegRHeTp4Gh8+51KCeaMsyOdWkhF9+INXfxZIXs/Ks5R2xOxPUVd/olS7RBuW",
+    "role": "USER",
+    "profile": {
+      "displayName": "testuser",
+      "avatar": ""
+    },
+    "lastLogin": null,
+    "createdAt": 1764437116349,
+    "updatedAt": 1764437116349
+  },
+  {
+    "address": "0xa3b96081698E099818BAD18c6a73240E3D27735b",
+    "username": "submitter1",
+    "passwordHash": "$2a$10$jYs26P2KW.ZGz.krDJwE0O07ypvmuHVmvzvNAhIrLGE.0BQyy2/TW",
+    "encryptedMnemonic": "U2FsdGVkX18YtdgnYaSmo5omXIZa24iwX0pu9Epe0VdO6xCg/a/aA3a+kfDr7I1CoSZ0Xwog4yx0tLGHeG7fp/E5A5q98iRRdBWBzsepp+79INrPmk3zzZUBzSkl0Mqq",
+    "role": "SUBMITTER",
+    "profile": {
+      "displayName": "submitter1",
+      "avatar": ""
+    },
+    "lastLogin": null,
+    "createdAt": 1764437116468,
+    "updatedAt": 1764437116468
+  },
+  {
+    "address": "0x46336A0bAb326054DD62F8F7518E48C6D7B05a80",
+    "username": "reviewer1",
+    "passwordHash": "$2a$10$lN2l3qYjpL8s/TEWpVx42./LqJ.jC6GjVjeJwwTuZvipw1z/JmUy2",
+    "encryptedMnemonic": "U2FsdGVkX18TujoWOn7aysjDAOn7Y/EHC/z197JzGtWJ/82uMeBYQ5/piI4PWaX5YDtm4pcrYkOpwWeG9WRZeT3ocjflj/eM8VP0VqkLQj+AVsuj3+hQCNIVKcA8PZShDiKBcB8I6Hin9q0WLtDwEQ==",
+    "role": "REVIEWER",
+    "profile": {
+      "displayName": "reviewer1",
+      "avatar": ""
+    },
+    "lastLogin": null,
+    "createdAt": 1764437116585,
+    "updatedAt": 1764437116585
+  },
+  {
+    "address": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
+    "username": "admin",
+    "passwordHash": "$2a$10$8LxFE4FUUIfmCzVHpaiT3uVbYffZabySL6FEHtK1pIXLtOnxPJ.g2",
+    "encryptedMnemonic": "U2FsdGVkX1943BAnOy/gwnDQKwCt8Hqz3QZkM9Yb0QKnabxlEbgbcv4kd1EyF9bQip35CCULpxhaNVpEExIN/g1FCROoy01OLtKlcAjDJOsRCbQftEUg9hg3QLdENVZY",
+    "role": "ADMIN",
+    "profile": {
+      "displayName": "admin",
+      "avatar": ""
+    },
+    "lastLogin": null,
+    "createdAt": 1764437116698,
+    "updatedAt": 1764437116698
+  }
+]
