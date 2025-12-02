@@ -1,7 +1,7 @@
 import React from 'react';
-import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle, FileText } from 'lucide-react';
 
-const AssetComparisonCard = ({ asset, onApprove, onReject, isProcessing }) => {
+const AssetComparisonCard = ({ asset, onApprove, onReject, onGenerateContract, isProcessing }) => {
   const { raw, sanitized } = asset;
 
   return (
@@ -15,6 +15,17 @@ const AssetComparisonCard = ({ asset, onApprove, onReject, isProcessing }) => {
           </span>
         </div>
         <div className="flex gap-2">
+          {onGenerateContract && (
+            <button
+              onClick={() => onGenerateContract(sanitized?.id || raw?.id)}
+              disabled={isProcessing}
+              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs font-semibold rounded flex items-center gap-1 transition-colors"
+              title="生成合同PDF"
+            >
+              <FileText size={14} />
+              生成合同
+            </button>
+          )}
           <button
             onClick={() => onApprove(sanitized?.id || raw?.id)}
             disabled={isProcessing}

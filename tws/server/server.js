@@ -3,7 +3,12 @@ import cors from 'cors';
 import arsenalRoutes from './routes/arsenal.js';
 import authRoutes from './routes/auth.js';
 import homepageRoutes from './routes/homepage.js';
+import oracleRoutes from './routes/oracle.js';
+import paymentRoutes from './routes/payment.js';
+import referralRoutes from './routes/referral.js';
 import { startBackgroundTasks } from './utils/backgroundTasks.js';
+import { startScanning } from './utils/oracle.js';
+import { securityMiddleware } from './middleware/security.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
@@ -20,10 +25,16 @@ if (!existsSync(uploadsDir)) {
   mkdirSync(uploadsDir, { recursive: true });
 }
 
-// 中间件
+// 安全中间件
+app.use(securityMiddleware);
+
+// 基础中间件
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 信任代理（用于获取真实IP）
+app.set('trust proxy', 1);
 
 // 静态文件服务 - 提供上传的文件
 app.use('/uploads', express.static(uploadsDir));
@@ -32,6 +43,9 @@ app.use('/uploads', express.static(uploadsDir));
 app.use('/api/arsenal', arsenalRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/homepage', homepageRoutes);
+app.use('/api/oracle', oracleRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/referral', referralRoutes);
 
 // 根路径
 app.get('/', (req, res) => {
@@ -43,7 +57,10 @@ app.get('/', (req, res) => {
       api: {
         arsenal: '/api/arsenal',
         auth: '/api/auth',
-        homepage: '/api/homepage'
+        homepage: '/api/homepage',
+        oracle: '/api/oracle',
+        payment: '/api/payment',
+        referral: '/api/referral'
       }
     },
     timestamp: new Date().toISOString()
@@ -68,6 +85,20 @@ app.use((err, req, res, next) => {
 
 // 启动后台任务
 startBackgroundTasks();
+
+// 启动Oracle扫描任务（如果启用）
+if (process.env.ENABLE_ORACLE === 'true') {
+  startScanning((result) => {
+    console.log('🚨 Oracle检测到触发事件:', result);
+  });
+}
+
+// 启动Telegram Bot（如果启用）
+if (process.env.TELEGRAM_BOT_TOKEN) {
+  import('./bot/index.js').catch(error => {
+    console.error('加载Telegram Bot失败:', error);
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`🚀 TWS Arsenal Server running on http://localhost:${PORT}`);

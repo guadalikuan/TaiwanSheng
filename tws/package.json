@@ -22,7 +22,8 @@
     "lucide-react": "^0.447.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.9.6"
+    "react-router-dom": "^7.9.6",
+    "@twa-dev/sdk": "^1.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.7",

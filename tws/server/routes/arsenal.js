@@ -11,8 +11,15 @@ import {
   getApprovedAssets,
   updateAssetStatus,
   getAssetsByStatus,
-  getAllAssets
+  getAllAssets,
+  getSanitizedAssets
 } from '../utils/storage.js';
+import { authenticate, requireRole } from '../middleware/auth.js';
+import { ROLES } from '../utils/roles.js';
+import { generateContractByAssetId } from '../utils/contractGenerator.js';
+import { getAssetById, updateRawAsset, getAssetReviewHistory } from '../utils/storage.js';
+import { readFileSync } from 'fs';
+import blockchainService from '../utils/blockchain.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -160,8 +167,8 @@ router.get('/preview', (req, res) => {
   }
 });
 
-// GET /api/arsenal/pending - 获取所有待审核资产
-router.get('/pending', (req, res) => {
+// GET /api/arsenal/pending - 获取所有待审核资产（需要审核员或管理员权限）
+router.get('/pending', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), (req, res) => {
   try {
     const pendingAssets = getPendingAssets();
     res.json({
@@ -196,19 +203,42 @@ router.get('/assets', (req, res) => {
   }
 });
 
-// PUT /api/arsenal/approve/:id - 批准资产
-router.put('/approve/:id', (req, res) => {
+// PUT /api/arsenal/approve/:id - 批准资产（需要审核员或管理员权限）
+router.put('/approve/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), async (req, res) => {
   try {
     const { id } = req.params;
+    const { autoMint = true, mintToAddress } = req.body;
+    
+    // 更新资产状态
+    const assetData = getAssetById(id);
     const updatedAsset = updateAssetStatus(id, 'AVAILABLE', {
-      reviewedBy: req.body.reviewedBy || 'system',
+      reviewedBy: req.user?.username || req.body.reviewedBy || 'system',
       reviewNotes: req.body.reviewNotes || ''
     });
+    
+    // 如果启用自动上链，则触发区块链铸造
+    let mintResult = null;
+    if (autoMint && process.env.CONTRACT_ADDRESS) {
+      try {
+        const toAddress = mintToAddress || req.user?.address || process.env.PLATFORM_WALLET;
+        if (toAddress) {
+          mintResult = await blockchainService.mintAsset(assetData, toAddress);
+          console.log('✅ 资产已自动上链:', mintResult);
+        }
+      } catch (mintError) {
+        console.error('⚠️ 资产上链失败（但审核已通过）:', mintError);
+        // 上链失败不影响审核通过
+      }
+    }
     
     res.json({
       success: true,
       message: 'Asset approved successfully',
-      asset: updatedAsset
+      asset: updatedAsset,
+      blockchain: mintResult ? {
+        txHash: mintResult.txHash,
+        tokenId: mintResult.tokenId
+      } : null
     });
   } catch (error) {
     console.error('Error approving asset:', error);
@@ -219,12 +249,12 @@ router.put('/approve/:id', (req, res) => {
   }
 });
 
-// PUT /api/arsenal/reject/:id - 拒绝资产
-router.put('/reject/:id', (req, res) => {
+// PUT /api/arsenal/reject/:id - 拒绝资产（需要审核员或管理员权限）
+router.put('/reject/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), (req, res) => {
   try {
     const { id } = req.params;
     const updatedAsset = updateAssetStatus(id, 'REJECTED', {
-      reviewedBy: req.body.reviewedBy || 'system',
+      reviewedBy: req.user?.username || req.body.reviewedBy || 'system',
       reviewNotes: req.body.reviewNotes || 'Rejected by admin'
     });
     
@@ -242,8 +272,8 @@ router.put('/reject/:id', (req, res) => {
   }
 });
 
-// GET /api/arsenal/stats - 获取统计信息
-router.get('/stats', (req, res) => {
+// GET /api/arsenal/stats - 获取统计信息（需要审核员或管理员权限）
+router.get('/stats', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), (req, res) => {
   try {
     const allAssets = getAllAssets();
     const pending = getAssetsByStatus('MINTING');
@@ -297,6 +327,210 @@ router.post('/upload', upload.single('file'), (req, res) => {
     res.status(500).json({ 
       error: 'Failed to upload file',
       message: error.message 
+    });
+  }
+});
+
+// POST /api/arsenal/generate-contract/:id - 生成合同PDF（需要审核员或管理员权限）
+router.post('/generate-contract/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN, ROLES.SUBMITTER), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // 检查资产是否存在
+    const assetData = getAssetById(id);
+    if (!assetData.raw || !assetData.sanitized) {
+      return res.status(404).json({
+        success: false,
+        error: 'Asset not found',
+        message: `Asset with id ${id} not found`
+      });
+    }
+
+    // 生成合同PDF
+    const pdfPath = await generateContractByAssetId(id);
+    
+    // 读取PDF文件并返回
+    const pdfBuffer = readFileSync(pdfPath);
+    const filename = pdfPath.split('/').pop();
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(pdfBuffer);
+    
+  } catch (error) {
+    console.error('Error generating contract:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate contract',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/arsenal/contract/:id - 获取合同PDF（预览，需要审核员或管理员权限）
+router.get('/contract/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN, ROLES.SUBMITTER), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // 检查资产是否存在
+    const assetData = getAssetById(id);
+    if (!assetData.raw || !assetData.sanitized) {
+      return res.status(404).json({
+        success: false,
+        error: 'Asset not found',
+        message: `Asset with id ${id} not found`
+      });
+    }
+
+    // 生成合同PDF（如果不存在）
+    const pdfPath = await generateContractByAssetId(id);
+    
+    // 读取PDF文件并返回
+    const pdfBuffer = readFileSync(pdfPath);
+    const filename = pdfPath.split('/').pop();
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    res.send(pdfBuffer);
+    
+  } catch (error) {
+    console.error('Error getting contract:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get contract',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/arsenal/batch-approve - 批量批准资产（需要审核员或管理员权限）
+router.post('/batch-approve', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), async (req, res) => {
+  try {
+    const { ids, reviewNotes } = req.body;
+    
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request',
+        message: 'ids array is required'
+      });
+    }
+
+    const results = [];
+    const errors = [];
+
+    for (const id of ids) {
+      try {
+        const updatedAsset = updateAssetStatus(id, 'AVAILABLE', {
+          reviewedBy: req.user?.username || 'system',
+          reviewNotes: reviewNotes || 'Batch approved'
+        });
+        results.push({ id, success: true, asset: updatedAsset });
+      } catch (error) {
+        errors.push({ id, success: false, error: error.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Processed ${ids.length} assets`,
+      results,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (error) {
+    console.error('Error batch approving assets:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to batch approve assets',
+      message: error.message
+    });
+  }
+});
+
+// PUT /api/arsenal/edit/:id - 编辑资产（审核前可修改，需要提交者或管理员权限）
+router.put('/edit/:id', authenticate, requireRole(ROLES.SUBMITTER, ROLES.ADMIN), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    // 检查资产是否存在且处于可编辑状态
+    const assetData = getAssetById(id);
+    if (!assetData.raw || !assetData.sanitized) {
+      return res.status(404).json({
+        success: false,
+        error: 'Asset not found',
+        message: `Asset with id ${id} not found`
+      });
+    }
+
+    // 只有MINTING状态的资产可以编辑
+    if (assetData.sanitized.status !== 'MINTING') {
+      return res.status(400).json({
+        success: false,
+        error: 'Asset cannot be edited',
+        message: 'Only assets with MINTING status can be edited'
+      });
+    }
+
+    // 更新原始资产数据
+    const updatedAsset = updateRawAsset(id, updates);
+
+    // 重新生成脱敏数据
+    const sanitizedAsset = wrapAsset(updatedAsset);
+    sanitizedAsset.id = id;
+    
+    // 更新脱敏资产（保持状态不变）
+    const sanitizedAssets = getSanitizedAssets();
+    const index = sanitizedAssets.findIndex(a => a.id === id);
+    if (index !== -1) {
+      sanitizedAssets[index] = {
+        ...sanitizedAsset,
+        status: assetData.sanitized.status, // 保持原状态
+        reviewHistory: assetData.sanitized.reviewHistory || []
+      };
+      const { writeFileSync } = await import('fs');
+      const { join, dirname } = await import('path');
+      const { fileURLToPath } = await import('url');
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
+      const SANITIZED_ASSETS_FILE = join(__dirname, '../data/sanitizedAssets.json');
+      writeFileSync(SANITIZED_ASSETS_FILE, JSON.stringify(sanitizedAssets, null, 2), 'utf8');
+    }
+
+    res.json({
+      success: true,
+      message: 'Asset updated successfully',
+      asset: {
+        raw: updatedAsset,
+        sanitized: sanitizedAssets[index]
+      }
+    });
+  } catch (error) {
+    console.error('Error editing asset:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to edit asset',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/arsenal/review-history/:id - 获取审核历史（需要审核员或管理员权限）
+router.get('/review-history/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), (req, res) => {
+  try {
+    const { id } = req.params;
+    const history = getAssetReviewHistory(id);
+    
+    res.json({
+      success: true,
+      history
+    });
+  } catch (error) {
+    console.error('Error getting review history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get review history',
+      message: error.message
     });
   }
 });

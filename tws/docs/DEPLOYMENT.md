@@ -186,6 +186,177 @@ server {
 2. 重新构建：`npm run build:prod`
 3. 重启服务或容器
 
+## 完整部署步骤
+
+### 第一步：服务器准备
+
+1. **选择服务器节点**
+   - 推荐：新加坡或日本（AWS/DigitalOcean）
+   - 最低配置：2核CPU，4GB内存，50GB存储
+   - 操作系统：Ubuntu 20.04 LTS 或更高版本
+
+2. **安装必要软件**
+   ```bash
+   sudo apt update
+   sudo apt install -y docker.io docker-compose nginx certbot python3-certbot-nginx
+   sudo systemctl enable docker
+   ```
+
+3. **配置防火墙**
+   ```bash
+   sudo ufw allow 22/tcp
+   sudo ufw allow 80/tcp
+   sudo ufw allow 443/tcp
+   sudo ufw enable
+   ```
+
+### 第二步：域名和SSL
+
+1. **域名配置**
+   - 使用 Namecheap 或 GoDaddy 注册域名
+   - 开启 Whois 隐私保护
+   - 建议后缀：`.xyz` 或 `.network`
+
+2. **DNS配置**
+   - A记录指向服务器IP
+   - 等待DNS传播（通常几分钟到几小时）
+
+3. **SSL证书**
+   ```bash
+   sudo certbot --nginx -d your-domain.com
+   ```
+
+### 第三步：代码部署
+
+1. **克隆代码**
+   ```bash
+   git clone <repository-url>
+   cd tws
+   ```
+
+2. **配置环境变量**
+   ```bash
+   cp .env.production.example .env.production
+   nano .env.production  # 编辑并填入实际值
+   ```
+
+3. **构建和部署**
+   ```bash
+   # 前端构建
+   npm install
+   npm run build:prod
+   
+   # 后端部署
+   cd server
+   npm install
+   npm run build  # 如果有构建步骤
+   ```
+
+### 第四步：Docker部署
+
+1. **使用生产配置**
+   ```bash
+   docker-compose -f docker-compose.prod.yml up -d
+   ```
+
+2. **检查服务状态**
+   ```bash
+   docker-compose -f docker-compose.prod.yml ps
+   docker-compose -f docker-compose.prod.yml logs -f
+   ```
+
+### 第五步：智能合约部署
+
+1. **安装依赖**
+   ```bash
+   cd blockchain
+   npm install
+   ```
+
+2. **配置网络**
+   - 编辑 `hardhat.config.js`
+   - 设置RPC URL和私钥
+
+3. **部署合约**
+   ```bash
+   npm run deploy:testnet  # 测试网
+   # 或
+   npm run deploy:mainnet  # 主网
+   ```
+
+4. **更新环境变量**
+   - 将部署的合约地址添加到 `.env.production`
+
+### 第六步：Telegram Bot配置
+
+1. **创建Bot**
+   - 在Telegram中联系 @BotFather
+   - 创建新Bot，获取Token
+
+2. **配置Web App**
+   - 使用 `/setmenubutton` 命令设置菜单按钮
+   - 设置Web App URL
+
+3. **更新环境变量**
+   ```bash
+   TELEGRAM_BOT_TOKEN=your_token_here
+   TELEGRAM_BOT_USERNAME=your_bot_username
+   ```
+
+### 第七步：数据初始化
+
+1. **创建测试用户**
+   ```bash
+   cd server
+   npm run create-test-users
+   ```
+
+2. **初始化首页数据**
+   ```bash
+   npm run init-homepage
+   ```
+
+3. **生成种子数据**（可选）
+   ```bash
+   node scripts/generateSeedData.js
+   ```
+
+## 监控和日志
+
+### 日志位置
+
+- **Docker日志**：`docker-compose logs -f`
+- **Nginx日志**：`/var/log/nginx/access.log` 和 `/var/log/nginx/error.log`
+- **应用日志**：容器内或服务器日志文件
+
+### 健康检查
+
+- 前端：访问 `https://your-domain.com/health`
+- API：访问 `https://api.your-domain.com/health`
+
+### 性能监控
+
+建议使用以下工具：
+- **Uptime监控**：UptimeRobot 或 Pingdom
+- **错误追踪**：Sentry（如果启用）
+- **分析**：Google Analytics（如果启用）
+
+## 备份策略
+
+1. **数据备份**
+   ```bash
+   # 备份数据目录
+   tar -czf backup-$(date +%Y%m%d).tar.gz server/data/
+   ```
+
+2. **定期备份**
+   - 建议每天自动备份
+   - 保留最近30天的备份
+
+## 安全加固
+
+参考 [CHECKLIST.md](./CHECKLIST.md) 中的安全配置部分。
+
 ## 联系支持
 
 如遇到问题，请查看 [CHECKLIST.md](./CHECKLIST.md) 中的部署检查清单。

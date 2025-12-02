@@ -14,13 +14,14 @@ import {
   decryptPrivateKey
 } from '../utils/web3.js';
 import { generateToken } from '../utils/jwt.js';
+import { ROLES } from '../utils/roles.js';
 
 const router = express.Router();
 
 // POST /api/auth/register - 用户注册
 router.post('/register', async (req, res) => {
   try {
-    const { username, password, mnemonic } = req.body;
+    const { username, password, mnemonic, role, inviteCode } = req.body;
 
     // 验证必填字段
     if (!username || !password) {
@@ -94,13 +95,39 @@ router.post('/register', async (req, res) => {
     // 加密助记符（使用密码作为密钥）
     const encryptedMnemonic = encryptPrivateKey(finalMnemonic, password);
 
+    // 角色验证和分配
+    let assignedRole = ROLES.USER; // 默认角色
+    
+    // 如果提供了角色，验证是否有效
+    if (role) {
+      const validRoles = Object.values(ROLES);
+      if (validRoles.includes(role)) {
+        // 特殊角色需要邀请码或管理员权限
+        if (role === ROLES.ADMIN || role === ROLES.REVIEWER) {
+          // 这里可以添加邀请码验证逻辑
+          // 暂时允许通过inviteCode参数设置（生产环境需要更严格的验证）
+          if (inviteCode && inviteCode === process.env.ADMIN_INVITE_CODE) {
+            assignedRole = role;
+          } else {
+            // 没有有效邀请码，降级为普通用户
+            assignedRole = ROLES.USER;
+          }
+        } else if (role === ROLES.SUBMITTER) {
+          // SUBMITTER角色可以直接注册（资产提交者）
+          assignedRole = ROLES.SUBMITTER;
+        } else {
+          assignedRole = role;
+        }
+      }
+    }
+
     // 创建用户数据
     const userData = {
       address: walletAddress,
       username,
       passwordHash,
       encryptedMnemonic,
-      role: 'USER', // 默认角色
+      role: assignedRole,
       profile: {
         displayName: username,
         avatar: ''

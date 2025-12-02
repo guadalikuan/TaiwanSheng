@@ -188,7 +188,12 @@ export const rejectAsset = async (id, reviewData = {}) => {
  */
 export const getAssetStats = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/arsenal/stats`);
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/arsenal/stats`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     
     if (!response.ok) {
       throw new Error('Failed to get stats');
@@ -197,6 +202,58 @@ export const getAssetStats = async () => {
     return await response.json();
   } catch (error) {
     console.error('Error getting stats:', error);
+    throw error;
+  }
+};
+
+/**
+ * 生成合同PDF
+ * @param {string} id - 资产ID
+ * @param {boolean} download - 是否下载（true）或预览（false）
+ * @returns {Promise<void>}
+ */
+export const generateContract = async (id, download = true) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const endpoint = download 
+      ? `${API_BASE_URL}/api/arsenal/generate-contract/${id}`
+      : `${API_BASE_URL}/api/arsenal/contract/${id}`;
+    
+    const response = await fetch(endpoint, {
+      method: download ? 'POST' : 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to generate contract');
+    }
+    
+    // 获取PDF blob
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    
+    if (download) {
+      // 下载PDF
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `contract_${id}_${Date.now()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      // 在新窗口预览
+      window.open(url, '_blank');
+    }
+    
+    // 清理URL
+    setTimeout(() => window.URL.revokeObjectURL(url), 100);
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error generating contract:', error);
     throw error;
   }
 };

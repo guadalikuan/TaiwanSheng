@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, RefreshCw, CheckCircle, XCircle, AlertCircle, BarChart3 } from 'lucide-react';
-import { getPendingAssets, approveAsset, rejectAsset, getAssetStats } from '../utils/api';
+import { getPendingAssets, approveAsset, rejectAsset, getAssetStats, generateContract } from '../utils/api';
 import AssetComparisonCard from './AssetComparisonCard';
 
 const CommandCenter = () => {
@@ -94,6 +94,20 @@ const CommandCenter = () => {
     } catch (err) {
       console.error('Error rejecting asset:', err);
       alert('拒绝失败：' + err.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // 生成合同
+  const handleGenerateContract = async (id) => {
+    try {
+      setProcessing(true);
+      await generateContract(id, true); // 下载PDF
+      alert('合同已生成并下载！');
+    } catch (err) {
+      console.error('Error generating contract:', err);
+      alert('生成合同失败：' + err.message);
     } finally {
       setProcessing(false);
     }
@@ -243,6 +257,7 @@ const CommandCenter = () => {
                   asset={selectedAsset}
                   onApprove={handleApprove}
                   onReject={handleReject}
+                  onGenerateContract={handleGenerateContract}
                   isProcessing={processing}
                 />
               ) : (

@@ -1,4 +1,5 @@
 import { verifyToken } from '../utils/jwt.js';
+import { ROLES, isRoleAllowed } from '../utils/roles.js';
 
 /**
  * 认证中间件 - 验证 JWT token
@@ -59,10 +60,10 @@ export const authorize = (...allowedRoles) => {
       });
     }
     
-    const userRole = req.user.role;
+    const userRole = req.user.role || ROLES.USER;
     
     // 检查角色权限
-    if (!allowedRoles.includes(userRole)) {
+    if (!isRoleAllowed(userRole, allowedRoles)) {
       return res.status(403).json({
         success: false,
         error: 'Insufficient permissions',
@@ -72,6 +73,14 @@ export const authorize = (...allowedRoles) => {
     
     next();
   };
+};
+
+/**
+ * 权限检查中间件别名（与authorize功能相同，提供更语义化的名称）
+ * @param {Array<string>} allowedRoles - 允许的角色数组
+ */
+export const requireRole = (...allowedRoles) => {
+  return authorize(...allowedRoles);
 };
 
 /**

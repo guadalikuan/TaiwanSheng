@@ -90,10 +90,20 @@ export const updateAssetStatus = (id, status, reviewData = {}) => {
       throw new Error(`Asset with id ${id} not found`);
     }
     
+    // 保存审核历史
+    const reviewHistory = assets[index].reviewHistory || [];
+    reviewHistory.push({
+      status,
+      reviewedBy: reviewData.reviewedBy || 'system',
+      reviewNotes: reviewData.reviewNotes || '',
+      reviewedAt: Date.now()
+    });
+    
     assets[index] = {
       ...assets[index],
       status,
       reviewedAt: Date.now(),
+      reviewHistory,
       ...reviewData
     };
     
@@ -103,6 +113,37 @@ export const updateAssetStatus = (id, status, reviewData = {}) => {
     console.error('Error updating asset status:', error);
     throw error;
   }
+};
+
+// 更新原始资产数据（用于编辑）
+export const updateRawAsset = (id, updates) => {
+  initDataFiles();
+  try {
+    const assets = getRawAssets();
+    const index = assets.findIndex(asset => asset.id === id);
+    
+    if (index === -1) {
+      throw new Error(`Raw asset with id ${id} not found`);
+    }
+    
+    assets[index] = {
+      ...assets[index],
+      ...updates,
+      updatedAt: Date.now()
+    };
+    
+    writeFileSync(RAW_ASSETS_FILE, JSON.stringify(assets, null, 2), 'utf8');
+    return assets[index];
+  } catch (error) {
+    console.error('Error updating raw asset:', error);
+    throw error;
+  }
+};
+
+// 获取资产的审核历史
+export const getAssetReviewHistory = (id) => {
+  const asset = getSanitizedAssets().find(a => a.id === id);
+  return asset?.reviewHistory || [];
 };
 
 // 根据状态获取资产
