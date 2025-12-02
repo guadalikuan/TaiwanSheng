@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -330,5 +331,25 @@ body::before {
 
 .animate-fadeIn {
   animation: fadeIn 0.5s ease-out;
+}
+
+/* 长安家书 - 竖排文字样式 */
+.writing-vertical-rl {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+}
+
+/* 长安家书 - 自定义滚动条样式 */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #e6dcc3; 
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #8b281f; 
+  border-radius: 3px;
 }
 

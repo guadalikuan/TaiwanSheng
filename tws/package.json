@@ -15,13 +15,14 @@
     "docker:compose:down": "docker-compose down"
   },
   "dependencies": {
+    "bip39": "^3.1.0",
+    "ethers": "^6.13.0",
+    "framer-motion": "^12.23.25",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.447.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.9.6",
-    "ethers": "^6.13.0",
-    "bip39": "^3.1.0"
+    "react-router-dom": "^7.9.6"
   },
   "devDependencies": {
     "@types/react": "^18.3.7",

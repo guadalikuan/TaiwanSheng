@@ -14,6 +14,7 @@ import MarketDetailPage from './components/MarketDetailPage';
 import MapNodeDetailPage from './components/MapNodeDetailPage';
 import AssetDetailPage from './components/AssetDetailPage';
 import MapAssetDetailPage from './components/MapAssetDetailPage';
+import ChanganLetter from './components/ChanganLetter';
 
 const App = () => (
   <Routes>
@@ -31,6 +32,7 @@ const App = () => (
     <Route path="/map-node/:id" element={<MapNodeDetailPage />} />
     <Route path="/asset-detail/:id" element={<AssetDetailPage />} />
     <Route path="/map-asset/:id" element={<MapAssetDetailPage />} />
+    <Route path="/letter" element={<ChanganLetter />} />
   </Routes>
 );
 
