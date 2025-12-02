@@ -1,0 +1,77 @@
+[
+  {
+    "id": "bot_asset_1764684420889_00bj7wn",
+    "codeName": "CN-INT-CMD-2026",
+    "displayId": "CN-INT-RES-569",
+    "title": "Inland Strategic Reserve (内陆战略储备) - BUNKER (加固地堡)",
+    "locationTag": "CN-INT-RES",
+    "region": "Inland Strategic Reserve (内陆战略储备)",
+    "zoneClass": "BUNKER (加固地堡)",
+    "securityLevel": 4,
+    "specs": {
+      "area": "128 m²",
+      "capacity": "6 Personnel",
+      "type": "BUNKER (加固地堡)"
+    },
+    "financials": {
+      "totalTokens": 348611,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Inland Strategic Reserve (内陆战略储备). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "MINTING",
+    "tokenPrice": 348611,
+    "imageUrl": "/assets/blueprints/bunker.png",
+    "internalRef": "bot_asset_1764684420889_00bj7wn"
+  },
+  {
+    "id": "bot_asset_1764684560737_2oacuy9",
+    "codeName": "CN-INT-CMD-8129",
+    "displayId": "CN-INT-RES-531",
+    "title": "Inland Strategic Reserve (内陆战略储备) - COMMAND_POST (前线指挥所)",
+    "locationTag": "CN-INT-RES",
+    "region": "Inland Strategic Reserve (内陆战略储备)",
+    "zoneClass": "COMMAND_POST (前线指挥所)",
+    "securityLevel": 4,
+    "specs": {
+      "area": "174 m²",
+      "capacity": "8 Personnel",
+      "type": "COMMAND_POST (前线指挥所)"
+    },
+    "financials": {
+      "totalTokens": 262500,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Inland Strategic Reserve (内陆战略储备). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "MINTING",
+    "tokenPrice": 262500,
+    "imageUrl": "/assets/blueprints/command_post.png",
+    "internalRef": "bot_asset_1764684560737_2oacuy9"
+  },
+  {
+    "id": "bot_asset_1764685383703_9wv4giy",
+    "codeName": "CN-INT-BKR-4323",
+    "displayId": "CN-INT-RES-524",
+    "title": "Inland Strategic Reserve (内陆战略储备) - BUNKER (加固地堡)",
+    "locationTag": "CN-INT-RES",
+    "region": "Inland Strategic Reserve (内陆战略储备)",
+    "zoneClass": "BUNKER (加固地堡)",
+    "securityLevel": 4,
+    "specs": {
+      "area": "110 m²",
+      "capacity": "5 Personnel",
+      "type": "BUNKER (加固地堡)"
+    },
+    "financials": {
+      "totalTokens": 675000,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Inland Strategic Reserve (内陆战略储备). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "MINTING",
+    "tokenPrice": 675000,
+    "imageUrl": "/assets/blueprints/bunker.png",
+    "internalRef": "bot_asset_1764685383703_9wv4giy"
+  }
+]

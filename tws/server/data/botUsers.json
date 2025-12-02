@@ -1,0 +1,371 @@
+[
+  {
+    "id": "bot_1764684209105_tody8uh",
+    "username": "bot_user_3zkmg1",
+    "address": "0x9B3E6dc5bfdD13a7041CDC78A1d72BCeD908d3C8",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "high",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684209252,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684209270_m4nkn17",
+    "username": "bot_user_2vldam",
+    "address": "0x2F06aA2416eFabCCa1d22749C58F61f2b8791cfB",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "low",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684209353,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684209376_qo6at5k",
+    "username": "bot_user_4b38w3",
+    "address": "0xba90189B8a6DB086FAF2218DF8e17e0003E15135",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "medium",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684209452,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684209467_lkd7v2n",
+    "username": "bot_user_e3qgny",
+    "address": "0x17f84178FD864A32fa569dc8388F2fCB49a724B1",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "medium",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684209544,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684209559_jv5kqyj",
+    "username": "bot_user_3er99n",
+    "address": "0xdf494A72b0cb7c6F9D7EAAC888d9F9CAC5E574E3",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "low",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684209634,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684209653_zzw0xdo",
+    "username": "bot_user_y66h27",
+    "address": "0xde1230C5c1f8E6A4c83d1b7595cCCD0587053ce5",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "high",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684209728,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684209746_audwcpi",
+    "username": "bot_user_t69avw",
+    "address": "0x20163E54E4cdB50AA47bAB8144E3EB062479F633",
+    "role": "SUBMITTER",
+    "behaviorProfile": {
+      "activityLevel": "low",
+      "preferredActions": [
+        "submit"
+      ],
+      "lastActionTime": 1764684560738,
+      "actionCount": 1
+    },
+    "createdAt": 1764684209822,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684209839_z06i544",
+    "username": "bot_user_2rm43l",
+    "address": "0xc3860e3004337E86460a1F7a698a9Be36083f960",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "medium",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684209913,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684209932_7nz4qsa",
+    "username": "bot_user_b1y1ru",
+    "address": "0x3307f9e015eEA4602085a34F755d572Ad612930E",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "high",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684210007,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684210026_7z9oeee",
+    "username": "bot_user_46r1tn",
+    "address": "0x30d9348A99e8809c9A08c42C48889DdA130D343b",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "medium",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684210102,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684210119_qq441ls",
+    "username": "bot_user_5u0hjn",
+    "address": "0x179c4A39271f7A9153B2A93aC294393A84313A44",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "high",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684210196,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684210212_rdciwth",
+    "username": "bot_user_wsscyu",
+    "address": "0x55b1CfecC60a80bb041E561a808Fa7eB0Fb821Cc",
+    "role": "SUBMITTER",
+    "behaviorProfile": {
+      "activityLevel": "low",
+      "preferredActions": [
+        "submit"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684210287,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684210305_y7shm4f",
+    "username": "bot_user_gqsb5n",
+    "address": "0x10a81565A998664E8ba04B2D03f2B23d52D4eC79",
+    "role": "SUBMITTER",
+    "behaviorProfile": {
+      "activityLevel": "low",
+      "preferredActions": [
+        "submit"
+      ],
+      "lastActionTime": 1764684420891,
+      "actionCount": 1
+    },
+    "createdAt": 1764684210381,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684210399_ujvys80",
+    "username": "bot_user_ypllje",
+    "address": "0xbAd8fA27c78A2664cfb3915d18eEFe2338B57C05",
+    "role": "SUBMITTER",
+    "behaviorProfile": {
+      "activityLevel": "low",
+      "preferredActions": [
+        "submit"
+      ],
+      "lastActionTime": 1764685383705,
+      "actionCount": 1
+    },
+    "createdAt": 1764684210475,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684210493_glu22ru",
+    "username": "bot_user_ryh1u5",
+    "address": "0x98AfAB59Fe127eFB0899FA74A466e06aD092Eb44",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "medium",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684210568,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684210585_nui0qku",
+    "username": "bot_user_ua2fbu",
+    "address": "0x4E61286694b0A042988a0Fee42364E52f03BAAC8",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "low",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684210660,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684210680_ibqkj5d",
+    "username": "bot_user_9ezshw",
+    "address": "0x3b239508a7d95Dd5B39F25931571e6A260B20865",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "high",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684210755,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684210772_1ipyapp",
+    "username": "bot_user_f1t5f6",
+    "address": "0x123BBE5Da854a90b5bc9304F3155A0A8AB35e930",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "medium",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684210852,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684210865_fqprvvi",
+    "username": "bot_user_ql1ou7",
+    "address": "0x791bA9165db78a41Fc9F5a0E611a218a8c03EcCA",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "medium",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684210959,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684210974_w33wjxs",
+    "username": "bot_user_9lc2tc",
+    "address": "0x7132539A9eF389Bb73b035347fC5D92Da5aaE5f1",
+    "role": "SUBMITTER",
+    "behaviorProfile": {
+      "activityLevel": "medium",
+      "preferredActions": [
+        "submit"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684211050,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764684401689_urmu843",
+    "username": "bot_user_vi6j5o",
+    "address": "0x0072e619E9Fe680A78664f93a9a64631397cE89c",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "high",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764684401769,
+    "isActive": true
+  },
+  {
+    "id": "bot_1764685559786_u3x2nml",
+    "username": "bot_user_0fjdf9",
+    "address": "0x1b5DBc4FA92c171ea03518bCDD76C8718028d20F",
+    "role": "USER",
+    "behaviorProfile": {
+      "activityLevel": "medium",
+      "preferredActions": [
+        "purchase",
+        "trade"
+      ],
+      "lastActionTime": null,
+      "actionCount": 0
+    },
+    "createdAt": 1764685559927,
+    "isActive": true
+  }
+]

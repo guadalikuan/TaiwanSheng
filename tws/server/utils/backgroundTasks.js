@@ -17,6 +17,7 @@ import {
   generateAssetLog,
   generateKlinePoint
 } from './mockDataGenerator.js';
+import { startBotScheduler, stopBotScheduler } from './botScheduler.js';
 
 let marketTaskInterval = null;
 let taiwanNodeTaskInterval = null;
@@ -144,6 +145,15 @@ const startAssetTask = () => {
 };
 
 /**
+ * 启动机器人任务
+ */
+const startBotTasks = () => {
+  // 启动机器人调度器
+  startBotScheduler();
+  console.log('✅ Bot tasks started');
+};
+
+/**
  * 启动所有后台任务
  */
 export const startBackgroundTasks = () => {
@@ -154,6 +164,7 @@ export const startBackgroundTasks = () => {
   startKlineTask();
   startTaiwanNodeTask();
   startAssetTask();
+  startBotTasks();
   
   console.log('\n✨ All background tasks started successfully!');
 };
@@ -182,6 +193,9 @@ export const stopBackgroundTasks = () => {
     clearInterval(assetTaskInterval);
     assetTaskInterval = null;
   }
+  
+  // 停止机器人任务
+  stopBotScheduler();
   
   console.log('🛑 All background tasks stopped');
 };

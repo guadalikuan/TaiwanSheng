@@ -1,0 +1,53 @@
+[
+  {
+    "id": "bot_asset_1764684420889_00bj7wn",
+    "ownerName": "Owner_p8ql9c",
+    "ownerId": "2992",
+    "contactPhone": "13980068515",
+    "projectName": "榆林·项目M0II",
+    "city": "榆林",
+    "district": "开发区",
+    "address": "榆林路727号",
+    "roomNumber": "1524",
+    "area": 128,
+    "marketValuation": 376.5,
+    "debtAmount": 251,
+    "proofDocs": [],
+    "timestamp": 1764684420889,
+    "submittedBy": "0x10a81565A998664E8ba04B2D03f2B23d52D4eC79"
+  },
+  {
+    "id": "bot_asset_1764684560737_2oacuy9",
+    "ownerName": "Owner_suv4e4",
+    "ownerId": "3042",
+    "contactPhone": "13987447089",
+    "projectName": "榆林·项目AQ6F",
+    "city": "榆林",
+    "district": "开发区",
+    "address": "榆林路646号",
+    "roomNumber": "1423",
+    "area": 174,
+    "marketValuation": 283.5,
+    "debtAmount": 189,
+    "proofDocs": [],
+    "timestamp": 1764684560737,
+    "submittedBy": "0x20163E54E4cdB50AA47bAB8144E3EB062479F633"
+  },
+  {
+    "id": "bot_asset_1764685383703_9wv4giy",
+    "ownerName": "Owner_nnim3z",
+    "ownerId": "3687",
+    "contactPhone": "13948495057",
+    "projectName": "安康·项目38BC",
+    "city": "安康",
+    "district": "开发区",
+    "address": "安康路244号",
+    "roomNumber": "632",
+    "area": 110,
+    "marketValuation": 729,
+    "debtAmount": 486,
+    "proofDocs": [],
+    "timestamp": 1764685383703,
+    "submittedBy": "0xbAd8fA27c78A2664cfb3915d18eEFe2338B57C05"
+  }
+]

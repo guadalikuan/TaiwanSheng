@@ -9,6 +9,8 @@ import referralRoutes from './routes/referral.js';
 import { startBackgroundTasks } from './utils/backgroundTasks.js';
 import { startScanning } from './utils/oracle.js';
 import { securityMiddleware } from './middleware/security.js';
+import { initializeBotUsers } from './utils/botBehaviorSimulator.js';
+import { getBotUserStats, getActiveBotUsers } from './utils/botUserManager.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
@@ -83,24 +85,54 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error', message: err.message });
 });
 
-// 启动后台任务
-startBackgroundTasks();
-
-// 启动Oracle扫描任务（如果启用）
-if (process.env.ENABLE_ORACLE === 'true') {
-  startScanning((result) => {
-    console.log('🚨 Oracle检测到触发事件:', result);
-  });
-}
-
-// 启动Telegram Bot（如果启用）
-if (process.env.TELEGRAM_BOT_TOKEN) {
-  import('./bot/index.js').catch(error => {
-    console.error('加载Telegram Bot失败:', error);
-  });
-}
-
+// 先启动服务器，然后再初始化
 app.listen(PORT, () => {
   console.log(`🚀 TWS Arsenal Server running on http://localhost:${PORT}`);
+  
+  // 服务器启动后，初始化机器人用户池和后台任务
+  const initializeBotUserPool = async () => {
+    try {
+      const activeBots = getActiveBotUsers();
+      const minBotCount = 20;
+      
+      if (activeBots.length < minBotCount) {
+        const needed = minBotCount - activeBots.length;
+        console.log(`🤖 Initializing ${needed} bot users...`);
+        await initializeBotUsers(needed);
+        const stats = getBotUserStats();
+        console.log(`✅ Bot user pool ready: ${stats.active} active bots`);
+      } else {
+        const stats = getBotUserStats();
+        console.log(`✅ Bot user pool already initialized: ${stats.active} active bots`);
+      }
+    } catch (error) {
+      console.error('⚠️  Error initializing bot user pool:', error);
+      // 不阻止服务器运行，继续运行
+    }
+  };
+
+  // 初始化机器人用户池，然后启动后台任务
+  initializeBotUserPool().then(() => {
+    // 启动后台任务
+    startBackgroundTasks();
+  }).catch(error => {
+    console.error('⚠️  Error during initialization:', error);
+    // 即使初始化失败，也启动后台任务
+    startBackgroundTasks();
+  });
+
+  // 启动Oracle扫描任务（如果启用）
+  if (process.env.ENABLE_ORACLE === 'true') {
+    startScanning((result) => {
+      console.log('🚨 Oracle检测到触发事件:', result);
+    });
+  }
+
+  // 启动Telegram Bot（如果启用）
+  if (process.env.TELEGRAM_BOT_TOKEN) {
+    import('./bot/index.js').catch(error => {
+      console.error('加载Telegram Bot失败:', error);
+    });
+  }
 });
 
