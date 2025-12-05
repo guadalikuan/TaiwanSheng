@@ -196,3 +196,4 @@ export const manualScan = async () => {
   return results;
 };
 
+

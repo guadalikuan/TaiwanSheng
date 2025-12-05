@@ -4,7 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -n \"前端,后端\" -c \"cyan,magenta\" \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "vite",
+    "dev:backend": "cd server && node server.js",
+    "start:server": "cd server && node start.js",
+    "check-server": "cd server && node scripts/check-server.js",
+    "check": "npm run check-server",
     "build": "vite build",
     "build:prod": "vite build --mode production",
     "preview": "vite preview",
@@ -22,14 +27,14 @@
     "lucide-react": "^0.447.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.9.6",
-    "@twa-dev/sdk": "^1.0.0"
+    "react-router-dom": "^7.9.6"
   },
   "devDependencies": {
     "@types/react": "^18.3.7",
     "@types/react-dom": "^18.3.3",
     "@vitejs/plugin-react": "^4.3.3",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^8.2.2",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
     "vite": "^5.4.2"

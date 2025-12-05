@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
 import { generateUniqueId } from '../utils/uniqueId';
 import { getOmegaData } from '../utils/api';
+import { useSSE } from '../contexts/SSEContext';
+import { useServerStatus } from '../contexts/ServerStatusContext';
 
 const crisisEvents = [
   'DETECTED: 12 PLA Aircraft crossed median line. (-6 Hours)',
@@ -16,6 +18,7 @@ const formatSegment = (value, length) => String(value).padStart(length, '0');
 
 const OmegaSection = () => {
   const navigate = useNavigate();
+  const { isOnline } = useServerStatus();
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
   const [premium, setPremium] = useState(142.5);
   const [logs, setLogs] = useState([]);
@@ -27,10 +30,16 @@ const OmegaSection = () => {
 
   // 加载初始数据
   useEffect(() => {
+    // 如果服务器离线，不发起请求，避免浏览器控制台显示错误
+    if (!isOnline) {
+      setLoading(false);
+      return;
+    }
+
     const loadData = async () => {
       try {
         const response = await getOmegaData();
-        if (response.success && response.data) {
+        if (response && response.success && response.data) {
           const data = response.data;
           if (data.etuTargetTime) {
             targetRef.current = data.etuTargetTime;
@@ -47,15 +56,22 @@ const OmegaSection = () => {
           if (data.alertMessage) {
             setAlertMessage(data.alertMessage);
           }
+        } else if (response && response.success === false) {
+          // 处理错误响应（如服务器离线）
+          // 完全静默处理，不输出任何日志
         }
       } catch (error) {
-        console.error('Failed to load omega data:', error);
+        // 连接错误已在 api.js 中处理，完全静默
+        // 只记录非连接错误
+        if (error.name !== 'ConnectionRefusedError' && !error.message?.includes('无法连接到服务器')) {
+          console.error('Failed to load omega data:', error);
+        }
       } finally {
         setLoading(false);
       }
     };
     loadData();
-  }, []);
+  }, [isOnline]);
 
   // 倒计时更新
   useEffect(() => {
@@ -71,58 +87,97 @@ const OmegaSection = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // 定期更新数据（每3秒）
+  // 使用 SSE 接收实时更新
+  const { subscribe } = useSSE();
+  
   useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const response = await getOmegaData();
-        if (response.success && response.data) {
-          const data = response.data;
-          
-          // 更新风险溢价
-          if (data.riskPremium !== undefined && data.riskPremium !== premium) {
-            setPremium(data.riskPremium);
+    // 订阅 omega 数据更新
+    const unsubscribe = subscribe('omega', (message) => {
+      if (message.type === 'update' && message.data) {
+        const data = message.data;
+        
+        // 更新风险溢价
+        if (data.riskPremium !== undefined && data.riskPremium !== premium) {
+          const oldPremium = premium;
+          setPremium(data.riskPremium);
+          // 如果风险溢价变化超过5%，触发glitch效果
+          if (Math.abs(data.riskPremium - oldPremium) > 5) {
             setIsGlitching(true);
             if (glitchTimeoutRef.current) clearTimeout(glitchTimeoutRef.current);
             glitchTimeoutRef.current = setTimeout(() => setIsGlitching(false), 500);
           }
+        }
+        
+        // 更新事件日志
+        if (data.events && Array.isArray(data.events)) {
+          const newEvents = data.events.map(event => ({
+            id: event.id || generateUniqueId(),
+            text: event.text || event.message || ''
+          }));
+          const hadNewEvents = newEvents.length > logs.length;
+          setLogs(newEvents);
           
-          // 更新事件日志
-          if (data.events && Array.isArray(data.events)) {
-            const newEvents = data.events.map(event => ({
-              id: event.id || generateUniqueId(),
-              text: event.text || event.message || ''
-            }));
-            setLogs(newEvents);
-            
-            // 如果有新事件，触发glitch效果
-            if (newEvents.length > logs.length) {
-              setIsGlitching(true);
-              targetRef.current -= Math.random() * 100000000;
-              if (glitchTimeoutRef.current) clearTimeout(glitchTimeoutRef.current);
-              glitchTimeoutRef.current = setTimeout(() => setIsGlitching(false), 500);
-            }
-          }
-          
-          // 更新ETU目标时间（如果后端有更新）
-          if (data.etuTargetTime && data.etuTargetTime !== targetRef.current) {
-            targetRef.current = data.etuTargetTime;
+          // 如果有新事件，触发glitch效果并调整ETU
+          if (hadNewEvents) {
+            setIsGlitching(true);
+            // 每个新事件减少ETU目标时间（加速统一）
+            const eventCount = newEvents.length - logs.length;
+            targetRef.current -= eventCount * 1000 * 60 * 60 * 24; // 每个事件减少1天
+            if (glitchTimeoutRef.current) clearTimeout(glitchTimeoutRef.current);
+            glitchTimeoutRef.current = setTimeout(() => setIsGlitching(false), 500);
           }
         }
-      } catch (error) {
-        console.error('Failed to update omega data:', error);
+        
+        // 更新ETU目标时间
+        if (data.etuTargetTime && data.etuTargetTime !== targetRef.current) {
+          const timeDiff = data.etuTargetTime - targetRef.current;
+          // 如果ETU变化超过1小时，触发glitch效果
+          if (Math.abs(timeDiff) > 1000 * 60 * 60) {
+            setIsGlitching(true);
+            if (glitchTimeoutRef.current) clearTimeout(glitchTimeoutRef.current);
+            glitchTimeoutRef.current = setTimeout(() => setIsGlitching(false), 500);
+          }
+          targetRef.current = data.etuTargetTime;
+        }
+        
+        // 更新警告消息
+        if (data.alertMessage) {
+          setAlertMessage(data.alertMessage);
+        }
+      } else if (message.type === 'incremental' && message.data.type === 'event') {
+        // 增量更新：新事件
+        const newEvents = message.data.events.map(event => ({
+          id: event.id || generateUniqueId(),
+          text: event.text || event.message || ''
+        }));
+        const hadNewEvents = newEvents.length > logs.length;
+        setLogs(newEvents);
+        
+        if (hadNewEvents) {
+          setIsGlitching(true);
+          const eventCount = newEvents.length - logs.length;
+          targetRef.current -= eventCount * 1000 * 60 * 60 * 24;
+          if (glitchTimeoutRef.current) clearTimeout(glitchTimeoutRef.current);
+          glitchTimeoutRef.current = setTimeout(() => setIsGlitching(false), 500);
+        }
       }
-    }, 3000);
+    });
+    
     return () => {
-      clearInterval(interval);
+      unsubscribe();
       if (glitchTimeoutRef.current) clearTimeout(glitchTimeoutRef.current);
     };
-  }, [premium, logs.length]);
+  }, [subscribe, premium, logs.length]);
 
   return (
     <div className="relative flex h-screen flex-col bg-black text-slate-100 overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(248,113,113,0.08),transparent_60%)] pointer-events-none" />
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none" />
+      <div 
+        className="absolute inset-0 opacity-10 pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+        }}
+      />
       
       {/* 警告栏 - 固定高度，添加顶部 padding 避开导航栏 */}
       <div className="relative w-full bg-red-900/20 border-b border-red-800 text-center py-2 z-10 shrink-0 mt-16 md:mt-20">

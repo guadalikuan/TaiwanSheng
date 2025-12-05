@@ -203,6 +203,99 @@ router.get('/assets', (req, res) => {
   }
 });
 
+// GET /api/arsenal/assets/:id - 根据ID获取单个资产（公开端点，用于资产详情页）
+router.get('/assets/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const assetData = getAssetById(id);
+    
+    if (!assetData.raw || !assetData.sanitized) {
+      return res.status(404).json({
+        success: false,
+        error: 'Asset not found',
+        message: `Asset with id ${id} not found`
+      });
+    }
+    
+    // 格式化资产数据，匹配前端需要的格式
+    const sanitized = assetData.sanitized;
+    const raw = assetData.raw;
+    
+    // 尝试从原始数据中获取城市信息
+    let city = 'UNKNOWN';
+    if (raw && raw.city) {
+      city = raw.city;
+    } else if (sanitized.internalRef) {
+      const allAssets = getAllAssets();
+      const rawAsset = allAssets.raw.find(r => r.id === sanitized.internalRef);
+      if (rawAsset && rawAsset.city) {
+        city = rawAsset.city;
+      }
+    }
+    
+    // 如果还是没有城市，尝试从locationTag中提取
+    if (city === 'UNKNOWN' && sanitized.locationTag) {
+      const locationMap = {
+        'CN-NW-CAPITAL': '西安',
+        'CN-NW-SUB': '咸阳',
+        'CN-IND-HUB': '宝鸡',
+        'CN-QINLING-MTN': '商洛',
+        'CN-INT-RES': '汉中'
+      };
+      city = locationMap[sanitized.locationTag] || sanitized.locationTag;
+    }
+    
+    // 从yield字符串中提取百分比数字
+    let yieldPercent = 10;
+    if (sanitized.financials && sanitized.financials.yield) {
+      const yieldMatch = sanitized.financials.yield.match(/(\d+\.?\d*)%/);
+      if (yieldMatch) {
+        yieldPercent = parseFloat(yieldMatch[1]);
+      }
+    }
+    
+    // 计算价格（使用tokenPrice或totalTokens或debtAmount）
+    const price = sanitized.tokenPrice || 
+                  (sanitized.financials && sanitized.financials.totalTokens) || 
+                  sanitized.debtAmount || 
+                  (raw && raw.debtAmount) || 
+                  0;
+    
+    // 从securityLevel转换为risk等级
+    const riskMap = {
+      5: 'LOW',
+      4: 'LOW',
+      3: 'MED',
+      2: 'HIGH',
+      1: 'HIGH'
+    };
+    const risk = riskMap[sanitized.securityLevel] || 'MED';
+    
+    const formattedAsset = {
+      id: sanitized.id,
+      city: city,
+      title: sanitized.codeName || sanitized.title || 'Unknown Asset',
+      type: sanitized.zoneClass || sanitized.specs?.type || 'Residential',
+      price: `${price.toLocaleString()} USDT`,
+      yield: `${yieldPercent.toFixed(0)}%`,
+      status: sanitized.status === 'AVAILABLE' ? 'AVAILABLE' : (sanitized.status === 'MINTING' ? 'MINTING' : 'RESERVED'),
+      risk: risk
+    };
+    
+    res.json({
+      success: true,
+      data: formattedAsset
+    });
+  } catch (error) {
+    console.error('Error getting asset by id:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get asset',
+      message: error.message
+    });
+  }
+});
+
 // PUT /api/arsenal/approve/:id - 批准资产（需要审核员或管理员权限）
 router.put('/approve/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), async (req, res) => {
   try {

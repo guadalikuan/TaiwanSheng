@@ -34,16 +34,59 @@ tws/
 ### 安装依赖
 
 ```bash
+# 安装前端依赖
 npm install
+
+# 安装后端依赖
+cd server && npm install && cd ..
 ```
 
 ### 开发模式
 
+**同时启动前端和后端（推荐）：**
 ```bash
 npm run dev
 ```
 
-应用将在 `http://localhost:3000` 启动。
+**分别启动：**
+```bash
+# 终端 1: 启动前端
+npm run dev:frontend
+
+# 终端 2: 启动后端
+npm run dev:backend
+# 或使用启动助手（包含检查）
+npm run start:server
+```
+
+**检查服务器状态：**
+```bash
+npm run check-server
+```
+
+### 服务器配置
+
+- **前端**: `http://localhost:5173` 或 `http://localhost:5174`
+- **后端 API**: `http://localhost:3001`
+- **健康检查**: `http://localhost:3001/health`
+- **服务器状态**: `http://localhost:3001/api/server/status`
+
+### 常见问题
+
+**问题 1: ERR_CONNECTION_REFUSED**
+- **原因**: 服务器未启动
+- **解决**: 运行 `npm run dev:backend` 或 `npm run start:server`
+
+**问题 2: 端口被占用**
+- **原因**: 端口 3001 已被其他进程占用
+- **解决**: 
+  - Windows: `netstat -ano | findstr :3001`
+  - Linux/Mac: `lsof -i :3001`
+  - 或使用其他端口: `PORT=3002 npm run dev:backend`
+
+**问题 3: 地图瓦片加载失败**
+- **原因**: 网络问题或瓦片服务不可用
+- **解决**: 已自动处理，不影响使用
 
 ### 构建生产版本
 
@@ -94,10 +137,20 @@ npm run docker:compose
 
 ## 可用脚本
 
-- `npm run dev` - 启动开发服务器
+### 前端脚本
+- `npm run dev` - 同时启动前端和后端开发服务器
+- `npm run dev:frontend` - 仅启动前端开发服务器
 - `npm run build` - 构建应用
 - `npm run build:prod` - 构建生产版本
 - `npm run preview` - 预览生产构建
+
+### 后端脚本
+- `npm run dev:backend` - 启动后端开发服务器
+- `npm run start:server` - 使用启动助手启动服务器（包含检查）
+- `npm run check-server` - 检查服务器状态
+- `npm run check` - 检查服务器状态（别名）
+
+### Docker 脚本
 - `npm run docker:build` - 构建 Docker 镜像
 - `npm run docker:run` - 运行 Docker 容器
 - `npm run docker:compose` - 使用 Docker Compose 启动

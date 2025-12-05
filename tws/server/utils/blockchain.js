@@ -289,3 +289,4 @@ export const getAssetInfo = (tokenId) =>
 export const getBalance = (address, tokenId) => 
   blockchainService.getBalance(address, tokenId);
 
+

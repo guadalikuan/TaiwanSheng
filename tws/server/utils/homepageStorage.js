@@ -1,6 +1,16 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { 
+  getCurrentPrice, 
+  calculate24hPriceChange, 
+  calculate24hVolume,
+  getOrderBook,
+  getRecentTrades,
+  calculateVWAP
+} from './orderMatchingEngine.js';
+import { getBotUserStats } from './botUserManager.js';
+import { pushUpdate } from './sseManager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -13,52 +23,77 @@ const initDataDir = () => {
   if (!existsSync(DATA_DIR)) {
     mkdirSync(DATA_DIR, { recursive: true });
   }
-  if (!existsSync(HOMEPAGE_FILE)) {
-    const defaultData = {
-      omega: {
-        etuTargetTime: Date.now() + 1000 * 60 * 60 * 24 * 600, // 600天后
-        riskPremium: 142.5,
-        events: [],
-        alertMessage: '⚠ SYSTEM ALERT: GEOPOLITICAL TENSION RISING'
+  // 注意：默认数据创建现在在 readHomepageData() 中处理
+};
+
+// 获取默认数据
+const getDefaultData = () => {
+  return {
+    omega: {
+      etuTargetTime: Date.now() + 1000 * 60 * 60 * 24 * 600, // 600天后
+      riskPremium: 142.5,
+      events: [],
+      alertMessage: '⚠ SYSTEM ALERT: GEOPOLITICAL TENSION RISING'
+    },
+    market: {
+      currentPrice: 142.85,
+      priceChange24h: 12.4,
+      volume24h: 4291002911,
+      marketIndex: 'STRONG BUY',
+      klineData: [],
+      orderBook: {
+        asks: [],
+        bids: []
       },
-      market: {
-        currentPrice: 142.85,
-        priceChange24h: 12.4,
-        volume24h: 4291002911,
-        marketIndex: 'STRONG BUY',
-        klineData: [],
-        orderBook: {
-          asks: [],
-          bids: []
-        },
-        recentTrades: []
+      recentTrades: []
+    },
+    map: {
+      taiwan: {
+        nodeCount: 12458,
+        logs: []
       },
-      map: {
-        taiwan: {
-          nodeCount: 12458,
-          logs: []
-        },
-        mainland: {
-          assetPoolValue: 1425000000,
-          unitCount: 42109,
-          logs: []
-        },
-        blockHeight: '8922104'
-      }
-    };
-    writeFileSync(HOMEPAGE_FILE, JSON.stringify(defaultData, null, 2), 'utf8');
-  }
+      mainland: {
+        assetPoolValue: 1425000000,
+        unitCount: 42109,
+        logs: []
+      },
+      blockHeight: '8922104'
+    }
+  };
 };
 
 // 读取首页数据
 const readHomepageData = () => {
   initDataDir();
   try {
+    if (!existsSync(HOMEPAGE_FILE)) {
+      // 如果文件不存在，创建默认数据
+      const defaultData = getDefaultData();
+      writeFileSync(HOMEPAGE_FILE, JSON.stringify(defaultData, null, 2), 'utf8');
+      return defaultData;
+    }
+    
     const data = readFileSync(HOMEPAGE_FILE, 'utf8');
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    
+    // 验证数据完整性，如果缺少必要字段，使用默认值补充
+    const defaultData = getDefaultData();
+    return {
+      omega: { ...defaultData.omega, ...(parsed.omega || {}) },
+      market: { ...defaultData.market, ...(parsed.market || {}) },
+      map: { ...defaultData.map, ...(parsed.map || {}) }
+    };
   } catch (error) {
     console.error('Error reading homepage data:', error);
-    return null;
+    // 返回默认数据而不是 null
+    const defaultData = getDefaultData();
+    // 尝试写入默认数据
+    try {
+      writeFileSync(HOMEPAGE_FILE, JSON.stringify(defaultData, null, 2), 'utf8');
+    } catch (writeError) {
+      console.error('Error writing default data:', writeError);
+    }
+    return defaultData;
   }
 };
 
@@ -75,12 +110,158 @@ const writeHomepageData = (data) => {
 };
 
 /**
- * 获取Omega屏数据
- * @returns {Object} Omega数据
+ * 计算ETU目标时间（基于系统事件动态调整）
+ * @param {number} baseTargetTime - 基础目标时间（时间戳）
+ * @returns {Promise<number>} 调整后的目标时间（时间戳）
  */
-export const getOmegaData = () => {
+const calculateETUTargetTime = async (baseTargetTime) => {
+  try {
+    const data = readHomepageData();
+    const omega = data?.omega || getDefaultData().omega;
+    const events = omega.events || [];
+    
+    // 获取系统统计数据
+    let botStats = { active: 0, total: 0 };
+    try {
+      botStats = getBotUserStats();
+    } catch (error) {
+      console.warn('Error getting bot stats for ETU calculation:', error);
+    }
+    
+    // 获取市场数据
+    let marketVolume = 0;
+    let tradeCount = 0;
+    try {
+      marketVolume = calculate24hVolume();
+      const recentTrades = getRecentTrades(1000);
+      tradeCount = recentTrades.length;
+    } catch (error) {
+      console.warn('Error getting market data for ETU calculation:', error);
+    }
+    
+    // 获取资产数据
+    let assetCount = 0;
+    try {
+      // 使用动态导入（同步方式）
+      const storageModule = await import('./storage.js');
+      const allAssets = storageModule.getAllAssets();
+      assetCount = (allAssets.sanitized && Array.isArray(allAssets.sanitized)) ? allAssets.sanitized.length : 0;
+    } catch (error) {
+      console.warn('Error getting asset data for ETU calculation:', error);
+    }
+    
+    // 计算调整因子
+    // 事件影响：每个事件减少一定时间（加速统一）
+    const eventImpact = events.length * 1000 * 60 * 60 * 24; // 每个事件减少1天
+    
+    // 用户活跃度影响：活跃用户越多，加速越快
+    const userImpact = botStats.active * 1000 * 60 * 60 * 12; // 每个活跃用户减少12小时
+    
+    // 交易量影响：交易量越大，市场越活跃，加速越快
+    const volumeImpact = Math.min(marketVolume / 1000000, 100) * 1000 * 60 * 60 * 24; // 每100万交易量减少1天，最多100天
+    
+    // 资产数量影响：资产越多，系统越成熟，加速越快
+    const assetImpact = Math.min(assetCount / 10, 50) * 1000 * 60 * 60 * 24; // 每10个资产减少1天，最多50天
+    
+    // 总调整量（负值表示加速，减少目标时间）
+    const totalAdjustment = -(eventImpact + userImpact + volumeImpact + assetImpact);
+    
+    // 应用调整，但确保不会过度调整（最多调整30%）
+    const maxAdjustment = (baseTargetTime - Date.now()) * 0.3;
+    const finalAdjustment = Math.max(totalAdjustment, -maxAdjustment);
+    
+    return baseTargetTime + finalAdjustment;
+  } catch (error) {
+    console.error('Error calculating ETU target time:', error);
+    return baseTargetTime; // 出错时返回原始值
+  }
+};
+
+/**
+ * 计算风险溢价（基于市场数据动态计算）
+ * @returns {Promise<number>} 风险溢价百分比
+ */
+const calculateRiskPremium = async () => {
+  try {
+    // 获取市场数据
+    let priceChange24h = 0;
+    let volume24h = 0;
+    let currentPrice = null;
+    
+    try {
+      currentPrice = getCurrentPrice();
+      if (currentPrice !== null) {
+        priceChange24h = calculate24hPriceChange(currentPrice);
+        volume24h = calculate24hVolume();
+      }
+    } catch (error) {
+      console.warn('Error getting market data for risk premium calculation:', error);
+    }
+    
+    // 获取系统统计数据
+    let botStats = { active: 0 };
+    try {
+      botStats = getBotUserStats();
+    } catch (error) {
+      console.warn('Error getting bot stats for risk premium calculation:', error);
+    }
+    
+    // 获取资产数据
+    let assetCount = 0;
+    try {
+      const storageModule = await import('./storage.js');
+      const allAssets = storageModule.getAllAssets();
+      assetCount = (allAssets.sanitized && Array.isArray(allAssets.sanitized)) ? allAssets.sanitized.length : 0;
+    } catch (error) {
+      console.warn('Error getting asset data for risk premium calculation:', error);
+    }
+    
+    // 基础风险溢价
+    const basePremium = 100.0;
+    
+    // 价格波动性影响：价格变化越大，风险溢价越高
+    const volatilityImpact = Math.abs(priceChange24h) * 2; // 每1%价格变化增加2%风险溢价
+    
+    // 交易量影响：交易量越大，市场越活跃，风险溢价略降（流动性好）
+    const volumeImpact = -Math.min(volume24h / 100000000, 20); // 每1亿交易量减少1%风险溢价，最多减少20%
+    
+    // 用户活跃度影响：用户越多，系统越稳定，风险溢价略降
+    const userImpact = -Math.min(botStats.active / 5, 10); // 每5个活跃用户减少1%风险溢价，最多减少10%
+    
+    // 资产数量影响：资产越多，系统越成熟，风险溢价略降
+    const assetImpact = -Math.min(assetCount / 20, 15); // 每20个资产减少1%风险溢价，最多减少15%
+    
+    // 计算最终风险溢价
+    const finalPremium = basePremium + volatilityImpact + volumeImpact + userImpact + assetImpact;
+    
+    // 确保风险溢价在合理范围内（50-200%）
+    return Math.max(50, Math.min(200, finalPremium));
+  } catch (error) {
+    console.error('Error calculating risk premium:', error);
+    return 142.5; // 出错时返回默认值
+  }
+};
+
+/**
+ * 获取Omega屏数据
+ * @returns {Promise<Object>} Omega数据
+ */
+export const getOmegaData = async () => {
   const data = readHomepageData();
-  return data?.omega || null;
+  const omega = data?.omega || getDefaultData().omega;
+  
+  // 动态计算ETU目标时间
+  const baseTargetTime = omega.etuTargetTime || (Date.now() + 1000 * 60 * 60 * 24 * 600);
+  const dynamicETUTargetTime = await calculateETUTargetTime(baseTargetTime);
+  
+  // 动态计算风险溢价
+  const dynamicRiskPremium = await calculateRiskPremium();
+  
+  return {
+    ...omega,
+    etuTargetTime: dynamicETUTargetTime,
+    riskPremium: dynamicRiskPremium
+  };
 };
 
 /**
@@ -99,6 +280,13 @@ export const updateOmegaData = (updates) => {
   };
   
   if (writeHomepageData(data)) {
+    // 推送 SSE 更新
+    pushUpdate('omega', 'update', {
+      riskPremium: data.omega.riskPremium,
+      etuTargetTime: data.omega.etuTargetTime,
+      alertMessage: data.omega.alertMessage,
+      events: data.omega.events
+    });
     return data.omega;
   }
   return null;
@@ -122,6 +310,12 @@ export const addOmegaEvent = (text) => {
   data.omega.events = [newEvent, ...(data.omega.events || [])].slice(0, 8);
   
   if (writeHomepageData(data)) {
+    // 推送 SSE 更新（增量）
+    pushUpdate('omega', 'incremental', {
+      type: 'event',
+      event: newEvent,
+      events: data.omega.events
+    });
     return newEvent;
   }
   return null;
@@ -133,7 +327,124 @@ export const addOmegaEvent = (text) => {
  */
 export const getMarketData = () => {
   const data = readHomepageData();
-  return data?.market || null;
+  
+  // 从订单撮合引擎获取实时数据
+  let currentPrice = null;
+  let priceChange24h = 0;
+  let volume24h = 0;
+  let vwap24h = null;
+  let orderBook = { asks: [], bids: [] };
+  let recentTrades = [];
+  
+  try {
+    try {
+      currentPrice = getCurrentPrice();
+      if (currentPrice !== null && !isNaN(currentPrice) && isFinite(currentPrice)) {
+        try {
+          priceChange24h = calculate24hPriceChange(currentPrice);
+          if (isNaN(priceChange24h) || !isFinite(priceChange24h)) {
+            priceChange24h = 0;
+          }
+        } catch (calcError) {
+          console.warn('Error calculating 24h price change:', calcError.message);
+          priceChange24h = 0;
+        }
+        
+        try {
+          volume24h = calculate24hVolume();
+          if (isNaN(volume24h) || !isFinite(volume24h)) {
+            volume24h = 0;
+          }
+        } catch (volError) {
+          console.warn('Error calculating 24h volume:', volError.message);
+          volume24h = 0;
+        }
+        
+        try {
+          vwap24h = calculateVWAP(24 * 60 * 60 * 1000); // 24小时VWAP
+          if (vwap24h !== null && (isNaN(vwap24h) || !isFinite(vwap24h))) {
+            vwap24h = null;
+          }
+        } catch (vwapError) {
+          console.warn('Error calculating 24h VWAP:', vwapError.message);
+          vwap24h = null;
+        }
+      }
+    } catch (priceError) {
+      console.warn('Error getting current price:', priceError.message);
+      currentPrice = null;
+    }
+    
+    try {
+      orderBook = getOrderBook(10);
+      if (!orderBook || !orderBook.asks || !orderBook.bids) {
+        orderBook = { asks: [], bids: [] };
+      }
+    } catch (orderBookError) {
+      console.warn('Error getting order book:', orderBookError.message);
+      orderBook = { asks: [], bids: [] };
+    }
+    
+    try {
+      recentTrades = getRecentTrades(10);
+      if (!Array.isArray(recentTrades)) {
+        recentTrades = [];
+      }
+    } catch (tradesError) {
+      console.warn('Error getting recent trades:', tradesError.message);
+      recentTrades = [];
+    }
+  } catch (error) {
+    // 如果订单撮合引擎不可用，使用默认数据
+    console.warn('Order matching engine not available, using default data:', error.message);
+    console.error('Full error:', error);
+  }
+  
+  // 合并数据：优先使用订单撮合引擎的数据，如果没有则使用存储的数据
+  const storedMarket = data?.market || getDefaultData().market;
+  
+  // 安全地格式化成交记录
+  let formattedTrades = storedMarket.recentTrades || [];
+  if (recentTrades.length > 0) {
+    try {
+      formattedTrades = recentTrades.map(trade => {
+        if (!trade || typeof trade !== 'object') return null;
+        const price = typeof trade.price === 'number' ? trade.price : parseFloat(trade.price) || 0;
+        const amount = typeof trade.amount === 'number' ? trade.amount : parseFloat(trade.amount) || 0;
+        const timestamp = trade.timestamp || Date.now();
+        
+        return {
+          id: trade.id || `trade_${timestamp}_${Math.random().toString(36).substring(2, 9)}`,
+          price: price.toFixed(2),
+          amount: amount.toFixed(4),
+          type: trade.buyOrderId ? 'buy' : 'sell',
+          time: new Date(timestamp).toLocaleTimeString(),
+          timestamp: timestamp
+        };
+      }).filter(t => t !== null);
+    } catch (formatError) {
+      console.warn('Error formatting trades:', formatError.message);
+      formattedTrades = storedMarket.recentTrades || [];
+    }
+  }
+  
+  return {
+    ...storedMarket,
+    currentPrice: currentPrice !== null && !isNaN(currentPrice) && isFinite(currentPrice) 
+      ? currentPrice 
+      : (storedMarket.currentPrice || 142.85),
+    priceChange24h: currentPrice !== null ? priceChange24h : (storedMarket.priceChange24h || 0),
+    volume24h: volume24h > 0 ? volume24h : (storedMarket.volume24h || 0),
+    vwap24h: vwap24h !== null && !isNaN(vwap24h) && isFinite(vwap24h) 
+      ? vwap24h 
+      : (storedMarket.vwap24h || null),
+    orderBook: (orderBook.asks && orderBook.asks.length > 0) || (orderBook.bids && orderBook.bids.length > 0) 
+      ? orderBook 
+      : (storedMarket.orderBook || { asks: [], bids: [] }),
+    recentTrades: formattedTrades,
+    klineData: storedMarket.klineData || [],
+    marketIndex: storedMarket.marketIndex || 'STRONG BUY'
+  };
 };
 
 /**
@@ -152,6 +463,14 @@ export const updateMarketData = (updates) => {
   };
   
   if (writeHomepageData(data)) {
+    // 推送 SSE 更新（如果包含价格相关数据）
+    if (updates.currentPrice !== undefined || updates.priceChange24h !== undefined || updates.volume24h !== undefined) {
+      pushUpdate('market', 'update', {
+        currentPrice: data.market.currentPrice,
+        priceChange24h: data.market.priceChange24h,
+        volume24h: data.market.volume24h
+      });
+    }
     return data.market;
   }
   return null;
@@ -184,11 +503,13 @@ export const addKlinePoint = (klinePoint) => {
 };
 
 /**
- * 添加交易记录
+ * 添加交易记录（已废弃，现在使用订单撮合引擎的成交记录）
  * @param {Object} trade - 交易数据 {price, amount, type, time}
  * @returns {Object|null} 新交易
+ * @deprecated 使用订单撮合引擎的成交记录
  */
 export const addMarketTrade = (trade) => {
+  // 这个方法现在主要用于兼容性，实际交易记录由订单撮合引擎管理
   const data = readHomepageData();
   if (!data) return null;
   
@@ -211,11 +532,13 @@ export const addMarketTrade = (trade) => {
 };
 
 /**
- * 更新订单簿
+ * 更新订单簿（已废弃，现在使用订单撮合引擎的订单簿）
  * @param {Object} orderBook - 订单簿 {asks: [], bids: []}
  * @returns {boolean} 是否成功
+ * @deprecated 使用订单撮合引擎的订单簿
  */
 export const updateOrderBook = (orderBook) => {
+  // 这个方法现在主要用于兼容性，实际订单簿由订单撮合引擎管理
   const data = readHomepageData();
   if (!data) return false;
   
@@ -224,12 +547,58 @@ export const updateOrderBook = (orderBook) => {
 };
 
 /**
- * 获取Map屏数据
- * @returns {Object} Map数据
+ * 计算区块链高度（基于交易数量模拟）
+ * @returns {Promise<string>} 区块链高度
  */
-export const getMapData = () => {
+const calculateBlockHeight = async () => {
+  try {
+    // 基础区块高度
+    const baseHeight = 8922104;
+    
+    // 获取交易数据
+    let tradeCount = 0;
+    try {
+      const recentTrades = getRecentTrades(10000);
+      tradeCount = recentTrades.length;
+    } catch (error) {
+      console.warn('Error getting trades for block height calculation:', error);
+    }
+    
+    // 每个交易增加一个区块（简化模型）
+    // 实际中，多个交易可能打包在一个区块中，这里简化处理
+    const blocksFromTrades = Math.floor(tradeCount / 10); // 每10个交易一个区块
+    
+    // 基于系统运行时间增加区块（模拟区块时间约15秒）
+    const systemStartTime = 1704067200000; // 2024-01-01 00:00:00 UTC (示例起始时间)
+    const currentTime = Date.now();
+    const timeElapsed = currentTime - systemStartTime;
+    const blocksFromTime = Math.floor(timeElapsed / (15 * 1000)); // 每15秒一个区块
+    
+    // 计算最终区块高度
+    const finalHeight = baseHeight + blocksFromTrades + blocksFromTime;
+    
+    return finalHeight.toString();
+  } catch (error) {
+    console.error('Error calculating block height:', error);
+    return '8922104'; // 出错时返回默认值
+  }
+};
+
+/**
+ * 获取Map屏数据
+ * @returns {Promise<Object>} Map数据
+ */
+export const getMapData = async () => {
   const data = readHomepageData();
-  return data?.map || null;
+  const map = data?.map || getDefaultData().map;
+  
+  // 动态计算区块链高度
+  const dynamicBlockHeight = await calculateBlockHeight();
+  
+  return {
+    ...map,
+    blockHeight: dynamicBlockHeight
+  };
 };
 
 /**
@@ -248,6 +617,12 @@ export const updateMapData = (updates) => {
   };
   
   if (writeHomepageData(data)) {
+    // 推送 SSE 更新
+    pushUpdate('map', 'update', {
+      taiwan: data.map.taiwan,
+      mainland: data.map.mainland,
+      blockHeight: data.map.blockHeight
+    });
     return data.map;
   }
   return null;
@@ -292,6 +667,12 @@ export const addTaiwanLog = (messageOrLog) => {
   data.map.taiwan.nodeCount = (data.map.taiwan.nodeCount || 0) + 1;
   
   if (writeHomepageData(data)) {
+    // 推送 SSE 更新（增量）
+    pushUpdate('map', 'incremental', {
+      type: 'taiwanLog',
+      log: newLog,
+      nodeCount: data.map.taiwan.nodeCount
+    });
     return newLog;
   }
   return null;
@@ -340,6 +721,13 @@ export const addAssetLog = (lotOrLog, location) => {
   data.map.mainland.unitCount = (data.map.mainland.unitCount || 0) + 1;
   
   if (writeHomepageData(data)) {
+    // 推送 SSE 更新（增量）
+    pushUpdate('map', 'incremental', {
+      type: 'assetLog',
+      log: newLog,
+      assetPoolValue: data.map.mainland.assetPoolValue,
+      unitCount: data.map.mainland.unitCount
+    });
     return newLog;
   }
   return null;

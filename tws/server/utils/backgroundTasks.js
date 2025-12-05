@@ -9,6 +9,7 @@ import {
   addAssetLog,
   addKlinePoint
 } from './homepageStorage.js';
+import { pushUpdate } from './sseManager.js';
 import {
   generateMarketTrade,
   updateMarketPrice,
@@ -17,6 +18,14 @@ import {
   generateAssetLog,
   generateKlinePoint
 } from './mockDataGenerator.js';
+import { 
+  getCurrentPrice, 
+  getOrderBook, 
+  getRecentTrades,
+  matchOrders,
+  calculate24hPriceChange,
+  calculate24hVolume
+} from './orderMatchingEngine.js';
 import { startBotScheduler, stopBotScheduler } from './botScheduler.js';
 
 let marketTaskInterval = null;
@@ -26,50 +35,76 @@ let orderBookTaskInterval = null;
 let klineTaskInterval = null;
 
 /**
- * 启动Market数据生成任务（每800ms）
+ * 启动Market数据生成任务（每350ms，约每秒3次）
+ * 现在基于订单撮合引擎的成交记录更新价格
  */
 const startMarketTask = () => {
   if (marketTaskInterval) return;
   
   marketTaskInterval = setInterval(() => {
     try {
-      const marketData = getMarketData();
-      if (!marketData) return;
+      // 尝试撮合订单（机器人提交的订单会被撮合）
+      matchOrders();
       
-      // 更新价格
-      const newPrice = updateMarketPrice(marketData.currentPrice || 142.85);
-      const priceChange = ((newPrice - (marketData.currentPrice || 142.85)) / (marketData.currentPrice || 142.85)) * 100;
+      // 从订单撮合引擎获取当前价格
+      const currentPrice = getCurrentPrice();
       
-      // 生成交易记录
-      const trade = generateMarketTrade(newPrice);
-      addMarketTrade(trade);
-      
-      // 更新市场数据
-      updateMarketData({
-        currentPrice: newPrice,
-        priceChange24h: priceChange
-      });
+      if (currentPrice !== null) {
+        // 计算24小时价格变化和成交量
+        const priceChange24h = calculate24hPriceChange(currentPrice);
+        const volume24h = calculate24hVolume();
+        
+        // 更新市场数据
+        updateMarketData({
+          currentPrice: currentPrice,
+          priceChange24h: priceChange24h,
+          volume24h: volume24h
+        });
+        
+        // 推送 SSE 更新
+        pushUpdate('market', 'update', {
+          currentPrice,
+          priceChange24h,
+          volume24h
+        });
+      } else {
+        // 如果没有成交记录，使用默认价格（首次启动时）
+        const marketData = getMarketData();
+        if (marketData && !marketData.currentPrice) {
+          updateMarketData({
+            currentPrice: 142.85,
+            priceChange24h: 0,
+            volume24h: 0
+          });
+        }
+      }
     } catch (error) {
       console.error('Market task error:', error);
     }
-  }, 800);
+  }, 350);
   
-  console.log('✅ Market background task started (800ms interval)');
+  console.log('✅ Market background task started (350ms interval, ~3 updates/sec)');
 };
 
 /**
  * 启动订单簿更新任务（每2秒）
+ * 现在直接从订单撮合引擎获取订单簿
  */
 const startOrderBookTask = () => {
   if (orderBookTaskInterval) return;
   
   orderBookTaskInterval = setInterval(() => {
     try {
-      const marketData = getMarketData();
-      if (!marketData) return;
+      // 从订单撮合引擎获取订单簿
+      const orderBook = getOrderBook(10);
       
-      const orderBook = generateOrderBook(marketData.currentPrice || 142.85);
+      // 更新到存储（用于兼容性）
       updateOrderBook(orderBook);
+      
+      // 推送 SSE 更新
+      pushUpdate('market', 'update', {
+        orderBook
+      });
     } catch (error) {
       console.error('OrderBook task error:', error);
     }
@@ -79,27 +114,93 @@ const startOrderBookTask = () => {
 };
 
 /**
- * 启动K线数据生成任务（每5秒添加一个新数据点）
+ * 启动K线数据生成任务（每1.5秒添加一个新数据点）
+ * 现在基于实际成交记录生成K线数据
  */
 const startKlineTask = () => {
   if (klineTaskInterval) return;
   
+  let lastKlineTime = Date.now();
+  let lastKlinePrice = null;
+  
   klineTaskInterval = setInterval(() => {
     try {
-      const marketData = getMarketData();
-      if (!marketData) return;
+      // 获取最近1.5秒内的成交记录
+      const recentTrades = getRecentTrades(100);
+      const now = Date.now();
+      const timeWindow = 1500; // 1.5秒
+      const windowStart = now - timeWindow;
       
-      const klinePoint = generateKlinePoint(
-        marketData.currentPrice || 142.85,
-        Date.now()
-      );
-      addKlinePoint(klinePoint);
+      // 筛选出时间窗口内的成交记录
+      // getRecentTrades返回的是倒序（最新在前），需要按时间正序排序
+      const windowTrades = recentTrades
+        .filter(t => t && t.timestamp && t.timestamp >= windowStart)
+        .sort((a, b) => a.timestamp - b.timestamp); // 按时间正序排序
+        
+      if (windowTrades.length > 0) {
+        // 基于实际成交记录生成K线数据点
+        const prices = windowTrades.map(t => {
+          const price = typeof t.price === 'number' ? t.price : parseFloat(t.price) || 0;
+          return isNaN(price) || !isFinite(price) ? 0 : price;
+        }).filter(p => p > 0);
+        
+        const volumes = windowTrades.map(t => {
+          const amount = typeof t.amount === 'number' ? t.amount : parseFloat(t.amount) || 0;
+          return isNaN(amount) || !isFinite(amount) ? 0 : amount;
+        });
+        
+        if (prices.length > 0) {
+          const open = lastKlinePrice || prices[0]; // 第一个价格（时间最早）
+          const close = prices[prices.length - 1]; // 最后一个价格（时间最晚）
+          const high = Math.max(...prices);
+          const low = Math.min(...prices);
+          const volume = volumes.reduce((sum, v) => sum + v, 0);
+        
+          const klinePoint = {
+            timestamp: now,
+            open: open,
+            high: high,
+            low: low,
+            close: close,
+            volume: volume
+          };
+          
+          addKlinePoint(klinePoint);
+          lastKlinePrice = close;
+          lastKlineTime = now;
+          
+          // 推送 SSE 更新（增量）
+          pushUpdate('market', 'incremental', {
+            klinePoint
+          });
+        }
+      } else {
+        // 如果没有成交记录，使用当前价格生成一个数据点
+        const currentPrice = getCurrentPrice();
+        if (currentPrice !== null) {
+          const klinePoint = {
+            timestamp: now,
+            open: currentPrice,
+            high: currentPrice,
+            low: currentPrice,
+            close: currentPrice,
+            volume: 0
+          };
+          addKlinePoint(klinePoint);
+          lastKlinePrice = currentPrice;
+          
+          // 推送 SSE 更新（增量）
+          pushUpdate('market', 'incremental', {
+            klinePoint
+          });
+        }
+      }
     } catch (error) {
       console.error('Kline task error:', error);
     }
-  }, 5000);
+  }, 1500);
   
-  console.log('✅ Kline background task started (5s interval)');
+  console.log('✅ Kline background task started (1.5s interval, based on actual trades)');
 };
 
 /**
@@ -114,6 +215,7 @@ const startTaiwanNodeTask = () => {
       if (Math.random() > 0.7) {
         const log = generateTaiwanNodeLog();
         addTaiwanLog(log); // 传递完整日志对象
+        // addTaiwanLog 内部会推送 SSE 更新
       }
     } catch (error) {
       console.error('Taiwan node task error:', error);
@@ -129,12 +231,13 @@ const startTaiwanNodeTask = () => {
 const startAssetTask = () => {
   if (assetTaskInterval) return;
   
-  assetTaskInterval = setInterval(() => {
+  assetTaskInterval = setInterval(async () => {
     try {
       // 随机决定是否生成新资产确认（60%概率）
       if (Math.random() > 0.6) {
-        const log = generateAssetLog();
+        const log = await generateAssetLog();
         addAssetLog(log); // 传递完整日志对象
+        // addAssetLog 内部会推送 SSE 更新
       }
     } catch (error) {
       console.error('Asset task error:', error);

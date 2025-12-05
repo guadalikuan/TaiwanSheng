@@ -1,28 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, DollarSign, TrendingUp, Lock, Unlock, FileText, Calendar } from 'lucide-react';
-import { getHomepageAssets } from '../utils/api';
+import { getAssetById } from '../utils/api';
 
 const AssetDetailPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [asset, setAsset] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await getHomepageAssets();
-        if (response.success && response.data?.assets) {
-          const foundAsset = response.data.assets.find(a => 
-            a.id === Number(id) || a.id === id || String(a.id).includes(String(id))
-          );
-          if (foundAsset) {
-            setAsset(foundAsset);
-          }
+        setError(null);
+        const response = await getAssetById(id);
+        if (response.success && response.data) {
+          setAsset(response.data);
+        } else {
+          setError(response.message || '无法加载资产数据');
         }
       } catch (error) {
         console.error('Failed to load asset data:', error);
+        setError('网络错误，请检查服务器连接');
       } finally {
         setLoading(false);
       }
@@ -38,13 +38,15 @@ const AssetDetailPage = () => {
     );
   }
 
-  if (!asset) {
+  if (!asset && !loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-red-500 font-mono">Asset not found</div>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
+        <div className="text-red-500 font-mono text-lg mb-4">
+          {error || 'Asset not found'}
+        </div>
         <button
           onClick={() => navigate('/')}
-          className="ml-4 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-mono text-sm"
+          className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-mono text-sm"
         >
           返回首页
         </button>

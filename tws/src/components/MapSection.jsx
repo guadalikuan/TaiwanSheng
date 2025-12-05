@@ -1,8 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { generateUniqueId } from '../utils/uniqueId';
 import { getMapData } from '../utils/api';
+import { useSSE } from '../contexts/SSEContext';
+import { useServerStatus } from '../contexts/ServerStatusContext';
+
+// 修复 Leaflet 默认图标路径问题，避免加载 @2x.png 文件失败
+// 由于我们使用自定义 divIcon，完全禁用默认图标以避免网络请求
+const transparentGif = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+// 禁用默认图标的 retina 版本（@2x.png）
+if (L.Icon.Default.prototype) {
+  // 覆盖 _getIconUrl 方法
+  if (typeof L.Icon.Default.prototype._getIconUrl === 'function') {
+    L.Icon.Default.prototype._getIconUrl = function(name) {
+      return transparentGif;
+    };
+  }
+  
+  // 直接设置默认选项，禁用所有图标 URL
+  L.Icon.Default.mergeOptions({
+    iconUrl: transparentGif,
+    iconRetinaUrl: transparentGif,
+    shadowUrl: transparentGif,
+    iconSize: [1, 1],
+    iconAnchor: [0, 0],
+    popupAnchor: [0, 0],
+    shadowSize: [0, 0],
+  });
+}
 
 const taiwanHotspots = [
   { name: 'Taipei (Xinyi)', lat: 25.033, lng: 121.5654 },
@@ -25,7 +53,35 @@ const mainlandNodes = [
 
 const formatAsset = (value) => `¥ ${(value / 100000000).toFixed(3)} B`;
 
+/**
+ * 验证并修正坐标是否在合理范围内
+ * @param {number} lat - 纬度
+ * @param {number} lng - 经度
+ * @param {string} region - 区域类型：'mainland' 或 'taiwan'
+ * @returns {Object} 修正后的坐标 {lat, lng}
+ */
+const validateAndFixCoordinates = (lat, lng, region = 'mainland') => {
+  // 中国大陆范围：纬度 18°-54°N，经度 73°-135°E
+  // 台湾范围：纬度 21.9°-25.3°N，经度 119.3°-122.0°E
+  const bounds = region === 'taiwan' 
+    ? { latMin: 21.9, latMax: 25.3, lngMin: 119.3, lngMax: 122.0 }
+    : { latMin: 18, latMax: 54, lngMin: 73, lngMax: 135 };
+  
+  // 修正超出范围的坐标
+  let fixedLat = lat;
+  let fixedLng = lng;
+  
+  if (fixedLat < bounds.latMin) fixedLat = bounds.latMin;
+  if (fixedLat > bounds.latMax) fixedLat = bounds.latMax;
+  if (fixedLng < bounds.lngMin) fixedLng = bounds.lngMin;
+  if (fixedLng > bounds.lngMax) fixedLng = bounds.lngMax;
+  
+  return { lat: fixedLat, lng: fixedLng };
+};
+
 const MapSection = () => {
+  const navigate = useNavigate();
+  const { isOnline } = useServerStatus();
   const [twNodeCount, setTwNodeCount] = useState(12458);
   const [twLogs, setTwLogs] = useState([]);
   const [assetValue, setAssetValue] = useState(1425000000);
@@ -44,10 +100,16 @@ const MapSection = () => {
 
   // 加载初始数据
   useEffect(() => {
+    // 如果服务器离线，不发起请求，避免浏览器控制台显示错误
+    if (!isOnline) {
+      setLoading(false);
+      return;
+    }
+
     const loadData = async () => {
       try {
         const response = await getMapData();
-        if (response.success && response.data) {
+        if (response && response.success && response.data) {
           const mapData = response.data;
           
           if (mapData.taiwan) {
@@ -81,15 +143,22 @@ const MapSection = () => {
           if (mapData.blockHeight) {
             setBlockHeight(mapData.blockHeight);
           }
+        } else if (response && response.success === false) {
+          // 处理错误响应（如服务器离线）
+          // 完全静默处理，不输出任何日志
         }
       } catch (error) {
-        console.error('Failed to load map data:', error);
+        // 连接错误已在 api.js 中处理，完全静默
+        // 只记录非连接错误
+        if (error.name !== 'ConnectionRefusedError' && !error.message?.includes('无法连接到服务器')) {
+          console.error('Failed to load map data:', error);
+        }
       } finally {
         setLoading(false);
       }
     };
     loadData();
-  }, []);
+  }, [isOnline]);
 
   useEffect(() => {
     if (!taiwanMapContainerRef.current) return;
@@ -101,11 +170,20 @@ const MapSection = () => {
       doubleClickZoom: false,
     }).setView([23.6978, 120.9605], 8);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    const taiwanTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
       maxZoom: 19,
       subdomains: 'abcd',
       crossOrigin: true,
-    }).addTo(map);
+      detectRetina: false, // 禁用 retina 检测，避免加载 @2x.png 文件
+    });
+    
+    // 添加瓦片加载错误处理，静默处理失败
+    taiwanTileLayer.on('tileerror', (error, tile) => {
+      // 静默处理瓦片加载错误，不显示在控制台
+      // 这可以防止 110.png, 111.png 等瓦片加载失败时的错误提示
+    });
+    
+    taiwanTileLayer.addTo(map);
 
     taiwanMapRef.current = map;
     const pulseIcon = L.divIcon({
@@ -118,9 +196,13 @@ const MapSection = () => {
       const city = taiwanHotspots[Math.floor(Math.random() * taiwanHotspots.length)];
       const offsetLat = (Math.random() - 0.5) * 0.04;
       const offsetLng = (Math.random() - 0.5) * 0.04;
+      const rawLat = city.lat + offsetLat;
+      const rawLng = city.lng + offsetLng;
+      // 验证并修正坐标
+      const validated = validateAndFixCoordinates(rawLat, rawLng, 'taiwan');
       return {
-        lat: city.lat + offsetLat,
-        lng: city.lng + offsetLng,
+        lat: validated.lat,
+        lng: validated.lng,
         city: city.name,
       };
     };
@@ -141,51 +223,125 @@ const MapSection = () => {
     };
   }, []);
 
-  // 定期更新台湾节点数据（每800ms）
+  // 使用 SSE 接收实时更新
+  const { subscribe } = useSSE();
+  
+  // 处理台湾节点数据更新的辅助函数
+  const handleTaiwanLogUpdate = (log) => {
+    if (!taiwanMapRef.current) return;
+    
+    const existingNodeIds = new Set(twLogs.map(l => l.nodeId).filter(Boolean));
+    const nodeId = log.nodeId || log.id;
+    if (nodeId && existingNodeIds.has(nodeId)) return; // 已存在，跳过
+    
+    // 使用日志中的位置信息，如果没有则使用默认位置
+    let lat, lng;
+    
+    if (log.location && log.location.lat && log.location.lng) {
+      const validated = validateAndFixCoordinates(log.location.lat, log.location.lng, 'taiwan');
+      lat = validated.lat;
+      lng = validated.lng;
+    } else if (log.city) {
+      const cityData = taiwanHotspots.find(c => c.name.includes(log.city));
+      if (cityData) {
+        const rawLat = cityData.lat + (Math.random() - 0.5) * 0.04;
+        const rawLng = cityData.lng + (Math.random() - 0.5) * 0.04;
+        const validated = validateAndFixCoordinates(rawLat, rawLng, 'taiwan');
+        lat = validated.lat;
+        lng = validated.lng;
+      } else {
+        const city = taiwanHotspots[Math.floor(Math.random() * taiwanHotspots.length)];
+        const rawLat = city.lat + (Math.random() - 0.5) * 0.04;
+        const rawLng = city.lng + (Math.random() - 0.5) * 0.04;
+        const validated = validateAndFixCoordinates(rawLat, rawLng, 'taiwan');
+        lat = validated.lat;
+        lng = validated.lng;
+      }
+    } else {
+      const city = taiwanHotspots[Math.floor(Math.random() * taiwanHotspots.length)];
+      const rawLat = city.lat + (Math.random() - 0.5) * 0.04;
+      const rawLng = city.lng + (Math.random() - 0.5) * 0.04;
+      const validated = validateAndFixCoordinates(rawLat, rawLng, 'taiwan');
+      lat = validated.lat;
+      lng = validated.lng;
+    }
+    
+    const finalNodeId = nodeId || `NODE-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    
+    const pulseIcon = L.divIcon({
+      className: 'tw-pulse-icon',
+      iconSize: [14, 14],
+      iconAnchor: [7, 7],
+    });
+    
+    const marker = L.marker([lat, lng], { icon: pulseIcon, interactive: true }).addTo(taiwanMapRef.current);
+    marker.on('click', () => {
+      navigate(`/map-node/${finalNodeId}`);
+    });
+  };
+  
   useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const response = await getMapData();
-        if (response.success && response.data && response.data.taiwan) {
-          const taiwanData = response.data.taiwan;
-          
+    // 订阅 map 数据更新
+    const unsubscribe = subscribe('map', (message) => {
+      if (message.type === 'update' && message.data) {
+        // 全量更新：直接使用SSE推送的完整数据，不需要再次调用API
+        const mapData = message.data;
+        if (mapData.taiwan) {
+          const taiwanData = mapData.taiwan;
           if (taiwanData.nodeCount !== undefined) {
             setTwNodeCount(taiwanData.nodeCount);
           }
-          
           if (taiwanData.logs && Array.isArray(taiwanData.logs)) {
-            setTwLogs(taiwanData.logs.map(log => ({
+            const formattedLogs = taiwanData.logs.map(log => ({
               id: log.id || generateUniqueId(),
-              message: log.message || ''
-            })));
-          }
-          
-          // 如果有新节点，在地图上添加标记
-          if (taiwanData.logs && taiwanData.logs.length > twLogs.length && taiwanMapRef.current) {
-            const city = taiwanHotspots[Math.floor(Math.random() * taiwanHotspots.length)];
-            const offsetLat = (Math.random() - 0.5) * 0.04;
-            const offsetLng = (Math.random() - 0.5) * 0.04;
-            const pulseIcon = L.divIcon({
-              className: 'tw-pulse-icon',
-              iconSize: [14, 14],
-              iconAnchor: [7, 7],
-            });
-            const marker = L.marker([city.lat + offsetLat, city.lng + offsetLng], { icon: pulseIcon, interactive: true }).addTo(taiwanMapRef.current);
-            const latestLog = taiwanData.logs[0];
-            if (latestLog && latestLog.nodeId) {
-              marker.on('click', () => {
-                navigate(`/map-node/${latestLog.nodeId}`);
-              });
-            }
+              message: log.message || '',
+              nodeId: log.nodeId || log.id,
+              location: log.location || null,
+              city: log.city || null
+            }));
+            setTwLogs(formattedLogs);
           }
         }
-      } catch (error) {
-        console.error('Failed to update taiwan data:', error);
+        if (mapData.mainland) {
+          const mainlandData = mapData.mainland;
+          if (mainlandData.assetPoolValue !== undefined) {
+            setAssetValue(mainlandData.assetPoolValue);
+          }
+          if (mainlandData.unitCount !== undefined) {
+            setUnitCount(mainlandData.unitCount);
+          }
+          if (mainlandData.logs && Array.isArray(mainlandData.logs)) {
+            setAssetLogs(mainlandData.logs.map(log => ({
+              id: log.id || generateUniqueId(),
+              lot: log.lot || '',
+              location: log.location || '',
+              assetId: log.assetId || null,
+              nodeLocation: log.nodeLocation || null
+            })));
+          }
+        }
+      } else if (message.type === 'incremental' && message.data.type === 'taiwanLog') {
+        // 增量更新：新台湾节点日志
+        const log = message.data.log;
+        setTwLogs(prevLogs => {
+          const formattedLog = {
+            id: log.id || generateUniqueId(),
+            message: log.message || '',
+            nodeId: log.nodeId || log.id,
+            location: log.location || null,
+            city: log.city || null
+          };
+          return [formattedLog, ...prevLogs].slice(0, 6);
+        });
+        if (message.data.nodeCount !== undefined) {
+          setTwNodeCount(message.data.nodeCount);
+        }
+        handleTaiwanLogUpdate(log);
       }
-    }, 800);
+    });
     
-    return () => clearInterval(interval);
-  }, [twLogs.length]);
+    return unsubscribe;
+  }, [subscribe, twLogs.length]);
 
   useEffect(() => {
     if (!mainlandMapContainerRef.current) return;
@@ -197,11 +353,20 @@ const MapSection = () => {
       dragging: true,
     }).setView([34.3416, 108.9398], 5);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    const mainlandTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
       maxZoom: 18,
       subdomains: 'abcd',
       crossOrigin: true,
-    }).addTo(map);
+      detectRetina: false, // 禁用 retina 检测，避免加载 @2x.png 文件
+    });
+    
+    // 添加瓦片加载错误处理，静默处理失败
+    mainlandTileLayer.on('tileerror', (error, tile) => {
+      // 静默处理瓦片加载错误，不显示在控制台
+      // 这可以防止 110.png, 111.png 等瓦片加载失败时的错误提示
+    });
+    
+    mainlandTileLayer.addTo(map);
 
     mainlandMapRef.current = map;
     const beaconIcon = L.divIcon({
@@ -219,68 +384,101 @@ const MapSection = () => {
       });
     });
 
-    const spawnAsset = () => {
-      const baseNode = mainlandNodes[Math.floor(Math.random() * mainlandNodes.length)];
-      const offsetLat = (Math.random() - 0.5) * 0.8;
-      const offsetLng = (Math.random() - 0.5) * 0.8;
-      const point = L.circleMarker([baseNode.lat + offsetLat, baseNode.lng + offsetLng], {
+    // spawnAsset函数已移除，现在使用真实日志数据生成标记
+
+    // 处理资产数据更新的辅助函数
+    const handleAssetLogUpdate = (log) => {
+      if (!mainlandMapRef.current) return;
+      
+      // 使用日志中的位置信息，偏移从 0.8 度减少到 0.05 度（约5.5公里）
+      let lat, lng;
+      if (log.nodeLocation && log.nodeLocation.lat && log.nodeLocation.lng) {
+        const rawLat = log.nodeLocation.lat + (Math.random() - 0.5) * 0.05;
+        const rawLng = log.nodeLocation.lng + (Math.random() - 0.5) * 0.05;
+        const validated = validateAndFixCoordinates(rawLat, rawLng, 'mainland');
+        lat = validated.lat;
+        lng = validated.lng;
+      } else {
+        const baseNode = mainlandNodes[Math.floor(Math.random() * mainlandNodes.length)];
+        const rawLat = baseNode.lat + (Math.random() - 0.5) * 0.05;
+        const rawLng = baseNode.lng + (Math.random() - 0.5) * 0.05;
+        const validated = validateAndFixCoordinates(rawLat, rawLng, 'mainland');
+        lat = validated.lat;
+        lng = validated.lng;
+      }
+      
+      const assetId = log.assetId || log.id || `ASSET-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      
+      const point = L.circleMarker([lat, lng], {
         radius: 2,
         color: '#fbbf24',
         fillOpacity: 1,
         opacity: 0.9,
-      }).addTo(map);
+      }).addTo(mainlandMapRef.current);
       
-      // 添加点击事件
+      // 使用真实资产ID
       point.on('click', () => {
-        const assetId = `ASSET-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
         navigate(`/map-asset/${assetId}`);
       });
-
+      
+      // 2秒后移除标记
       const timeout = setTimeout(() => {
-        if (map.hasLayer(point)) {
-          map.removeLayer(point);
+        if (mainlandMapRef.current && mainlandMapRef.current.hasLayer(point)) {
+          mainlandMapRef.current.removeLayer(point);
         }
       }, 2000);
       mainlandTimeoutsRef.current.push(timeout);
     };
-
-    // 定期更新资产数据（每600ms）
-    const assetUpdateInterval = setInterval(async () => {
-      try {
-        const response = await getMapData();
-        if (response.success && response.data && response.data.mainland) {
-          const mainlandData = response.data.mainland;
-          
-          if (mainlandData.assetPoolValue !== undefined) {
-            setAssetValue(mainlandData.assetPoolValue);
-          }
-          
-          if (mainlandData.unitCount !== undefined) {
-            setUnitCount(mainlandData.unitCount);
-          }
-          
-          if (mainlandData.logs && Array.isArray(mainlandData.logs)) {
-            setAssetLogs(mainlandData.logs.map(log => ({
-              id: log.id || generateUniqueId(),
-              lot: log.lot || '',
-              location: log.location || ''
-            })));
-            
-            // 如果有新资产，在地图上添加标记
-            if (mainlandData.logs.length > assetLogs.length) {
-              spawnAsset();
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Failed to update mainland data:', error);
-      }
-    }, 600);
     
-    mainlandIntervalRef.current = assetUpdateInterval;
+    // 订阅 map 数据更新（资产部分）
+    const unsubscribe = subscribe('map', (message) => {
+      if (message.type === 'update' && message.data && message.data.mainland) {
+        // 全量更新：直接使用SSE推送的完整数据，不需要再次调用API
+        const mainlandData = message.data.mainland;
+        if (mainlandData.assetPoolValue !== undefined) {
+          setAssetValue(mainlandData.assetPoolValue);
+        }
+        if (mainlandData.unitCount !== undefined) {
+          setUnitCount(mainlandData.unitCount);
+        }
+        if (mainlandData.logs && Array.isArray(mainlandData.logs)) {
+          setAssetLogs(mainlandData.logs.map(log => ({
+            id: log.id || generateUniqueId(),
+            lot: log.lot || '',
+            location: log.location || '',
+            assetId: log.assetId || null,
+            nodeLocation: log.nodeLocation || null
+          })));
+        }
+      } else if (message.type === 'incremental' && message.data.type === 'assetLog') {
+        // 增量更新：新资产日志
+        const log = message.data.log;
+        setAssetLogs(prevLogs => {
+          const formattedLog = {
+            id: log.id || generateUniqueId(),
+            lot: log.lot || '',
+            location: log.location || '',
+            assetId: log.assetId || null,
+            nodeLocation: log.nodeLocation || null
+          };
+          return [formattedLog, ...prevLogs].slice(0, 5);
+        });
+        if (message.data.assetPoolValue !== undefined) {
+          setAssetValue(message.data.assetPoolValue);
+        }
+        if (message.data.unitCount !== undefined) {
+          setUnitCount(message.data.unitCount);
+        }
+        handleAssetLogUpdate(log);
+      }
+    });
+    
+    mainlandIntervalRef.current = { unsubscribe }; // 存储取消订阅函数
 
     return () => {
-      clearInterval(mainlandIntervalRef.current);
+      if (mainlandIntervalRef.current && mainlandIntervalRef.current.unsubscribe) {
+        mainlandIntervalRef.current.unsubscribe();
+      }
       mainlandTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
       map.remove();
     };
@@ -371,8 +569,11 @@ const MapSection = () => {
                       key={log.id} 
                       className="text-[11px] cursor-pointer hover:bg-slate-800/50 px-2 py-1 rounded transition-colors"
                       onClick={() => {
+                        // 使用真实节点ID导航
                         const nodeId = log.nodeId || log.id;
-                        navigate(`/map-node/${nodeId}`);
+                        if (nodeId) {
+                          navigate(`/map-node/${nodeId}`);
+                        }
                       }}
                     >
                       <span className="text-green-500 mr-2">[CONNECT]</span>

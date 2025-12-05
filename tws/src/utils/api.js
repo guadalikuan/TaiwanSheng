@@ -1,6 +1,10 @@
 // API 调用工具
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
+// 请求去重缓存（避免短时间内重复请求）
+const requestCache = new Map();
+const CACHE_DURATION = 500; // 500ms内的重复请求会被去重，减少429错误
+
 /**
  * 统一处理 API 响应
  * @param {Response} response - Fetch 响应对象
@@ -17,9 +21,23 @@ const handleResponse = async (response) => {
     } catch {
       errorData = { message: `HTTP ${response.status}: ${response.statusText}` };
     }
+    
+    // 429错误特殊处理
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After');
+      return {
+        success: false,
+        message: errorData.message || '请求过于频繁，请稍后再试',
+        error: 'RateLimitExceeded',
+        status: 429,
+        retryAfter: retryAfter ? parseInt(retryAfter) : null
+      };
+    }
+    
     return { 
       success: false, 
-      message: errorData.message || errorData.error || '请求失败' 
+      message: errorData.message || errorData.error || '请求失败',
+      status: response.status
     };
   }
 
@@ -36,6 +54,140 @@ const handleResponse = async (response) => {
     console.error('JSON parse error:', parseError);
     return { success: false, message: '服务器响应格式错误' };
   }
+};
+
+/**
+ * 带重试机制的fetch请求
+ * @param {string} url - 请求URL
+ * @param {Object} options - Fetch选项
+ * @param {number} maxRetries - 最大重试次数（默认3次）
+ * @param {number} baseDelay - 基础延迟（毫秒，默认1000ms）
+ * @returns {Promise<Object>}
+ */
+const fetchWithRetry = async (url, options = {}, maxRetries = 3, baseDelay = 1000) => {
+  // 请求去重：检查缓存中是否有相同的请求
+  const cacheKey = `${url}_${JSON.stringify(options)}`;
+  const cached = requestCache.get(cacheKey);
+  const now = Date.now();
+  
+  if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+    // 返回缓存的请求结果
+    return cached.promise;
+  }
+  
+  // 创建新的请求Promise
+  const requestPromise = (async () => {
+    let lastError;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+        
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        const result = await handleResponse(response);
+        
+        // 如果是429错误且还有重试机会，进行指数退避
+        if (result.status === 429 && attempt < maxRetries) {
+          const retryAfter = result.retryAfter || null;
+          // 对于429错误，使用更长的延迟：2s, 4s, 8s...
+          const delay = retryAfter 
+            ? retryAfter * 1000  // 使用服务器建议的延迟
+            : Math.max(2000, baseDelay * Math.pow(2, attempt + 1)); // 指数退避：2s, 4s, 8s...
+          
+          console.warn(`请求过于频繁，${delay / 1000}秒后重试 (${attempt + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        // 请求成功或非429错误，返回结果
+        return result;
+        
+      } catch (error) {
+        lastError = error;
+        
+        // 检查是否是连接被拒绝错误（服务器未运行）
+        const isConnectionRefused = error.message?.includes('Failed to fetch') || 
+                                   error.message?.includes('ERR_CONNECTION_REFUSED') ||
+                                   error.message?.includes('NetworkError') ||
+                                   error.name === 'TypeError' ||
+                                   error.name === 'AbortError';
+        
+        // 如果是连接被拒绝，立即返回错误，不进行任何重试
+        if (isConnectionRefused) {
+          // 完全静默处理连接错误，不输出任何日志
+          // 错误信息已通过 UI 横幅显示给用户
+          
+          // 立即返回错误响应，不进行重试
+          return {
+            success: false,
+            message: '无法连接到服务器。请确保服务器正在运行（npm run dev:backend）',
+            error: 'ConnectionRefusedError',
+            data: null
+          };
+        }
+        
+        // 如果是其他网络错误且还有重试机会，进行指数退避
+        // 注意：连接被拒绝的错误已经在上面处理，这里不会执行
+        if (attempt < maxRetries && (error.name === 'TypeError' || error.name === 'AbortError')) {
+          // 检查是否可能是连接被拒绝（避免在离线时输出警告）
+          const mightBeConnectionRefused = error.message?.includes('Failed to fetch') || 
+                                          error.message?.includes('ERR_CONNECTION_REFUSED') ||
+                                          error.message?.includes('NetworkError');
+          if (!mightBeConnectionRefused) {
+            const delay = baseDelay * Math.pow(2, attempt);
+            console.warn(`请求失败，${delay / 1000}秒后重试 (${attempt + 1}/${maxRetries}):`, error.message);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          } else {
+            // 可能是连接被拒绝，立即返回，不重试
+            return {
+              success: false,
+              message: '无法连接到服务器。请确保服务器正在运行（npm run dev:backend）',
+              error: 'ConnectionRefusedError',
+              data: null
+            };
+          }
+        }
+        
+        // 最后一次尝试失败，返回错误响应而不是抛出异常
+        if (attempt === maxRetries) {
+          return {
+            success: false,
+            message: error.message || '请求失败，请稍后重试',
+            error: error.name || 'NetworkError',
+            data: null
+          };
+        }
+      }
+    }
+    
+    // 所有重试都失败，返回错误
+    return {
+      success: false,
+      message: lastError?.message || '请求失败，请稍后重试',
+      error: lastError?.name || 'NetworkError'
+    };
+  })();
+  
+  // 缓存请求Promise
+  requestCache.set(cacheKey, {
+    promise: requestPromise,
+    timestamp: now
+  });
+  
+  // 清理缓存（CACHE_DURATION后）
+  setTimeout(() => {
+    requestCache.delete(cacheKey);
+  }, CACHE_DURATION);
+  
+  return requestPromise;
 };
 
 /**
@@ -358,11 +510,15 @@ export const loginWithMnemonic = async (mnemonic, password) => {
  */
 export const getOmegaData = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/homepage/omega`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    return await handleResponse(response);
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/homepage/omega`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      },
+      3, // 最多重试3次
+      1000 // 基础延迟1秒
+    );
   } catch (error) {
     console.error('API getOmegaData error:', error);
     return { success: false, message: error.message || '网络错误，请检查服务器连接' };
@@ -375,14 +531,33 @@ export const getOmegaData = async () => {
  */
 export const getMarketData = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/homepage/market`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    return await handleResponse(response);
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/homepage/market`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      },
+      3, // 最多重试3次
+      1000 // 基础延迟1秒
+    );
   } catch (error) {
     console.error('API getMarketData error:', error);
-    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+    
+    // 提供更详细的错误信息
+    let errorMessage = '网络错误，请检查服务器连接';
+    if (error.name === 'AbortError') {
+      errorMessage = `请求超时，请检查服务器是否运行在 ${API_BASE_URL}`;
+    } else if (error.message) {
+      errorMessage = error.message;
+    } else if (error.toString().includes('Failed to fetch')) {
+      errorMessage = `无法连接到服务器 ${API_BASE_URL}，请确保后端服务正在运行`;
+    }
+    
+    return { 
+      success: false, 
+      message: errorMessage,
+      error: error.name || 'NetworkError'
+    };
   }
 };
 
@@ -392,11 +567,15 @@ export const getMarketData = async () => {
  */
 export const getMapData = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/homepage/map`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    return await handleResponse(response);
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/homepage/map`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      },
+      3, // 最多重试3次
+      1000 // 基础延迟1秒
+    );
   } catch (error) {
     console.error('API getMapData error:', error);
     return { success: false, message: error.message || '网络错误，请检查服务器连接' };
@@ -409,14 +588,63 @@ export const getMapData = async () => {
  */
 export const getHomepageAssets = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/homepage/assets`, {
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/homepage/assets`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      },
+      3, // 最多重试3次
+      1000 // 基础延迟1秒
+    );
+  } catch (error) {
+    // 连接错误已在 fetchWithRetry 中处理，这里只处理其他错误
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 根据ID获取单个资产详情
+ * @param {string|number} id - 资产ID
+ * @returns {Promise<Object>}
+ */
+export const getAssetById = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/arsenal/assets/${id}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     });
     return await handleResponse(response);
   } catch (error) {
-    console.error('API getHomepageAssets error:', error);
-    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+    console.error('API getAssetById error:', error);
+    return { 
+      success: false, 
+      message: error.message || '网络错误，请检查服务器连接' 
+    };
+  }
+};
+
+/**
+ * 获取首页统计信息（在线用户数等）
+ * @returns {Promise<Object>}
+ */
+export const getHomepageStats = async () => {
+  try {
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/homepage/stats`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      },
+      2, // 最多重试2次（统计数据不需要太频繁重试）
+      1500 // 基础延迟1.5秒
+    );
+  } catch (error) {
+    console.error('API getHomepageStats error:', error);
+    return { 
+      success: false, 
+      message: error.message || '网络错误，请检查服务器连接' 
+    };
   }
 };
 

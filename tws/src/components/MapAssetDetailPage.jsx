@@ -1,25 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, Package, Calendar, CheckCircle } from 'lucide-react';
-import { getMapData } from '../utils/api';
+import { getMapData, getAssetById } from '../utils/api';
 
 const MapAssetDetailPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [mapData, setMapData] = useState(null);
   const [assetInfo, setAssetInfo] = useState(null);
+  const [fullAssetInfo, setFullAssetInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await getMapData();
-        if (response.success && response.data) {
-          setMapData(response.data);
+        setError(null);
+        
+        // 首先尝试通过ID获取完整资产信息
+        const assetResponse = await getAssetById(id);
+        if (assetResponse.success && assetResponse.data) {
+          setFullAssetInfo(assetResponse.data);
+        }
+        
+        // 同时加载地图数据
+        const mapResponse = await getMapData();
+        if (mapResponse.success && mapResponse.data) {
+          setMapData(mapResponse.data);
           
           // 从资产日志中查找资产信息
-          if (response.data.mainland?.logs) {
-            const asset = response.data.mainland.logs.find(log => 
+          if (mapResponse.data.mainland?.logs) {
+            const asset = mapResponse.data.mainland.logs.find(log => 
               log.assetId === id || log.id === id || log.lot === id
             );
             if (asset) {
@@ -33,26 +44,12 @@ const MapAssetDetailPage = () => {
                 value: asset.value,
                 status: asset.status || 'confirmed'
               });
-            } else {
-              // 如果没有找到，使用第一个日志作为示例
-              const firstLog = response.data.mainland.logs[0];
-              if (firstLog) {
-                setAssetInfo({
-                  id: id || firstLog.assetId || firstLog.id,
-                  lot: firstLog.lot,
-                  location: firstLog.location,
-                  timestamp: firstLog.timestamp,
-                  nodeName: firstLog.nodeName || 'Unknown',
-                  nodeLocation: firstLog.nodeLocation || { lat: 34.3416, lng: 108.9398 },
-                  value: firstLog.value || 0,
-                  status: 'confirmed'
-                });
-              }
             }
           }
         }
       } catch (error) {
         console.error('Failed to load map data:', error);
+        setError('无法加载资产数据');
       } finally {
         setLoading(false);
       }
@@ -72,10 +69,18 @@ const MapAssetDetailPage = () => {
     );
   }
 
-  if (!assetInfo && !mapData) {
+  if (!assetInfo && !fullAssetInfo && !loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-red-500 font-mono">Asset not found</div>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
+        <div className="text-red-500 font-mono text-lg mb-4">
+          {error || 'Asset not found'}
+        </div>
+        <button
+          onClick={() => navigate('/')}
+          className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-mono text-sm"
+        >
+          返回首页
+        </button>
       </div>
     );
   }

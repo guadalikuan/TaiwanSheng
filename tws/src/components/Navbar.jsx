@@ -2,21 +2,59 @@ import React, { useState, useEffect } from 'react';
 import { Radio, BarChart3, Map, Database, ShieldAlert, Activity, LogIn, LogOut, User } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { getHomepageStats } from '../utils/api';
+import { useSSE } from '../contexts/SSEContext';
+import { useServerStatus } from '../contexts/ServerStatusContext';
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
+  const { isOnline } = useServerStatus();
   const [scrolled, setScrolled] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState(12405);
   const isHomePage = location.pathname === '/';
 
+  // 加载初始统计数据
   useEffect(() => {
-    const interval = setInterval(() => {
-      setOnlineUsers((prev) => prev + Math.floor(Math.random() * 10) - 3);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
+    // 如果服务器离线，不发起请求，避免浏览器控制台显示错误
+    if (!isOnline) {
+      return;
+    }
+
+    const loadStats = async () => {
+      try {
+        const response = await getHomepageStats();
+        if (response && response.success && response.data && response.data.onlineUsers) {
+          setOnlineUsers(response.data.onlineUsers);
+        } else if (response && response.success === false) {
+          // 处理错误响应（如服务器离线）
+          // 完全静默处理，不输出任何日志
+          // 服务器离线时，不更新用户数，保持默认值或显示离线状态
+        }
+      } catch (error) {
+        // 连接错误已在 api.js 中处理，这里只记录其他错误
+        if (error.name !== 'ConnectionRefusedError') {
+          console.error('Failed to load homepage stats:', error);
+        }
+      }
+    };
+    loadStats();
+  }, [isOnline]);
+
+  // 使用 SSE 接收实时更新
+  const { subscribe } = useSSE();
+  
+  useEffect(() => {
+    // 订阅 stats 数据更新
+    const unsubscribe = subscribe('stats', (message) => {
+      if (message.type === 'update' && message.data && message.data.onlineUsers !== undefined) {
+        setOnlineUsers(message.data.onlineUsers);
+      }
+    });
+    
+    return unsubscribe;
+  }, [subscribe]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -25,10 +63,10 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { id: 'omega', label: '天机 | OMEGA', icon: <Radio size={16} /> },
-    { id: 'market', label: '战图 | MARKET', icon: <BarChart3 size={16} /> },
-    { id: 'map', label: '围城 | INTEL', icon: <Map size={16} /> },
-    { id: 'assets', label: '资产 | ASSETS', icon: <Database size={16} /> },
+    { id: 'omega', label: '天機 | OMEGA', icon: <Radio size={16} /> },
+    { id: 'market', label: '戰圖 | MARKET', icon: <BarChart3 size={16} /> },
+    { id: 'map', label: '圍城 | INTEL', icon: <Map size={16} /> },
+    { id: 'assets', label: '資產 | ASSETS', icon: <Database size={16} /> },
   ];
 
   return (
@@ -99,7 +137,7 @@ const Navbar = () => {
                   type="button"
                 >
                   <LogOut size={14} className="mr-2" />
-                  登出/LOGOUT
+                  登出 / LOGOUT
                 </button>
               </>
             ) : (
@@ -109,7 +147,7 @@ const Navbar = () => {
                 type="button"
               >
                 <LogIn size={14} className="mr-2" />
-                登录/LOGIN
+                登入 / LOGIN
               </button>
             )}
           </div>

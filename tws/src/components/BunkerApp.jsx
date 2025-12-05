@@ -39,8 +39,8 @@ const BunkerApp = () => {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center font-mono text-emerald-500">
         <Activity className="w-12 h-12 animate-pulse mb-4" />
-        <div className="text-xs tracking-[0.2em]">ESTABLISHING SECURE LINK...</div>
-        <div className="mt-2 text-xs text-slate-500">NODE: XIAMEN_03 <span className="animate-ping">.</span></div>
+        <div className="text-xs tracking-[0.2em]">正在建立安全連線...</div>
+        <div className="mt-2 text-xs text-slate-500">節點：廈門_03 <span className="animate-ping">.</span></div>
       </div>
     );
   }
@@ -52,10 +52,10 @@ const BunkerApp = () => {
       <div className="flex justify-between items-center p-4 border-b border-slate-800 bg-slate-900/50 backdrop-blur">
         <div className="flex items-center space-x-2">
           <div className={`w-2 h-2 rounded-full ${survivalRate > 80 ? 'bg-emerald-500' : 'bg-red-500'} animate-pulse`}></div>
-          <span className="text-xs text-slate-400">ID: TWS-89757</span>
+          <span className="text-xs text-slate-400">身份：TWS-89757</span>
         </div>
         <div className="text-xs text-gold text-yellow-500 border border-yellow-500/30 px-2 py-1 rounded">
-          VIP: 0
+          會員等級：0
         </div>
       </div>
 
@@ -67,7 +67,7 @@ const BunkerApp = () => {
         </div>
 
         <div className="relative z-10 flex flex-col items-center">
-          <div className="text-xs uppercase tracking-widest text-slate-500 mb-4">Current Survival Probability</div>
+          <div className="text-xs uppercase tracking-widest text-slate-500 mb-4">當前生存機率</div>
           
           {/* 环形进度条模拟 */}
           <div className="relative w-48 h-48 flex items-center justify-center">
@@ -85,15 +85,15 @@ const BunkerApp = () => {
                 {survivalRate}%
               </span>
               <span className={`text-xs mt-1 px-2 py-0.5 rounded ${survivalRate > 60 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-red-900/50 text-red-400 blink'}`}>
-                {survivalRate > 60 ? 'SECURE' : 'CRITICAL RISK'}
+                {survivalRate > 60 ? '安全' : '極度危險'}
               </span>
             </div>
           </div>
 
           <p className="mt-4 text-xs text-center max-w-[200px] text-slate-400">
             {survivalRate > 60 
-              ? "System stabilized. Maintain assets to keep status." 
-              : "WARNING: Your assets are insufficient to survive the Event. Acquire shelter immediately."}
+              ? "系統已穩定。維持資產以保持狀態。" 
+              : "警告：您的資產不足以應對事件。請立即獲取避難所。"}
           </p>
         </div>
       </div>
@@ -106,8 +106,8 @@ const BunkerApp = () => {
             className="bg-red-900/20 border border-red-800 hover:bg-red-900/40 active:scale-95 transition-all p-3 rounded flex flex-col items-center group"
           >
             <ShieldCheck className="w-6 h-6 text-red-500 mb-1 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-bold text-red-100">SECURE ASSET</span>
-            <span className="text-[10px] text-red-400 mt-1">+15% SURVIVAL</span>
+            <span className="text-sm font-bold text-red-100">獲取資產</span>
+            <span className="text-[10px] text-red-400 mt-1">+15% 生存率</span>
           </button>
 
           <button 
@@ -115,8 +115,8 @@ const BunkerApp = () => {
             className="bg-slate-800 border border-slate-700 hover:bg-slate-700 active:scale-95 transition-all p-3 rounded flex flex-col items-center group"
           >
             <Crosshair className="w-6 h-6 text-blue-400 mb-1 group-hover:rotate-90 transition-transform" />
-            <span className="text-sm font-bold text-slate-200">OPS MISSION</span>
-            <span className="text-[10px] text-blue-400 mt-1">+5% SURVIVAL</span>
+            <span className="text-sm font-bold text-slate-200">任務行動</span>
+            <span className="text-[10px] text-blue-400 mt-1">+5% 生存率</span>
           </button>
         </div>
       </div>
@@ -126,9 +126,9 @@ const BunkerApp = () => {
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-sm font-bold text-slate-400 flex items-center">
             <Lock className="w-3 h-3 mr-2" />
-            ASSET VAULT
+            資產金庫
           </h3>
-          <span className="text-xs text-slate-600">Encrypted via TWS-Chain</span>
+          <span className="text-xs text-slate-600">透過 TWS 鏈加密</span>
         </div>
 
         <div className="space-y-3">
@@ -139,13 +139,13 @@ const BunkerApp = () => {
                 <Zap className="w-5 h-5 text-yellow-500" />
               </div>
               <div>
-                <div className="text-sm font-bold text-white">TWS TOKEN</div>
-                <div className="text-xs text-slate-500">Balance: 0.00</div>
+                <div className="text-sm font-bold text-white">TWS 代幣</div>
+                <div className="text-xs text-slate-500">餘額：0.00</div>
               </div>
             </div>
             <div className="text-right">
               <div className="text-sm font-mono text-emerald-400">+0.0%</div>
-              <div className="text-[10px] text-slate-600">Awaiting Event</div>
+              <div className="text-[10px] text-slate-600">等待事件</div>
             </div>
           </div>
 
@@ -158,10 +158,10 @@ const BunkerApp = () => {
               </div>
               <div>
                 <div className="text-sm font-bold text-red-500 group-hover:text-red-400 transition-colors">
-                  NO SHELTER SECURED
+                  未獲取避難所
                 </div>
                 <div className="text-xs text-red-800 group-hover:text-red-600">
-                  Risk Level: CRITICAL
+                  風險等級：極度危險
                 </div>
               </div>
             </div>
@@ -169,7 +169,7 @@ const BunkerApp = () => {
               onClick={() => navigate('/market')}
               className="bg-red-700 hover:bg-red-600 text-white text-[10px] font-bold px-3 py-1.5 rounded shadow-[0_0_10px_rgba(220,38,38,0.5)] animate-pulse"
             >
-              ACQUIRE
+              獲取
             </button>
           </div>
 
@@ -178,12 +178,12 @@ const BunkerApp = () => {
           <div className="bg-slate-900 border-l-4 border-l-red-600 border-y border-r border-slate-800 rounded p-4 flex justify-between items-center">
             <div className="flex items-center">
               <div className="mr-3">
-                <div className="text-[10px] text-slate-500 uppercase">Deed Number</div>
+                <div className="text-[10px] text-slate-500 uppercase">產權編號</div>
                 <div className="text-sm font-mono text-white tracking-widest">CN-FUJ-8901</div>
               </div>
             </div>
             <div className="px-2 py-1 bg-emerald-900/30 border border-emerald-800 rounded text-[10px] text-emerald-500">
-              VERIFIED
+              已驗證
             </div>
           </div> 
           */}
@@ -201,13 +201,13 @@ const BunkerApp = () => {
             className="flex flex-col items-center cursor-pointer text-slate-600 hover:text-slate-400 transition-colors"
           >
             <Radio className="w-6 h-6" />
-            <span className="text-[10px] mt-1 font-bold">HOME</span>
+            <span className="text-[10px] mt-1 font-bold">首頁</span>
           </div>
 
           {/* Tab 1: 地堡 (当前) */}
           <div className="flex flex-col items-center cursor-pointer text-emerald-500">
             <ShieldCheck className="w-6 h-6" />
-            <span className="text-[10px] mt-1 font-bold">BUNKER</span>
+            <span className="text-[10px] mt-1 font-bold">地堡</span>
           </div>
 
           {/* Tab 2: 市场 (走势) */}
@@ -216,7 +216,7 @@ const BunkerApp = () => {
             className="flex flex-col items-center cursor-pointer text-slate-600 hover:text-slate-400 transition-colors"
           >
             <Activity className="w-6 h-6" />
-            <span className="text-[10px] mt-1 font-bold">MARKET</span>
+            <span className="text-[10px] mt-1 font-bold">市場</span>
           </div>
 
           {/* Tab 3: 任务 (拉新) */}
@@ -228,7 +228,7 @@ const BunkerApp = () => {
               <Crosshair className="w-6 h-6" />
               <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-bounce"></div>
             </div>
-            <span className="text-[10px] mt-1 font-bold">OPS</span>
+            <span className="text-[10px] mt-1 font-bold">任務</span>
           </div>
 
           {/* Tab 4: 身份 (确权) */}
@@ -239,7 +239,7 @@ const BunkerApp = () => {
             <div className="w-6 h-6 rounded-full border-2 border-slate-600 flex items-center justify-center">
               <div className="w-3 h-3 bg-slate-600 rounded-full"></div>
             </div>
-            <span className="text-[10px] mt-1 font-bold">ID</span>
+            <span className="text-[10px] mt-1 font-bold">身份</span>
           </div>
 
         </div>

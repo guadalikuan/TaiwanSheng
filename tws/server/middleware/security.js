@@ -20,6 +20,15 @@ const ALLOWED_IP_RANGES = [];
  * 检测并阻止可疑IP
  */
 export const ipFilter = (req, res, next) => {
+  // 跳过 OPTIONS 预检请求，避免 CORS 问题
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+  // 跳过 SSE 路由，因为 SSE 连接需要长时间保持打开
+  if (req.path.startsWith('/api/sse')) {
+    return next();
+  }
+  
   const clientIp = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'];
   
   // 检查黑名单
@@ -75,6 +84,15 @@ const isIPInRange = (ip, cidr) => {
  * 检测深度扫描并重定向
  */
 export const honeypot = (req, res, next) => {
+  // 跳过 OPTIONS 预检请求，避免 CORS 问题
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+  // 跳过 SSE 路由，因为 SSE 连接需要长时间保持打开
+  if (req.path.startsWith('/api/sse')) {
+    return next();
+  }
+  
   const userAgent = req.headers['user-agent'] || '';
   const path = req.path;
   
@@ -133,12 +151,41 @@ export const apiRateLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1分钟
   max: 60, // 最多60次请求
   message: 'API rate limit exceeded',
+  skip: (req) => {
+    // 跳过 OPTIONS 预检请求，避免 CORS 问题
+    if (req.method === 'OPTIONS') {
+      return true;
+    }
+    // 跳过 SSE 路由，因为 SSE 连接需要长时间保持打开
+    return req.path.startsWith('/api/sse');
+  },
+});
+
+/**
+ * 首页API频率限制（更宽松的限制）
+ * 用于首页数据轮询，允许更高的请求频率
+ */
+export const homepageRateLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1分钟
+  max: 400, // 最多400次请求（每分钟）
+  message: 'Homepage API rate limit exceeded. Please reduce request frequency.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    // 跳过 OPTIONS 预检请求，避免 CORS 问题
+    if (req.method === 'OPTIONS') {
+      return true;
+    }
+    // 在生产环境中可以根据需要跳过某些请求
+    return false;
+  },
 });
 
 /**
  * Helmet安全头配置
+ * 注意：跳过 OPTIONS 请求，避免干扰 CORS 预检请求
  */
-export const securityHeaders = helmet({
+const helmetConfig = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -150,13 +197,32 @@ export const securityHeaders = helmet({
     },
   },
   crossOriginEmbedderPolicy: false, // 允许嵌入内容
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // 允许跨域资源
 });
+
+export const securityHeaders = (req, res, next) => {
+  // 跳过 OPTIONS 请求，避免干扰 CORS
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+  // 应用 Helmet
+  helmetConfig(req, res, next);
+};
 
 /**
  * DDoS防护中间件
  * 检测异常请求模式
  */
 export const ddosProtection = (req, res, next) => {
+  // 跳过 OPTIONS 预检请求，避免 CORS 问题
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+  // 跳过 SSE 路由，因为 SSE 连接需要长时间保持打开
+  if (req.path.startsWith('/api/sse')) {
+    return next();
+  }
+  
   // 这里可以添加更复杂的DDoS检测逻辑
   // 例如：检测短时间内大量请求、异常请求模式等
   

@@ -3,6 +3,7 @@ import { saveRawAsset, saveSanitizedAsset, getApprovedAssets, updateAssetStatus 
 import { wrapAsset } from './assetWrapperFactory.js';
 import { addOmegaEvent } from './homepageStorage.js';
 import { ROLES } from './roles.js';
+import { submitOrder, getCurrentPrice, matchOrders } from './orderMatchingEngine.js';
 
 // 城市列表
 const CITIES = ['西安', '咸阳', '宝鸡', '商洛', '汉中', '安康', '延安', '榆林'];
@@ -104,6 +105,23 @@ export const simulateAssetSubmission = async () => {
     sanitizedAsset.status = 'MINTING';
     saveSanitizedAsset(sanitizedAsset);
     
+    // 随机决定是否自动审核为AVAILABLE（70%概率）
+    if (Math.random() > 0.3) {
+      // 延迟一小段时间后自动审核（模拟审核流程）
+      setTimeout(() => {
+        try {
+          updateAssetStatus(sanitizedAsset.id, 'AVAILABLE', {
+            reviewedBy: 'system',
+            reviewNotes: 'Auto-approved by bot system',
+            reviewedAt: Date.now()
+          });
+          console.log(`✅ Bot asset auto-approved: ${sanitizedAsset.codeName}`);
+        } catch (error) {
+          console.error('Error auto-approving asset:', error);
+        }
+      }, Math.random() * 5000 + 2000); // 2-7秒后审核
+    }
+    
     // 记录机器人行为
     recordBotAction(botUser.id, 'submit_asset');
     
@@ -172,6 +190,81 @@ export const simulateAssetPurchase = async () => {
     };
   } catch (error) {
     console.error('Error simulating asset purchase:', error);
+    return null;
+  }
+};
+
+/**
+ * 模拟机器人提交买卖订单
+ * @returns {Object|null} 提交的订单信息或 null
+ */
+export const simulateOrderSubmission = async () => {
+  try {
+    // 从USER机器人池中选择一个
+    const botUser = getRandomBotUser({ role: ROLES.USER });
+    
+    if (!botUser) {
+      // 如果没有USER机器人，创建一个
+      const newBot = await createBotUser({ role: ROLES.USER });
+      if (!newBot) return null;
+      return await simulateOrderSubmission(); // 递归重试
+    }
+    
+    // 获取当前市场价格
+    let currentPrice = getCurrentPrice();
+    
+    // 如果没有当前价格，使用默认价格（100）
+    if (!currentPrice) {
+      currentPrice = 100;
+    }
+    
+    // 随机决定是买单还是卖单（60%买单，40%卖单，模拟市场偏向买入）
+    const isBuy = Math.random() > 0.4;
+    
+    // 生成订单价格（基于当前价格，允许±5%的波动）
+    const priceVariation = (Math.random() - 0.5) * 0.1; // -5% 到 +5%
+    const orderPrice = Number((currentPrice * (1 + priceVariation)).toFixed(2));
+    
+    // 生成订单数量（随机，但确保合理）
+    const orderAmount = Number((Math.random() * 100 + 10).toFixed(4)); // 10-110
+    
+    // 创建订单
+    const order = {
+      id: `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      userId: botUser.id,
+      username: botUser.username,
+      type: isBuy ? 'buy' : 'sell',
+      price: orderPrice,
+      amount: orderAmount,
+      timestamp: Date.now()
+    };
+    
+    // 提交订单到订单簿
+    submitOrder(order);
+    
+    // 立即尝试撮合订单
+    const matchedTrades = matchOrders();
+    
+    // 记录机器人行为
+    recordBotAction(botUser.id, isBuy ? 'submit_buy_order' : 'submit_sell_order');
+    
+    // 如果有成交，生成Omega事件
+    if (matchedTrades.length > 0) {
+      const trade = matchedTrades[0];
+      const eventText = `[TRIGGER] Trade executed: ${trade.amount.toFixed(2)} @ ${trade.price.toFixed(2)} by ${botUser.username}`;
+      addOmegaEvent(eventText);
+      console.log(`💱 Bot order matched: ${order.type} ${order.amount} @ ${order.price} by ${botUser.username}`);
+    } else {
+      console.log(`📝 Bot order submitted: ${order.type} ${order.amount} @ ${order.price} by ${botUser.username}`);
+    }
+    
+    return {
+      order,
+      matched: matchedTrades.length > 0,
+      trades: matchedTrades
+    };
+  } catch (error) {
+    console.error('Error simulating order submission:', error);
     return null;
   }
 };

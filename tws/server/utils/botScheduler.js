@@ -2,6 +2,7 @@ import {
   simulateUserRegistration,
   simulateAssetSubmission,
   simulateAssetPurchase,
+  simulateOrderSubmission,
   generateOmegaEvent
 } from './botBehaviorSimulator.js';
 
@@ -15,6 +16,7 @@ const TASK_INTERVALS = {
   userRegistration: { min: 5 * 60 * 1000, max: 15 * 60 * 1000 }, // 5-15分钟
   assetSubmission: { min: 3 * 60 * 1000, max: 10 * 60 * 1000 }, // 3-10分钟
   assetPurchase: { min: 2 * 60 * 1000, max: 8 * 60 * 1000 }, // 2-8分钟
+  orderSubmission: { min: 500, max: 3000 }, // 0.5-3秒（高频交易）
   omegaEvent: { min: 10 * 60 * 1000, max: 30 * 60 * 1000 } // 10-30分钟
 };
 
@@ -28,6 +30,7 @@ let taskTimers = {
   userRegistration: null,
   assetSubmission: null,
   assetPurchase: null,
+  orderSubmission: null,
   omegaEvent: null
 };
 
@@ -145,6 +148,30 @@ const scheduleAssetPurchase = () => {
 };
 
 /**
+ * 调度订单提交任务（高频）
+ */
+const scheduleOrderSubmission = () => {
+  if (taskTimers.orderSubmission) {
+    clearTimeout(taskTimers.orderSubmission);
+  }
+  
+  const nextExecution = calculateNextExecution(TASK_INTERVALS.orderSubmission);
+  
+  taskTimers.orderSubmission = setTimeout(async () => {
+    try {
+      await simulateOrderSubmission();
+    } catch (error) {
+      console.error('Error in order submission task:', error);
+    }
+    
+    // 调度下次执行
+    if (isRunning) {
+      scheduleOrderSubmission();
+    }
+  }, nextExecution);
+};
+
+/**
  * 调度Omega事件生成任务
  */
 const scheduleOmegaEvent = () => {
@@ -189,6 +216,8 @@ export const startBotScheduler = () => {
   setTimeout(() => scheduleUserRegistration(), Math.random() * 60000); // 0-60秒随机延迟
   setTimeout(() => scheduleAssetSubmission(), Math.random() * 60000);
   setTimeout(() => scheduleAssetPurchase(), Math.random() * 60000);
+  // 订单提交任务立即启动（高频交易）
+  scheduleOrderSubmission();
   setTimeout(() => scheduleOmegaEvent(), Math.random() * 60000);
   
   console.log('✅ Bot scheduler started');
@@ -229,6 +258,7 @@ export const getSchedulerStatus = () => {
       userRegistration: taskTimers.userRegistration ? 'scheduled' : 'none',
       assetSubmission: taskTimers.assetSubmission ? 'scheduled' : 'none',
       assetPurchase: taskTimers.assetPurchase ? 'scheduled' : 'none',
+      orderSubmission: taskTimers.orderSubmission ? 'scheduled' : 'none',
       omegaEvent: taskTimers.omegaEvent ? 'scheduled' : 'none'
     }
   };

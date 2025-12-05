@@ -5,8 +5,10 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
+    "start": "node start.js",
     "dev": "node --watch server.js",
+    "start:direct": "node server.js",
+    "check": "node scripts/check-server.js",
     "create-test-users": "node scripts/createTestUsers.js",
     "init-homepage": "node scripts/initHomepageData.js",
     "generate-seed": "node scripts/generateSeedData.js"
