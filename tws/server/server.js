@@ -9,6 +9,7 @@ import referralRoutes from './routes/referral.js';
 import sseRoutes, { startSSEKeepalive } from './routes/sse.js';
 import { startBackgroundTasks } from './utils/backgroundTasks.js';
 import { startScanning } from './utils/oracle.js';
+import { initTimeManager } from './utils/timeManager.js';
 import { securityMiddleware } from './middleware/security.js';
 import { initializeBotUsers } from './utils/botBehaviorSimulator.js';
 import { getBotUserStats, getActiveBotUsers } from './utils/botUserManager.js';
@@ -416,8 +417,11 @@ const startServer = async () => {
   initializeBotUserPool().then(() => {
     // 初始化市场价格
     initializeMarketPrice();
-    // 启动后台任务
-    startBackgroundTasks();
+    // 初始化服务
+initTimeManager();
+
+// 启动后台任务
+startBackgroundTasks();
     console.log('\n✅ 所有服务已启动：');
     console.log('   ✓ Express API 服务器');
     console.log('   ✓ SSE (Server-Sent Events) 实时推送');
@@ -435,13 +439,9 @@ const startServer = async () => {
   // 启动 SSE keepalive
   startSSEKeepalive();
   
-  // 启动Oracle扫描任务（如果启用）
-  if (process.env.ENABLE_ORACLE === 'true') {
-    startScanning((result) => {
-      console.log('🚨 Oracle检测到触发事件:', result);
-    });
-    console.log('   ✓ Oracle 扫描服务');
-  }
+  // 启动Oracle扫描任务
+  startScanning();
+  console.log('   ✓ Oracle 扫描服务');
 
   // 启动Telegram Bot（如果启用）
   if (process.env.TELEGRAM_BOT_TOKEN) {

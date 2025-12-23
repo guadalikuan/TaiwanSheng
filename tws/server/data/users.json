@@ -1776,5 +1776,19 @@
     "lastLogin": null,
     "createdAt": 1764906420103,
     "updatedAt": 1764906420103
+  },
+  {
+    "address": "0x53188eA0659672184f6fC741ec7BFFefD12219B9",
+    "username": "Ren_",
+    "passwordHash": "$2a$10$fbJJjd4LnvOmQSLQk3nzLeFgvLBtIAP05Z9.jP1W0N7Xi3E6IJx.2",
+    "encryptedMnemonic": "U2FsdGVkX1/FGAXPp5/TIq5VT1v7KJ9YBN7ECTy+FLkrw6JcT7VYdSu/8Wdf252RRePFRGGoBB9oB7uLJ7oBaKlxhmf7/Ub6qlioAz7T3D1MqzTlXdL/bFFfgn2PIBBo",
+    "role": "USER",
+    "profile": {
+      "displayName": "Ren_",
+      "avatar": ""
+    },
+    "lastLogin": null,
+    "createdAt": 1766457894677,
+    "updatedAt": 1766457894677
   }
 ]

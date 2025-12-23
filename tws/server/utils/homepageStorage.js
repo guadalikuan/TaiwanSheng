@@ -109,72 +109,16 @@ const writeHomepageData = (data) => {
   }
 };
 
+import { getTargetTime, getTimeData } from './timeManager.js';
+
 /**
  * 计算ETU目标时间（基于系统事件动态调整）
  * @param {number} baseTargetTime - 基础目标时间（时间戳）
  * @returns {Promise<number>} 调整后的目标时间（时间戳）
  */
 const calculateETUTargetTime = async (baseTargetTime) => {
-  try {
-    const data = readHomepageData();
-    const omega = data?.omega || getDefaultData().omega;
-    const events = omega.events || [];
-    
-    // 获取系统统计数据
-    let botStats = { active: 0, total: 0 };
-    try {
-      botStats = getBotUserStats();
-    } catch (error) {
-      console.warn('Error getting bot stats for ETU calculation:', error);
-    }
-    
-    // 获取市场数据
-    let marketVolume = 0;
-    let tradeCount = 0;
-    try {
-      marketVolume = calculate24hVolume();
-      const recentTrades = getRecentTrades(1000);
-      tradeCount = recentTrades.length;
-    } catch (error) {
-      console.warn('Error getting market data for ETU calculation:', error);
-    }
-    
-    // 获取资产数据
-    let assetCount = 0;
-    try {
-      // 使用动态导入（同步方式）
-      const storageModule = await import('./storage.js');
-      const allAssets = storageModule.getAllAssets();
-      assetCount = (allAssets.sanitized && Array.isArray(allAssets.sanitized)) ? allAssets.sanitized.length : 0;
-    } catch (error) {
-      console.warn('Error getting asset data for ETU calculation:', error);
-    }
-    
-    // 计算调整因子
-    // 事件影响：每个事件减少一定时间（加速统一）
-    const eventImpact = events.length * 1000 * 60 * 60 * 24; // 每个事件减少1天
-    
-    // 用户活跃度影响：活跃用户越多，加速越快
-    const userImpact = botStats.active * 1000 * 60 * 60 * 12; // 每个活跃用户减少12小时
-    
-    // 交易量影响：交易量越大，市场越活跃，加速越快
-    const volumeImpact = Math.min(marketVolume / 1000000, 100) * 1000 * 60 * 60 * 24; // 每100万交易量减少1天，最多100天
-    
-    // 资产数量影响：资产越多，系统越成熟，加速越快
-    const assetImpact = Math.min(assetCount / 10, 50) * 1000 * 60 * 60 * 24; // 每10个资产减少1天，最多50天
-    
-    // 总调整量（负值表示加速，减少目标时间）
-    const totalAdjustment = -(eventImpact + userImpact + volumeImpact + assetImpact);
-    
-    // 应用调整，但确保不会过度调整（最多调整30%）
-    const maxAdjustment = (baseTargetTime - Date.now()) * 0.3;
-    const finalAdjustment = Math.max(totalAdjustment, -maxAdjustment);
-    
-    return baseTargetTime + finalAdjustment;
-  } catch (error) {
-    console.error('Error calculating ETU target time:', error);
-    return baseTargetTime; // 出错时返回原始值
-  }
+  // 使用统一的时间管理器作为唯一真实数据源
+  return getTargetTime();
 };
 
 /**
@@ -230,9 +174,37 @@ const calculateRiskPremium = async () => {
     
     // 资产数量影响：资产越多，系统越成熟，风险溢价略降
     const assetImpact = -Math.min(assetCount / 20, 15); // 每20个资产减少1%风险溢价，最多减少15%
+
+    // 局势紧张程度影响（基于AI分析的时间调整）
+    let tensionImpact = 0;
+    try {
+      const timeData = await getTimeData();
+      if (timeData && timeData.history) {
+        // 获取最近24小时的调整记录
+        const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+        const recentAdjustments = timeData.history.filter(h => h.timestamp > oneDayAgo);
+        
+        // 计算总调整时间（负值代表加速统一，正值代表推迟）
+        const totalAdjustmentMs = recentAdjustments.reduce((sum, h) => sum + h.adjustment, 0);
+        
+        if (totalAdjustmentMs < 0) {
+          // 局势紧张，加速统一 -> 风险溢价上升
+          // 每加速1天，增加5%溢价，上限50%
+          const daysAccelerated = Math.abs(totalAdjustmentMs) / (24 * 60 * 60 * 1000);
+          tensionImpact = Math.min(daysAccelerated * 5, 50);
+        } else if (totalAdjustmentMs > 0) {
+          // 局势缓和，推迟统一 -> 风险溢价下降
+          // 每推迟1天，减少2%溢价，上限20%
+          const daysDelayed = totalAdjustmentMs / (24 * 60 * 60 * 1000);
+          tensionImpact = -Math.min(daysDelayed * 2, 20);
+        }
+      }
+    } catch (error) {
+      console.warn('Error calculating tension impact:', error);
+    }
     
     // 计算最终风险溢价
-    const finalPremium = basePremium + volatilityImpact + volumeImpact + userImpact + assetImpact;
+    const finalPremium = basePremium + volatilityImpact + volumeImpact + userImpact + assetImpact + tensionImpact;
     
     // 确保风险溢价在合理范围内（50-200%）
     return Math.max(50, Math.min(200, finalPremium));
@@ -731,5 +703,22 @@ export const addAssetLog = (lotOrLog, location) => {
     return newLog;
   }
   return null;
+};
+
+/**
+ * 更新AI时间调整值
+ * @param {number} deltaMs - 变化量（毫秒），负值表示加速统一，正值表示延后
+ * @returns {number} 新的累计值
+ */
+export const updateAiTimeAdjustment = (deltaMs) => {
+  console.warn('Deprecated: updateAiTimeAdjustment called. Use TimeManager.adjustTime instead.');
+  return 0;
+};
+
+export {
+  readHomepageData,
+  writeHomepageData,
+  calculateETUTargetTime,
+  calculateRiskPremium
 };
 

@@ -22,9 +22,9 @@ const router = express.Router();
 router.use(homepageRateLimiter);
 
 // GET /api/homepage/omega - 获取Omega屏数据
-router.get('/omega', (req, res) => {
+router.get('/omega', async (req, res) => {
   try {
-    const data = getOmegaData();
+    const data = await getOmegaData();
     if (!data) {
       return res.status(404).json({
         success: false,
@@ -170,9 +170,9 @@ router.post('/market/trade', (req, res) => {
 });
 
 // GET /api/homepage/map - 获取Map屏数据
-router.get('/map', (req, res) => {
+router.get('/map', async (req, res) => {
   try {
-    const data = getMapData();
+    const data = await getMapData();
     if (!data) {
       return res.status(404).json({
         success: false,

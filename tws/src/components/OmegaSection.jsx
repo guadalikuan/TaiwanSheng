@@ -25,7 +25,9 @@ const OmegaSection = () => {
   const [isGlitching, setIsGlitching] = useState(false);
   const [alertMessage, setAlertMessage] = useState('⚠ SYSTEM ALERT: GEOPOLITICAL TENSION RISING');
   const [loading, setLoading] = useState(true);
-  const targetRef = useRef(Date.now() + 1000 * 60 * 60 * 24 * 600);
+  // Default to 2027-12-31 to match server-side TimeManager default
+  // This prevents the "600 days" flicker on initial load
+  const targetRef = useRef(new Date('2027-12-31T00:00:00.000Z').getTime());
   const glitchTimeoutRef = useRef(null);
 
   // 加载初始数据
@@ -194,7 +196,11 @@ const OmegaSection = () => {
                 isGlitching ? 'glitch-active' : ''
               }`}
             >
-              {`${formatSegment(timeLeft.d, 4)}:${formatSegment(timeLeft.h, 2)}:${formatSegment(timeLeft.m, 2)}:${formatSegment(timeLeft.s, 2)}`}
+              {loading ? (
+                <div className="animate-pulse text-red-500/50">LOADING...</div>
+              ) : (
+                `${formatSegment(timeLeft.d, 4)}:${formatSegment(timeLeft.h, 2)}:${formatSegment(timeLeft.m, 2)}:${formatSegment(timeLeft.s, 2)}`
+              )}
             </div>
             <div className="flex justify-between text-[10px] md:text-xs text-red-800 mt-3 md:mt-4 px-4 md:px-8 font-mono uppercase tracking-[0.4em] md:tracking-[0.6em]">
               <span>DAYS</span>
