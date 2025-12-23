@@ -10,6 +10,7 @@ import {
 import { adjustTime } from './timeManager.js';
 import { pushUpdate } from './sseManager.js';
 import { v4 as uuidv4 } from 'uuid';
+import { isDuplicate, addToHistory } from './historyManager.js';
 
 // 配置
 const CONFIG = {
@@ -180,9 +181,11 @@ export const scanNewsSources = async () => {
   let totalTimeAdjustment = 0; // 毫秒
   
   for (const news of newsList) {
-    // 检查是否已处理过（防止重复计算影响）
-    // 这里简单起见，不持久化已处理的新闻ID，而是依赖“最新”和短时间窗口
-    // 实际生产中应该记录 processed_urls
+    // 检查是否已处理过（去重：布隆过滤器 + 历史记录）
+    if (isDuplicate(news.url)) {
+      console.log(`♻️ 跳过已处理新闻: ${news.title.substring(0, 20)}...`);
+      continue;
+    }
     
     let analysis = await analyzeNewsWithSpark(news);
     let method = 'AI';
@@ -219,15 +222,23 @@ export const scanNewsSources = async () => {
       adjustmentHours,
       timestamp: new Date().toISOString()
     });
+
+    // 记录到历史（去重用）
+    addToHistory({
+      url: news.url,
+      title: news.title,
+      timestamp: Date.now(),
+      analysis: { score, reason }
+    });
     
     // 如果有显著影响，作为事件记录
     if (Math.abs(adjustmentHours) >= 1) {
       // 写入 homepage.json 的 events
       const data = readHomepageData();
-      // 避免重复：检查最近的事件
-      const isDuplicate = data.omega.events.some(e => e.text.includes(news.title));
+      // 避免重复：检查最近的事件 (这里保留 homepage.json 自身的去重作为双重保险)
+      const isDuplicateEvent = data.omega.events.some(e => e.text.includes(news.title));
       
-      if (!isDuplicate) {
+      if (!isDuplicateEvent) {
         const newEvent = {
           id: uuidv4(), // Simple ID
           text: `[${method === 'AI' ? 'INTEL' : 'NEWS'}] ${news.title} (${adjustmentHours > 0 ? '+' : ''}${adjustmentHours}h)`,
