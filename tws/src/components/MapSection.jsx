@@ -6,6 +6,8 @@ import { generateUniqueId } from '../utils/uniqueId';
 import { getMapData } from '../utils/api';
 import { useSSE } from '../contexts/SSEContext';
 import { useServerStatus } from '../contexts/ServerStatusContext';
+import { AMAP_LEAFLET_CONFIG } from '../config/amap';
+
 
 // 修复 Leaflet 默认图标路径问题，避免加载 @2x.png 文件失败
 // 由于我们使用自定义 divIcon，完全禁用默认图标以避免网络请求
@@ -170,11 +172,14 @@ const MapSection = () => {
       doubleClickZoom: false,
     }).setView([23.6978, 120.9605], 8);
 
-    const taiwanTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      subdomains: 'abcd',
+    // 使用高德地图配置
+    const taiwanTileLayer = L.tileLayer(AMAP_LEAFLET_CONFIG.tileUrl, {
+      maxZoom: AMAP_LEAFLET_CONFIG.maxZoom,
+      minZoom: AMAP_LEAFLET_CONFIG.minZoom,
+      subdomains: AMAP_LEAFLET_CONFIG.subdomains,
       crossOrigin: true,
-      detectRetina: false, // 禁用 retina 检测，避免加载 @2x.png 文件
+      detectRetina: false,
+      attribution: AMAP_LEAFLET_CONFIG.attribution
     });
     
     // 添加瓦片加载错误处理，静默处理失败
@@ -353,11 +358,14 @@ const MapSection = () => {
       dragging: true,
     }).setView([34.3416, 108.9398], 5);
 
-    const mainlandTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      subdomains: 'abcd',
+    // 使用高德地图配置
+    const mainlandTileLayer = L.tileLayer(AMAP_LEAFLET_CONFIG.tileUrl, {
+      maxZoom: AMAP_LEAFLET_CONFIG.maxZoom,
+      minZoom: AMAP_LEAFLET_CONFIG.minZoom,
+      subdomains: AMAP_LEAFLET_CONFIG.subdomains,
       crossOrigin: true,
-      detectRetina: false, // 禁用 retina 检测，避免加载 @2x.png 文件
+      detectRetina: false,
+      attribution: AMAP_LEAFLET_CONFIG.attribution
     });
     
     // 添加瓦片加载错误处理，静默处理失败
