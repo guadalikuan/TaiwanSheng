@@ -52,7 +52,8 @@ const OmegaSection = () => {
           if (data.events && Array.isArray(data.events)) {
             setLogs(data.events.map(event => ({
               id: event.id || generateUniqueId(),
-              text: event.text || event.message || ''
+              text: event.text || event.message || '',
+              impact: event.impact // Preserve impact field
             })));
           }
           if (data.alertMessage) {
@@ -114,7 +115,8 @@ const OmegaSection = () => {
         if (data.events && Array.isArray(data.events)) {
           const newEvents = data.events.map(event => ({
             id: event.id || generateUniqueId(),
-            text: event.text || event.message || ''
+            text: event.text || event.message || '',
+            impact: event.impact // Preserve impact field
           }));
           const hadNewEvents = newEvents.length > logs.length;
           setLogs(newEvents);
@@ -123,8 +125,7 @@ const OmegaSection = () => {
           if (hadNewEvents) {
             setIsGlitching(true);
             // 每个新事件减少ETU目标时间（加速统一）
-            const eventCount = newEvents.length - logs.length;
-            targetRef.current -= eventCount * 1000 * 60 * 60 * 24; // 每个事件减少1天
+            // 注意：这里仅作视觉效果，实际时间由 etuTargetTime 决定
             if (glitchTimeoutRef.current) clearTimeout(glitchTimeoutRef.current);
             glitchTimeoutRef.current = setTimeout(() => setIsGlitching(false), 500);
           }
@@ -150,15 +151,15 @@ const OmegaSection = () => {
         // 增量更新：新事件
         const newEvents = message.data.events.map(event => ({
           id: event.id || generateUniqueId(),
-          text: event.text || event.message || ''
+          text: event.text || event.message || '',
+          impact: event.impact // Preserve impact field
         }));
         const hadNewEvents = newEvents.length > logs.length;
         setLogs(newEvents);
         
         if (hadNewEvents) {
           setIsGlitching(true);
-          const eventCount = newEvents.length - logs.length;
-          targetRef.current -= eventCount * 1000 * 60 * 60 * 24;
+          // 注意：这里仅作视觉效果，实际时间由 etuTargetTime 决定
           if (glitchTimeoutRef.current) clearTimeout(glitchTimeoutRef.current);
           glitchTimeoutRef.current = setTimeout(() => setIsGlitching(false), 500);
         }
@@ -216,8 +217,20 @@ const OmegaSection = () => {
                   <div className="text-red-600/70">[STANDBY] Awaiting anomaly...</div>
                 ) : (
                   logs.map((log) => (
-                    <div key={log.id}>
-                      <span className="text-red-500">[TRIGGER]</span> {log.text}
+                    <div key={log.id} className="flex justify-between items-center gap-2">
+                      <div className="truncate flex-1" title={log.text}>
+                        <span className="text-red-500 mr-2">[TRIGGER]</span>
+                        {log.text}
+                      </div>
+                      <div className={`whitespace-nowrap text-[9px] font-bold ${
+                        (!log.impact || log.impact === 'NEUTRAL') 
+                          ? 'text-gray-500' 
+                          : log.impact.startsWith('-') 
+                            ? 'text-green-500' 
+                            : 'text-red-500'
+                      }`}>
+                        {log.impact || 'NEUTRAL'}
+                      </div>
                     </div>
                   ))
                 )}

@@ -205,11 +205,13 @@ export const scanNewsSources = async () => {
     // 0-40: 延后。每1分延后1小时。
     let adjustmentHours = 0;
     if (score >= 60) {
-      adjustmentHours = (score - 60); // 负值代表倒计时减少（加速）
+      adjustmentHours = -(score - 60); // 负值代表倒计时减少（加速）
     } else if (score <= 40) {
       adjustmentHours = (40 - score); // 正值代表倒计时增加（延后）
     }
     
+    console.log(`   ⏱️ 单条调整: ${adjustmentHours}小时`);
+
     const adjustmentMs = adjustmentHours * 60 * 60 * 1000;
     totalTimeAdjustment += adjustmentMs;
     
@@ -231,24 +233,27 @@ export const scanNewsSources = async () => {
       analysis: { score, reason }
     });
     
-    // 如果有显著影响，作为事件记录
-    if (Math.abs(adjustmentHours) >= 1) {
-      // 写入 homepage.json 的 events
-      const data = readHomepageData();
-      // 避免重复：检查最近的事件 (这里保留 homepage.json 自身的去重作为双重保险)
-      const isDuplicateEvent = data.omega.events.some(e => e.text.includes(news.title));
-      
-      if (!isDuplicateEvent) {
-        const newEvent = {
-          id: uuidv4(), // Simple ID
-          text: `[${method === 'AI' ? 'INTEL' : 'NEWS'}] ${news.title} (${adjustmentHours > 0 ? '+' : ''}${adjustmentHours}h)`,
-          timestamp: Date.now()
-        };
-        data.omega.events.unshift(newEvent);
-        if (data.omega.events.length > 20) data.omega.events.pop(); // Keep last 20
-        writeHomepageData(data);
-      }
-    }
+    // 始终记录事件，无论是否有显著影响
+    // 写入 homepage.json 的 events
+    const data = readHomepageData();
+    
+    // 格式化 impact 字符串
+    let impactStr = 'NEUTRAL';
+    if (adjustmentHours > 0) impactStr = `+${adjustmentHours}h`;
+    else if (adjustmentHours < 0) impactStr = `${adjustmentHours}h`;
+    
+    const newEvent = {
+      id: uuidv4(),
+      text: news.title, // 只保留标题，时间在 impact 显示
+      impact: impactStr,
+      score: score,
+      reason: reason,
+      timestamp: Date.now()
+    };
+    
+    data.omega.events.unshift(newEvent);
+    if (data.omega.events.length > 20) data.omega.events.pop(); // Keep last 20
+    writeHomepageData(data);
   }
   
   // 更新总时间偏移

@@ -267,15 +267,17 @@ export const updateOmegaData = (updates) => {
 /**
  * 添加Omega事件
  * @param {string} text - 事件文本
+ * @param {string} [impact='NEUTRAL'] - 影响程度 (e.g. "+2h", "-1h", "NEUTRAL")
  * @returns {Object|null} 新事件
  */
-export const addOmegaEvent = (text) => {
+export const addOmegaEvent = (text, impact = 'NEUTRAL') => {
   const data = readHomepageData();
   if (!data) return null;
   
   const newEvent = {
     id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     text,
+    impact,
     timestamp: Date.now()
   };
   
