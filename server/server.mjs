@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import 'dotenv/config'; // Load environment variables
 import arsenalRoutes from './routes/arsenal.js';
 import authRoutes from './routes/auth.js';
 import homepageRoutes from './routes/homepage.js';
@@ -14,13 +15,9 @@ import { initHomepageStorage } from './utils/homepageStorage.js';
 import connectDB from './config/db.js';
 import { securityMiddleware } from './middleware/security.js';
 import { initializeBotUsers } from './utils/botBehaviorSimulator.js';
-import { getBotUserStats, getActiveBotUsers } from './utils/botUserManager.js';
-import { getCurrentPrice, submitOrder, matchOrders } from './utils/orderMatchingEngine.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
-import http from 'http';
-import net from 'net';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -35,18 +32,33 @@ if (!existsSync(uploadsDir)) {
 }
 
 // ==================== CORS 配置 ====================
-const allowedOrigins = [
-  'http://localhost:5173',  // Vite开发服务器
-  'http://localhost:5174',  // Vite开发服务器（备用端口）
-  'http://localhost:4173',  // Vite预览服务器
-  'http://localhost:3000',   // 备用端口
-  'https://tws-backend.onrender.com' // Render 后端地址
-];
-// ... (rest of the file remains similar)
+// 允许跨域访问，支持前端和倒计时App
+app.use(cors({
+  origin: true, // 允许所有来源，方便本地开发和文件系统访问
+  credentials: true
+}));
 
-// ... inside startServer ...
-// 启动服务器
-// ... 前面的代码保持不变 (直到 app.listen 之前)
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(securityMiddleware);
+
+// Static files
+app.use('/uploads', express.static(uploadsDir));
+
+// Health Check
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date() });
+});
+
+// Routes
+app.use('/api/arsenal', arsenalRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/homepage', homepageRoutes);
+app.use('/api/oracle', oracleRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/referral', referralRoutes);
+app.use('/api/sse', sseRoutes);
 
 const startServer = async () => {
   try {
@@ -59,18 +71,17 @@ const startServer = async () => {
     await initHomepageStorage();
 
     // 3. 启动后台任务与机器人
-    // 注意：确保这些函数在你的 imports 中已正确导入
     if (typeof initializeBotUsers === 'function') {
       await initializeBotUsers();
     }
     startBackgroundTasks();
     startScanning();
+    startSSEKeepalive();
 
     // 4. 真正启动监听
-    const FINAL_PORT = process.env.PORT || 10000;
-    app.listen(FINAL_PORT, '0.0.0.0', () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`\n🚀 TWS Arsenal Server is LIVE`);
-      console.log(`📡 Listening on port: ${FINAL_PORT}`);
+      console.log(`📡 Listening on port: ${PORT}`);
     });
 
   } catch (error) {
@@ -79,5 +90,4 @@ const startServer = async () => {
   }
 };
 
-// 执行启动
 startServer();

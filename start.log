@@ -12,30 +12,65 @@
 [前端] 
 [后端] 
 [后端] > tws@1.0.0 dev:backend
-[后端] > cd server && node server.js
+[后端] > cd server && node server.mjs
 [后端] 
-[后端] node:internal/modules/cjs/loader:1423
-[后端]   throw err;
-[后端]   ^
+[前端] Port 5173 is in use, trying another one...
+[前端] 
+[前端]   VITE v5.4.21  ready in 97 ms
+[前端] 
+[前端]   ➜  Local:   http://localhost:5174/
+[前端]   ➜  Network: use --host to expose
+[后端] ✅ 区块链服务初始化成功
+[后端] 📚 加载历史记录: 6 条
+[后端] [SSE Routes] 路由已注册:
+[后端]   - GET /api/sse/test
+[后端]   - GET /api/sse/homepage
+[后端]   - OPTIONS /api/sse/*
+[后端] ❌ Error connecting to MongoDB: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+[后端] ⚠️  Server running without persistent database connection.
+[后端] ✅ Connected to MongoDB Atlas
+[后端] Failed to load TimeManager from DB (using in-memory fallback): Operation `timeconfigs.findOne()` buffering timed out after 10000ms
+[后端] Failed to load Homepage from DB, using default: Operation `homepages.findOne()` buffering timed out after 10000ms
+[后端] 🏠 Homepage storage initialized from DB
+[后端] 🤖 Initializing 25 bot users...
+[后端] ✅ Initialized 25 bot users
+[后端] 🚀 Starting background tasks...
 [后端] 
-[后端] Error: Cannot find module '/Users/fanann/tws/server/server.js'
-[后端]     at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
-[后端]     at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
-[后端]     at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
-[后端]     at Module._load (node:internal/modules/cjs/loader:1226:37)
-[后端]     at TracingChannel.traceSync (node:diagnostics_channel:328:14)
-[后端]     at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
-[后端]     at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
-[后端]     at node:internal/main/run_main_module:33:47 {
-[后端]   code: 'MODULE_NOT_FOUND',
-[后端]   requireStack: []
+[后端] ✅ Market background task started (350ms interval, ~3 updates/sec)
+[后端] ✅ OrderBook background task started (2s interval)
+[后端] ✅ Kline background task started (1.5s interval, based on actual trades)
+[后端] ✅ Taiwan node background task started (800ms interval)
+[后端] ✅ Asset background task started (600ms interval)
+[后端] 🚀 Starting bot scheduler...
+[后端] ✅ Bot scheduler started
+[后端] ✅ Bot tasks started
+[后端] 
+[后端] ✨ All background tasks started successfully!
+[后端] 🚀 服务器启动，立即触发首次扫描...
+[后端] 🔍 开始扫描红色源头 (中国台湾网)...
+[后端] ✅ Oracle 定时扫描已启动 (Cron: 0 * * * *)
+[后端] node:events:486
+[后端]       throw er; // Unhandled 'error' event
+[后端]       ^
+[后端] 
+[后端] Error: listen EADDRINUSE: address already in use 0.0.0.0:10000
+[后端]     at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+[后端]     at listenInCluster (node:net:1997:12)
+[后端]     at node:net:2206:7
+[后端]     at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+[后端] Emitted 'error' event on Server instance at:
+[后端]     at emitErrorNT (node:net:1976:8)
+[后端]     at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+[后端]   code: 'EADDRINUSE',
+[后端]   errno: -48,
+[后端]   syscall: 'listen',
+[后端]   address: '0.0.0.0',
+[后端]   port: 10000
 [后端] }
 [后端] 
 [后端] Node.js v25.2.1
 [后端] npm run dev:backend exited with code 1
-[前端] Port 5173 is in use, trying another one...
-[前端] 
-[前端]   VITE v5.4.21  ready in 92 ms
-[前端] 
-[前端]   ➜  Local:   http://localhost:5174/
-[前端]   ➜  Network: use --host to expose
+[前端] 23:39:58 [vite] .env changed, restarting server...
+[前端] 23:39:58 [vite] server restarted.
+[前端] 23:40:11 [vite] .env changed, restarting server...
+[前端] 23:40:11 [vite] server restarted.

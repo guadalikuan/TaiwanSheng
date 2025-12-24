@@ -24,12 +24,13 @@ const SimplifiedLandingView = () => {
     setChartData(initialData);
   }, []);
 
+  // 使用 useRef 來保持 targetTime 的引用，這樣在 fetchSyncTime 中更新時，setInterval 也能獲取到最新值
+  const targetTimeRef = useRef(env.countdownTarget > 0 
+    ? env.countdownTarget 
+    : Date.now() + 1000 * 60 * 60 * 24 * 600);
+
   // 倒计时逻辑
   useEffect(() => {
-    let targetTime = env.countdownTarget > 0 
-      ? env.countdownTarget 
-      : Date.now() + 1000 * 60 * 60 * 24 * 600;
-
     // 尝试从后端获取同步时间
     const fetchSyncTime = async () => {
       try {
@@ -37,9 +38,9 @@ const SimplifiedLandingView = () => {
         if (response.ok) {
           const json = await response.json();
           if (json.success && json.data && json.data.etuTargetTime) {
-            targetTime = json.data.etuTargetTime;
+            targetTimeRef.current = json.data.etuTargetTime;
             // 立即重新计算一次以避免延迟
-            const distance = Math.max(targetTime - Date.now(), 0);
+            const distance = Math.max(targetTimeRef.current - Date.now(), 0);
             setTimeLeft(formatTime(distance));
           }
         }
@@ -48,14 +49,22 @@ const SimplifiedLandingView = () => {
       }
     };
 
+    // 初始化時獲取
     fetchSyncTime();
     
+    // 設置定期同步（每分鐘一次，與 line-countdown-app 一致）
+    const syncInterval = setInterval(fetchSyncTime, 60000);
+    
+    // 設置每秒更新顯示
     const interval = setInterval(() => {
-      const distance = Math.max(targetTime - Date.now(), 0);
+      const distance = Math.max(targetTimeRef.current - Date.now(), 0);
       setTimeLeft(formatTime(distance));
     }, 1000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      clearInterval(syncInterval);
+    };
   }, []);
 
   // 更新图表数据
