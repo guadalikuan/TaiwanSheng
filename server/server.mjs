@@ -46,47 +46,38 @@ const allowedOrigins = [
 
 // ... inside startServer ...
 // 启动服务器
-app.listen(PORT, async () => {
-  console.log(`\n🚀 TWS Arsenal Server running on http://localhost:${PORT}`);
-  console.log(`📡 服务器正在监听端口 ${PORT}`);
+// ... 前面的代码保持不变 (直到 app.listen 之前)
 
-  // 连接数据库
-  await connectDB();
+const startServer = async () => {
+  try {
+    // 1. 连接数据库
+    await connectDB();
+    console.log('✅ Connected to MongoDB Atlas');
 
-  // 服务器启动后，初始化机器人用户池和后台任务
-  const initializeBotUserPool = async () => {
-    // ...
-    // 初始化机器人用户池，然后启动后台任务
-    initializeBotUserPool().then(async () => {
-      // 初始化市场价格
-      initializeMarketPrice();
+    // 2. 初始化服务
+    await initTimeManager();
+    await initHomepageStorage();
 
-      // 初始化服务
-      await initTimeManager();
-      await initHomepageStorage();
+    // 3. 启动后台任务与机器人
+    // 注意：确保这些函数在你的 imports 中已正确导入
+    if (typeof initializeBotUsers === 'function') {
+      await initializeBotUsers();
+    }
+    startBackgroundTasks();
+    startScanning();
 
-      // 启动后台任务
-      startBackgroundTasks();
-      // ...
-      // ... at the end of file ...
-      if (!isVercel) {
-        startServer().catch((error) => {
-          console.error('\n❌ 启动前检查失败：', error);
-          process.exit(1);
-        });
-      } else {
-        // Vercel 环境下，初始化必要的服务（不启动监听）
-        console.log('🚀 Running in Vercel Serverless Environment');
-        // 连接数据库
-        connectDB().then(async () => {
-          // 初始化服务
-          await initTimeManager();
-          await initHomepageStorage();
-        });
-      }
+    // 4. 真正启动监听
+    const FINAL_PORT = process.env.PORT || 10000;
+    app.listen(FINAL_PORT, '0.0.0.0', () => {
+      console.log(`\n🚀 TWS Arsenal Server is LIVE`);
+      console.log(`📡 Listening on port: ${FINAL_PORT}`);
+    });
 
+  } catch (error) {
+    console.error('\n❌ Server startup failed:', error);
+    process.exit(1);
+  }
+};
 
-      const PORT = process.env.PORT || 10000;
-      app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-      });
+// 执行启动
+startServer();
