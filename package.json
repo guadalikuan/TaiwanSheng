@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -n \"前端,后端\" -c \"cyan,magenta\" \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "start": "npm run dev",
     "dev:frontend": "vite",
-    "dev:backend": "cd server && node server.js",
+    "dev:backend": "cd server && node server.mjs",
     "start:server": "cd server && node start.js",
     "check-server": "cd server && node scripts/check-server.js",
     "check": "npm run check-server",

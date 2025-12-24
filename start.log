@@ -1,0 +1,41 @@
+
+> tws@1.0.0 start
+> npm run dev
+
+
+> tws@1.0.0 dev
+> concurrently -n "前端,后端" -c "cyan,magenta" "npm run dev:frontend" "npm run dev:backend"
+
+[前端] 
+[前端] > tws@1.0.0 dev:frontend
+[前端] > vite
+[前端] 
+[后端] 
+[后端] > tws@1.0.0 dev:backend
+[后端] > cd server && node server.js
+[后端] 
+[后端] node:internal/modules/cjs/loader:1423
+[后端]   throw err;
+[后端]   ^
+[后端] 
+[后端] Error: Cannot find module '/Users/fanann/tws/server/server.js'
+[后端]     at Module._resolveFilename (node:internal/modules/cjs/loader:1420:15)
+[后端]     at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+[后端]     at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+[后端]     at Module._load (node:internal/modules/cjs/loader:1226:37)
+[后端]     at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+[后端]     at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+[后端]     at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+[后端]     at node:internal/main/run_main_module:33:47 {
+[后端]   code: 'MODULE_NOT_FOUND',
+[后端]   requireStack: []
+[后端] }
+[后端] 
+[后端] Node.js v25.2.1
+[后端] npm run dev:backend exited with code 1
+[前端] Port 5173 is in use, trying another one...
+[前端] 
+[前端]   VITE v5.4.21  ready in 92 ms
+[前端] 
+[前端]   ➜  Local:   http://localhost:5174/
+[前端]   ➜  Network: use --host to expose
