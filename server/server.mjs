@@ -45,45 +45,48 @@ const allowedOrigins = [
 // ... (rest of the file remains similar)
 
 // ... inside startServer ...
-  // 启动服务器
-  app.listen(PORT, async () => {
-    console.log(`\n🚀 TWS Arsenal Server running on http://localhost:${PORT}`);
-    console.log(`📡 服务器正在监听端口 ${PORT}`);
+// 启动服务器
+app.listen(PORT, async () => {
+  console.log(`\n🚀 TWS Arsenal Server running on http://localhost:${PORT}`);
+  console.log(`📡 服务器正在监听端口 ${PORT}`);
 
-    // 连接数据库
-    await connectDB();
+  // 连接数据库
+  await connectDB();
 
-    // 服务器启动后，初始化机器人用户池和后台任务
-    const initializeBotUserPool = async () => {
-// ...
+  // 服务器启动后，初始化机器人用户池和后台任务
+  const initializeBotUserPool = async () => {
+    // ...
     // 初始化机器人用户池，然后启动后台任务
     initializeBotUserPool().then(async () => {
       // 初始化市场价格
       initializeMarketPrice();
-      
+
       // 初始化服务
       await initTimeManager();
       await initHomepageStorage();
 
       // 启动后台任务
       startBackgroundTasks();
-// ...
-// ... at the end of file ...
-if (!isVercel) {
-  startServer().catch((error) => {
-    console.error('\n❌ 启动前检查失败：', error);
-    process.exit(1);
-  });
-} else {
-  // Vercel 环境下，初始化必要的服务（不启动监听）
-  console.log('🚀 Running in Vercel Serverless Environment');
-  // 连接数据库
-  connectDB().then(async () => {
-    // 初始化服务
-    await initTimeManager();
-    await initHomepageStorage();
-  });
-}
+      // ...
+      // ... at the end of file ...
+      if (!isVercel) {
+        startServer().catch((error) => {
+          console.error('\n❌ 启动前检查失败：', error);
+          process.exit(1);
+        });
+      } else {
+        // Vercel 环境下，初始化必要的服务（不启动监听）
+        console.log('🚀 Running in Vercel Serverless Environment');
+        // 连接数据库
+        connectDB().then(async () => {
+          // 初始化服务
+          await initTimeManager();
+          await initHomepageStorage();
+        });
+      }
 
-export default app;
-
+      export { app };
+      const PORT = process.env.PORT || 10000;
+      app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+      });
