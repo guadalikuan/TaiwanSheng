@@ -3,7 +3,7 @@
  * 封装 EventSource 连接，提供自动重连和错误处理
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001').replace(/\/$/, '');
 
 class SSEClient {
   constructor(url) {

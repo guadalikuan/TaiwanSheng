@@ -15,7 +15,7 @@ const ReferralPanel = () => {
   const loadReferralInfo = async () => {
     try {
       const token = localStorage.getItem('tws_token');
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+      const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001').replace(/\/$/, '');
       
       const response = await fetch(`${API_BASE_URL}/api/referral/info`, {
         headers: {
@@ -36,7 +36,7 @@ const ReferralPanel = () => {
 
   const loadLeaderboard = async () => {
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+      const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001').replace(/\/$/, '');
       const response = await fetch(`${API_BASE_URL}/api/referral/leaderboard`);
       const result = await response.json();
       if (result.success) {

@@ -9,6 +9,10 @@ COPY package*.json ./
 # 安装依赖
 RUN npm ci --only=production=false
 
+# 接收构建参数
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
 # 复制源代码
 COPY . .
 

@@ -38,6 +38,7 @@ const allowedOrigins = [
   'http://localhost:5174',  // Vite开发服务器（备用端口）
   'http://localhost:4173',  // Vite预览服务器
   'http://localhost:3000',   // 备用端口
+  'https://tws-fronted.zeabur.app', // Zeabur Frontend
 ];
 
 // CORS 辅助函数

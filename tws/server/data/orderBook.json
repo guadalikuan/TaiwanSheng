@@ -1,76 +1,16 @@
 {
   "buys": [
     {
-      "id": "order_1766497891232_4o07cfs",
-      "userId": "bot_1764813593233_qj0fbp5",
-      "username": "bot_user_k72di7",
+      "id": "order_1766592300623_ssufr6m",
+      "userId": "bot_1764684209559_jv5kqyj",
+      "username": "bot_user_3er99n",
       "type": "buy",
-      "price": 5139581.63,
-      "amount": 74.1846,
-      "timestamp": 1766497891232,
-      "remainingAmount": 74.1846,
+      "price": 5085188.04,
+      "amount": 31.422,
+      "timestamp": 1766592300623,
+      "remainingAmount": 31.422,
       "status": "pending",
-      "createdAt": 1766497891232
-    },
-    {
-      "id": "order_1766498076752_di3d201",
-      "userId": "bot_1764780666244_35fj3tg",
-      "username": "bot_user_sa36gv",
-      "type": "buy",
-      "price": 5135803.03,
-      "amount": 81.2292,
-      "timestamp": 1766498076752,
-      "remainingAmount": 81.2292,
-      "status": "pending",
-      "createdAt": 1766498076752
-    },
-    {
-      "id": "order_1766497868302_ltx57l0",
-      "userId": "bot_1764775203611_sc9lrdf",
-      "username": "bot_user_wtoyjr",
-      "type": "buy",
-      "price": 5133719.35,
-      "amount": 86.5338,
-      "timestamp": 1766497868302,
-      "remainingAmount": 40.022499999999994,
-      "status": "pending",
-      "createdAt": 1766497868302
-    },
-    {
-      "id": "order_1766498069358_21gyh9z",
-      "userId": "bot_1764765909611_qtb4368",
-      "username": "bot_user_pxs2dh",
-      "type": "buy",
-      "price": 5124521.99,
-      "amount": 26.8582,
-      "timestamp": 1766498069358,
-      "remainingAmount": 26.8582,
-      "status": "pending",
-      "createdAt": 1766498069358
-    },
-    {
-      "id": "order_1766498106236_97vmmgo",
-      "userId": "bot_1764906420014_abe4uaq",
-      "username": "bot_user_l3u2dq",
-      "type": "buy",
-      "price": 5111468.46,
-      "amount": 63.1608,
-      "timestamp": 1766498106236,
-      "remainingAmount": 63.1608,
-      "status": "pending",
-      "createdAt": 1766498106236
-    },
-    {
-      "id": "order_1766497862807_113jkyo",
-      "userId": "bot_1764827517001_9h5cjm1",
-      "username": "bot_user_m3207k",
-      "type": "buy",
-      "price": 5110355.07,
-      "amount": 64.2963,
-      "timestamp": 1766497862807,
-      "remainingAmount": 64.2963,
-      "status": "pending",
-      "createdAt": 1766497862807
+      "createdAt": 1766592300623
     },
     {
       "id": "order_1766498079504_x1ht7cr",
@@ -80,7 +20,7 @@
       "price": 5082393.98,
       "amount": 79.0629,
       "timestamp": 1766498079504,
-      "remainingAmount": 79.0629,
+      "remainingAmount": 61.57610000000001,
       "status": "pending",
       "createdAt": 1766498079504
     },
@@ -107,6 +47,18 @@
       "remainingAmount": 64.7229,
       "status": "pending",
       "createdAt": 1766497656256
+    },
+    {
+      "id": "order_1766592285876_56i40ib",
+      "userId": "bot_1764905685421_zwkvkr6",
+      "username": "bot_user_3snxh4",
+      "type": "buy",
+      "price": 5069159.66,
+      "amount": 73.2783,
+      "timestamp": 1766592285877,
+      "remainingAmount": 73.2783,
+      "status": "pending",
+      "createdAt": 1766592285877
     },
     {
       "id": "order_1766498073085_abjdtnn",
@@ -145,6 +97,18 @@
       "createdAt": 1766497736905
     },
     {
+      "id": "order_1766592229075_hd6v6rz",
+      "userId": "bot_1764847091556_xlijokk",
+      "username": "bot_user_rilkf0",
+      "type": "buy",
+      "price": 5051263.95,
+      "amount": 63.5071,
+      "timestamp": 1766592229075,
+      "remainingAmount": 63.5071,
+      "status": "pending",
+      "createdAt": 1766592229075
+    },
+    {
       "id": "order_1766497883800_q5c1j07",
       "userId": "bot_1764776505563_2j1faun",
       "username": "bot_user_qqnp5k",
@@ -169,6 +133,30 @@
       "createdAt": 1766498094823
     },
     {
+      "id": "order_1766592276156_vmunu9y",
+      "userId": "bot_1764776124657_uzqbt4o",
+      "username": "bot_user_kfl7bt",
+      "type": "buy",
+      "price": 5040705.98,
+      "amount": 59.9917,
+      "timestamp": 1766592276156,
+      "remainingAmount": 59.9917,
+      "status": "pending",
+      "createdAt": 1766592276156
+    },
+    {
+      "id": "order_1766592265562_rx1k9dy",
+      "userId": "bot_1764819599085_h2ojlhd",
+      "username": "bot_user_jhvo5z",
+      "type": "buy",
+      "price": 5033675.93,
+      "amount": 11.8181,
+      "timestamp": 1766592265562,
+      "remainingAmount": 11.8181,
+      "status": "pending",
+      "createdAt": 1766592265562
+    },
+    {
       "id": "order_1766497529839_7lsx113",
       "userId": "bot_1764861258940_cjrsewc",
       "username": "bot_user_81wzob",
@@ -191,6 +179,18 @@
       "remainingAmount": 71.2768,
       "status": "pending",
       "createdAt": 1766497876888
+    },
+    {
+      "id": "order_1766592284182_fmhbeaa",
+      "userId": "bot_1764795350425_ey57hcs",
+      "username": "bot_user_xx3ier",
+      "type": "buy",
+      "price": 5028709.37,
+      "amount": 13.4817,
+      "timestamp": 1766592284182,
+      "remainingAmount": 13.4817,
+      "status": "pending",
+      "createdAt": 1766592284182
     },
     {
       "id": "order_1766497660122_ifejgy1",
@@ -455,6 +455,18 @@
       "remainingAmount": 101.3054,
       "status": "pending",
       "createdAt": 1766495551872
+    },
+    {
+      "id": "order_1766592288311_tmjpvza",
+      "userId": "bot_1764791995764_w10mbq3",
+      "username": "bot_user_pjovec",
+      "type": "buy",
+      "price": 4893362.75,
+      "amount": 72.2924,
+      "timestamp": 1766592288311,
+      "remainingAmount": 72.2924,
+      "status": "pending",
+      "createdAt": 1766592288311
     },
     {
       "id": "order_1766495324564_a3xfos1",
@@ -82789,6 +82801,18 @@
       "createdAt": 1764691453483
     },
     {
+      "id": "order_1766592215067_limycma",
+      "userId": "bot_1764813593233_qj0fbp5",
+      "username": "bot_user_k72di7",
+      "type": "buy",
+      "price": 97.58,
+      "amount": 103.36,
+      "timestamp": 1766592215067,
+      "remainingAmount": 103.36,
+      "status": "pending",
+      "createdAt": 1766592215067
+    },
+    {
       "id": "order_1766457779217_w1z3vwo",
       "userId": "bot_1764772061856_7xl73yk",
       "username": "bot_user_ptlbq4",
@@ -82799,80 +82823,44 @@
       "remainingAmount": 76.9101,
       "status": "pending",
       "createdAt": 1766457779217
+    },
+    {
+      "id": "order_1766592216115_1ps8d8w",
+      "userId": "bot_1764684210585_nui0qku",
+      "username": "bot_user_ua2fbu",
+      "type": "buy",
+      "price": 96.69,
+      "amount": 47.8733,
+      "timestamp": 1766592216115,
+      "remainingAmount": 47.8733,
+      "status": "pending",
+      "createdAt": 1766592216115
+    },
+    {
+      "id": "order_1766592213429_35lqzhi",
+      "userId": "bot_1764774937700_bhot9zr",
+      "username": "bot_user_fh87h0",
+      "type": "buy",
+      "price": 96.35,
+      "amount": 68.9749,
+      "timestamp": 1766592213429,
+      "remainingAmount": 68.9749,
+      "status": "pending",
+      "createdAt": 1766592213429
     }
   ],
   "sells": [
     {
-      "id": "order_1766494872000_2m078up",
-      "userId": "bot_1764772338441_33wkkhx",
-      "username": "bot_user_tt7bu3",
+      "id": "order_1766592289738_attz5qw",
+      "userId": "bot_1764684210119_qq441ls",
+      "username": "bot_user_5u0hjn",
       "type": "sell",
-      "price": 5265096.92,
-      "amount": 101.0778,
-      "timestamp": 1766494872000,
-      "remainingAmount": 100.60959999999997,
+      "price": 5255389.06,
+      "amount": 33.7122,
+      "timestamp": 1766592289738,
+      "remainingAmount": 29.3904,
       "status": "pending",
-      "createdAt": 1766494872000
-    },
-    {
-      "id": "order_1766498103231_l2a8ha3",
-      "userId": "bot_1764840756807_w6nwa1c",
-      "username": "bot_user_w9v1da",
-      "type": "sell",
-      "price": 5266042.95,
-      "amount": 35.4115,
-      "timestamp": 1766498103231,
-      "remainingAmount": 35.4115,
-      "status": "pending",
-      "createdAt": 1766498103231
-    },
-    {
-      "id": "order_1766494879978_hxfw8tu",
-      "userId": "bot_1764860095641_3rrrlce",
-      "username": "bot_user_q19ljz",
-      "type": "sell",
-      "price": 5268511.68,
-      "amount": 39.5093,
-      "timestamp": 1766494879978,
-      "remainingAmount": 39.5093,
-      "status": "pending",
-      "createdAt": 1766494879978
-    },
-    {
-      "id": "order_1766485951059_8u068q6",
-      "userId": "bot_1764774552903_a9a32oq",
-      "username": "bot_user_5030a7",
-      "type": "sell",
-      "price": 5274537.91,
-      "amount": 35.023,
-      "timestamp": 1766485951059,
-      "remainingAmount": 35.023,
-      "status": "pending",
-      "createdAt": 1766485951059
-    },
-    {
-      "id": "order_1766498089954_8yd980k",
-      "userId": "bot_1764860095641_3rrrlce",
-      "username": "bot_user_q19ljz",
-      "type": "sell",
-      "price": 5277868.52,
-      "amount": 75.9208,
-      "timestamp": 1766498089954,
-      "remainingAmount": 75.9208,
-      "status": "pending",
-      "createdAt": 1766498089954
-    },
-    {
-      "id": "order_1766488419855_piaq225",
-      "userId": "bot_1764826915075_l9syv3g",
-      "username": "bot_user_oaxxgs",
-      "type": "sell",
-      "price": 5280507.13,
-      "amount": 62.2341,
-      "timestamp": 1766488419855,
-      "remainingAmount": 62.2341,
-      "status": "pending",
-      "createdAt": 1766488419855
+      "createdAt": 1766592289738
     },
     {
       "id": "order_1766495401394_lpouxov",
@@ -82882,9 +82870,21 @@
       "price": 5304460.03,
       "amount": 88.5501,
       "timestamp": 1766495401394,
-      "remainingAmount": 88.5501,
+      "remainingAmount": 78.57289999999995,
       "status": "pending",
       "createdAt": 1766495401394
+    },
+    {
+      "id": "order_1766592223761_82r2td4",
+      "userId": "bot_1764795350425_ey57hcs",
+      "username": "bot_user_xx3ier",
+      "type": "sell",
+      "price": 5304721.25,
+      "amount": 107.5401,
+      "timestamp": 1766592223761,
+      "remainingAmount": 107.5401,
+      "status": "pending",
+      "createdAt": 1766592223761
     },
     {
       "id": "order_1766497701974_9pvj7h8",
@@ -82897,6 +82897,42 @@
       "remainingAmount": 19.7811,
       "status": "pending",
       "createdAt": 1766497701974
+    },
+    {
+      "id": "order_1766592261050_yctgu5m",
+      "userId": "bot_1764768969738_bkguzvh",
+      "username": "bot_user_5gcpht",
+      "type": "sell",
+      "price": 5305642.03,
+      "amount": 64.6191,
+      "timestamp": 1766592261050,
+      "remainingAmount": 64.6191,
+      "status": "pending",
+      "createdAt": 1766592261050
+    },
+    {
+      "id": "order_1766592286498_qwftg73",
+      "userId": "bot_1764684401689_urmu843",
+      "username": "bot_user_vi6j5o",
+      "type": "sell",
+      "price": 5309172.5,
+      "amount": 13.3796,
+      "timestamp": 1766592286498,
+      "remainingAmount": 13.3796,
+      "status": "pending",
+      "createdAt": 1766592286498
+    },
+    {
+      "id": "order_1766592284847_o3l1sbr",
+      "userId": "bot_1764847091556_xlijokk",
+      "username": "bot_user_rilkf0",
+      "type": "sell",
+      "price": 5311430.97,
+      "amount": 38.696,
+      "timestamp": 1766592284847,
+      "remainingAmount": 38.696,
+      "status": "pending",
+      "createdAt": 1766592284847
     },
     {
       "id": "order_1766497888538_byhw7ac",
@@ -82921,6 +82957,30 @@
       "remainingAmount": 77.1112,
       "status": "pending",
       "createdAt": 1766497727521
+    },
+    {
+      "id": "order_1766592298388_q8o32sr",
+      "userId": "bot_1764849317822_c2m1bsj",
+      "username": "bot_user_keyejs",
+      "type": "sell",
+      "price": 5334599.19,
+      "amount": 59.3713,
+      "timestamp": 1766592298388,
+      "remainingAmount": 59.3713,
+      "status": "pending",
+      "createdAt": 1766592298388
+    },
+    {
+      "id": "order_1766592295273_ondc2k7",
+      "userId": "bot_1764839820010_dee215x",
+      "username": "bot_user_uekobg",
+      "type": "sell",
+      "price": 5338591.35,
+      "amount": 78.6162,
+      "timestamp": 1766592295273,
+      "remainingAmount": 78.6162,
+      "status": "pending",
+      "createdAt": 1766592295273
     },
     {
       "id": "order_1766497867378_s2l3vv4",
@@ -82971,6 +83031,18 @@
       "createdAt": 1766495355196
     },
     {
+      "id": "order_1766592237654_i28mdmm",
+      "userId": "bot_1764901338565_ccfp38q",
+      "username": "bot_user_xc8zvx",
+      "type": "sell",
+      "price": 5380015.24,
+      "amount": 109.4906,
+      "timestamp": 1766592237654,
+      "remainingAmount": 109.4906,
+      "status": "pending",
+      "createdAt": 1766592237654
+    },
+    {
       "id": "order_1766497446839_imz8kqn",
       "userId": "bot_1764778289347_d8brnni",
       "username": "bot_user_msfvcj",
@@ -82995,6 +83067,18 @@
       "createdAt": 1766497380556
     },
     {
+      "id": "order_1766592273305_9j4a80p",
+      "userId": "bot_1764770680007_1iwm726",
+      "username": "bot_user_lr5q2n",
+      "type": "sell",
+      "price": 5406504.31,
+      "amount": 98.1018,
+      "timestamp": 1766592273305,
+      "remainingAmount": 98.1018,
+      "status": "pending",
+      "createdAt": 1766592273305
+    },
+    {
       "id": "order_1766496477636_obivop5",
       "userId": "bot_1764860095641_3rrrlce",
       "username": "bot_user_q19ljz",
@@ -83005,6 +83089,18 @@
       "remainingAmount": 91.3329,
       "status": "pending",
       "createdAt": 1766496477636
+    },
+    {
+      "id": "order_1766592279082_zadcje2",
+      "userId": "bot_1764776124657_uzqbt4o",
+      "username": "bot_user_kfl7bt",
+      "type": "sell",
+      "price": 5499027.97,
+      "amount": 24.4721,
+      "timestamp": 1766592279082,
+      "remainingAmount": 24.4721,
+      "status": "pending",
+      "createdAt": 1766592279082
     }
   ]
 }

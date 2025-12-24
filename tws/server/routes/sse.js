@@ -9,7 +9,9 @@ const allowedOrigins = [
   'http://localhost:5174',
   'http://localhost:4173',
   'http://localhost:3000',
-];
+  'https://tws-fronted.zeabur.app', // Zeabur Frontend
+  process.env.FRONTEND_URL,         // Custom Frontend URL from env
+].filter(Boolean);
 
 // 处理 OPTIONS 预检请求
 router.options('*', (req, res) => {

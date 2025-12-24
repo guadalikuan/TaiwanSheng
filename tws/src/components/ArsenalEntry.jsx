@@ -63,7 +63,7 @@ const ArsenalEntry = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001').replace(/\/$/, '');
       const response = await fetch(`${API_BASE_URL}/api/arsenal/upload`, {
         method: 'POST',
         body: formData,

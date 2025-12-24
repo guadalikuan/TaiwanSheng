@@ -5,7 +5,7 @@
  * 在启动服务器前执行所有必要的检查和验证
  */
 
-import { existsSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
@@ -29,8 +29,14 @@ console.log('1. 检查必要的目录...');
 let allDirsExist = true;
 for (const dir of requiredDirs) {
   if (!existsSync(dir)) {
-    console.error(`   ❌ 目录不存在: ${dir}`);
-    allDirsExist = false;
+    try {
+      console.log(`   ⚠️ 目录不存在，尝试创建: ${dir}`);
+      mkdirSync(dir, { recursive: true });
+      console.log(`   ✅ 创建成功: ${dir}`);
+    } catch (error) {
+      console.error(`   ❌ 无法创建目录: ${dir}`, error.message);
+      allDirsExist = false;
+    }
   } else {
     console.log(`   ✅ ${dir}`);
   }

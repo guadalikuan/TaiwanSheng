@@ -1,5 +1,5 @@
 // API 调用工具
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001').replace(/\/$/, '');
 
 // 请求去重缓存（避免短时间内重复请求）
 const requestCache = new Map();
