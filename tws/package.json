@@ -20,6 +20,8 @@
     "docker:compose:down": "docker-compose down"
   },
   "dependencies": {
+    "@tonconnect/ui-react": "^2.3.1",
+    "@twa-dev/sdk": "^8.0.2",
     "bip39": "^3.1.0",
     "ethers": "^6.13.0",
     "framer-motion": "^12.23.25",
