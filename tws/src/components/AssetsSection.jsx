@@ -167,10 +167,54 @@ const AssetsSection = () => {
         <div>
           <h4 className="text-white font-bold mb-4 text-sm uppercase">社群</h4>
           <ul className="space-y-2 text-xs text-slate-400 font-mono">
+            {/* 👇 改这里：Telegram 链接 */}
             <li className="hover:text-cyan-400 cursor-pointer flex items-center">
-              <Globe size={10} className="mr-2" /> Telegram [加密]
+              <Globe size={10} className="mr-2" /> 
+              <a 
+                href="https://你的Telegram社群链接"  // 替换这行的链接
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-full"
+              >
+                Telegram [加密]
+              </a>
             </li>
-            <li className="hover:text-cyan-400 cursor-pointer">Twitter / X</li>
+            {/* 👇 改这里：Twitter/X 链接 */}
+            <li className="hover:text-cyan-400 cursor-pointer flex items-center">
+              <Globe size={10} className="mr-2" />  
+              <a 
+                href="https://x.com/TWSDAO"  // 替换这行的链接
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-full"
+              >
+                Twitter / X
+              </a>
+            </li>
+            {/* 👇 改这里：Facebook 链接（新增） */}
+            <li className="hover:text-cyan-400 cursor-pointer flex items-center">
+              <Globe size={10} className="mr-2" />  
+              <a 
+                href="https://www.facebook.com/groups/1365839505037775/"  // 替换这行的链接
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-full"
+              >
+                Facebook
+              </a>
+            </li>
+            {/* 👇 新增 Discord 链接 */}
+            <li className="hover:text-cyan-400 cursor-pointer flex items-center">
+              <Globe size={10} className="mr-2" />  {/* 可换成Discord专属图标 */}
+              <a 
+                href="https://discord.gg/mrF59Qxu"  // 替换成实际的Discord社群链接
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-full"
+              >
+                Discord
+              </a>
+            </li>
           </ul>
         </div>
 
