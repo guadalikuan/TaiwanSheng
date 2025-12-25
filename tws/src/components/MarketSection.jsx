@@ -21,9 +21,10 @@ const MarketSection = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [realMarketData, setRealMarketData] = useState(null); // 存储来自 DexScreener 的真实数据
   
   // 价格相关状态
-  const [yesterdayClose, setYesterdayClose] = useState(null); // 昨收价
+  const [yesterdayClose, setYesterdayClose] = useState(null);
   const [todayHigh, setTodayHigh] = useState(null); // 今日最高
   const [todayLow, setTodayLow] = useState(null); // 今日最低
   
@@ -33,6 +34,28 @@ const MarketSection = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartX, setDragStartX] = useState(0);
   const [dragStartOffset, setDragStartOffset] = useState(0);
+
+  // 获取 DexScreener 实时价格数据
+  useEffect(() => {
+    const fetchRealPrice = async () => {
+      try {
+        const response = await fetch('https://api.dexscreener.com/latest/dex/pairs/solana/6q88jmgqs5kikkjjvh7xgpy2rv3c2jps9yqsgqfvkrgt');
+        const data = await response.json();
+        if (data.pair) {
+          setRealMarketData(data.pair);
+          setCurrentPrice(parseFloat(data.pair.priceUsd));
+          setPriceChange24h(parseFloat(data.pair.priceChange.h24));
+          setVolume24h(parseFloat(data.pair.volume.h24));
+        }
+      } catch (err) {
+        console.error('Failed to fetch DexScreener data:', err);
+      }
+    };
+
+    fetchRealPrice();
+    const interval = setInterval(fetchRealPrice, 30000); // 每30秒更新一次价格
+    return () => clearInterval(interval);
+  }, []);
 
   // 加载初始数据（带重试机制）
   useEffect(() => {
@@ -176,10 +199,12 @@ const MarketSection = () => {
   
   // 处理市场数据更新的辅助函数
   const updateMarketDataFromSSE = (marketData) => {
-    // 更新价格
+    // 更新价格 - 注意：不再从 SSE 更新价格，以保持与 DexScreener K线图同步
+    /*
     if (marketData.currentPrice !== undefined) {
       setCurrentPrice(marketData.currentPrice);
     }
+    */
     
     // 更新K线数据
     if (marketData.klineData && Array.isArray(marketData.klineData) && marketData.klineData.length > 0) {
@@ -278,19 +303,22 @@ const MarketSection = () => {
       }
       
       // 更新价格相关数据
-      if (message.data.currentPrice !== undefined) {
-        setCurrentPrice(message.data.currentPrice);
-      }
-      if (message.data.priceChange24h !== undefined) {
-        setPriceChange24h(message.data.priceChange24h);
-      }
-      if (message.data.volume24h !== undefined) {
-        setVolume24h(message.data.volume24h);
-      }
-      if (message.data.orderBook) {
-        setOrderBook(message.data.orderBook);
-      }
-    });
+    // 注意：不再从 SSE 更新价格，以保持与 DexScreener K线图同步
+    /* 
+    if (message.data.currentPrice !== undefined) {
+      setCurrentPrice(message.data.currentPrice);
+    }
+    if (message.data.priceChange24h !== undefined) {
+      setPriceChange24h(message.data.priceChange24h);
+    }
+    if (message.data.volume24h !== undefined) {
+      setVolume24h(message.data.volume24h);
+    }
+    */
+    if (message.data.orderBook) {
+      setOrderBook(message.data.orderBook);
+    }
+  });
     
     return unsubscribe;
   }, [subscribe]);
@@ -692,25 +720,32 @@ const MarketSection = () => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
                 <Globe className="text-cyan-500 mr-2 animate-pulse" size={20} />
-                <h3 className="text-xl font-bold text-white font-mono tracking-wider">TWS/CNY</h3>
+                <h3 className="text-xl font-bold text-white font-mono tracking-wider">TWS/SOL</h3>
               </div>
             </div>
-            <button
-              onClick={() => navigate('/market')}
-              className="bg-yellow-600/20 border border-yellow-600/50 text-yellow-500 hover:bg-yellow-600 hover:text-black px-4 py-1.5 rounded text-xs font-mono tracking-widest transition-all flex items-center gap-2"
-            >
-              <ShoppingBag size={14} />
-              进入交易
-            </button>
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center bg-slate-800/50 rounded-full px-3 py-1 border border-slate-700">
+                <div className={`w-2 h-2 rounded-full mr-2 ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                <span className="text-[10px] font-mono text-slate-300">{isOnline ? 'NETWORK ONLINE' : 'NETWORK OFFLINE'}</span>
+              </div>
+              <button
+                onClick={() => navigate('/market')}
+                className="bg-yellow-600/20 border border-yellow-600/50 text-yellow-500 hover:bg-yellow-600 hover:text-black px-4 py-1.5 rounded text-xs font-mono tracking-widest transition-all flex items-center gap-2"
+              >
+                <ShoppingBag size={14} />
+                进入交易
+              </button>
+            </div>
           </div>
           
           <div className="flex items-center space-x-6">
             {/* 现价 */}
             <div className="flex items-baseline space-x-2">
-              <span className={`text-3xl font-mono font-bold ${currentPrice >= (yesterdayClose || currentPrice) ? 'text-green-500' : 'text-red-500'}`}>
-                {currentPrice.toFixed(2)}
+              <span className={`text-3xl font-mono font-bold ${priceChange24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {currentPrice > 0 ? (currentPrice < 0.01 ? currentPrice.toFixed(6) : currentPrice.toFixed(2)) : '0.00'}
+                <span className="text-xs ml-1 text-slate-500">USD</span>
               </span>
-              {currentPrice >= (yesterdayClose || currentPrice) ? (
+              {priceChange24h >= 0 ? (
                 <ArrowUp size={20} className="text-green-500" />
               ) : (
                 <ArrowDown size={20} className="text-red-500" />
@@ -718,30 +753,32 @@ const MarketSection = () => {
             </div>
             
             {/* 涨跌幅 */}
-            {yesterdayClose && (
-              <div className="flex flex-col">
-                <span className={`text-lg font-mono font-semibold ${currentPrice >= yesterdayClose ? 'text-green-500' : 'text-red-500'}`}>
-                  {currentPrice >= yesterdayClose ? '+' : ''}{(currentPrice - yesterdayClose).toFixed(2)}
-                </span>
-                <span className={`text-sm font-mono ${currentPrice >= yesterdayClose ? 'text-green-500/70' : 'text-red-500/70'}`}>
-                  {currentPrice >= yesterdayClose ? '+' : ''}{((currentPrice - yesterdayClose) / yesterdayClose * 100).toFixed(2)}%
-                </span>
-              </div>
-            )}
+            <div className="flex flex-col">
+              <span className={`text-lg font-mono font-semibold ${priceChange24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {priceChange24h >= 0 ? '+' : ''}{priceChange24h.toFixed(2)}%
+              </span>
+              <span className="text-[10px] text-slate-500 font-mono uppercase">24H Change</span>
+            </div>
             
-            {/* 昨收、最高、最低 */}
-            <div className="flex items-center space-x-4 text-xs font-mono text-slate-400">
+            {/* 流动性 & 市值 */}
+            <div className="hidden md:flex items-center space-x-4 text-xs font-mono border-l border-slate-800 pl-6">
               <div>
-                <span className="text-slate-500">昨收</span>
-                <span className="ml-2 text-white">{yesterdayClose ? yesterdayClose.toFixed(2) : '--'}</span>
+                <span className="text-slate-500 block text-[8px] uppercase">Liquidity</span>
+                <span className="text-cyan-400 font-bold">
+                  {realMarketData?.liquidity?.usd ? `$${realMarketData.liquidity.usd.toLocaleString()}` : '--'}
+                </span>
               </div>
               <div>
-                <span className="text-slate-500">最高</span>
-                <span className="ml-2 text-red-400">{todayHigh ? todayHigh.toFixed(2) : currentPrice.toFixed(2)}</span>
+                <span className="text-slate-500 block text-[8px] uppercase">FDV</span>
+                <span className="text-white">
+                  {realMarketData?.fdv ? `$${realMarketData.fdv.toLocaleString()}` : '--'}
+                </span>
               </div>
               <div>
-                <span className="text-slate-500">最低</span>
-                <span className="ml-2 text-green-400">{todayLow ? todayLow.toFixed(2) : currentPrice.toFixed(2)}</span>
+                <span className="text-slate-500 block text-[8px] uppercase">24H Volume</span>
+                <span className="text-white">
+                  {realMarketData?.volume?.h24 ? `$${realMarketData.volume.h24.toLocaleString()}` : '--'}
+                </span>
               </div>
             </div>
           </div>
@@ -749,27 +786,8 @@ const MarketSection = () => {
 
         {/* 选项卡栏 */}
         <div className="h-10 border-b border-slate-800 bg-slate-900/30 flex items-center justify-between px-4">
-          <div className="flex space-x-1">
-            {['分时', '日K', '周K', '月K'].map((mode) => (
-              <button
-                key={mode}
-                onClick={() => {
-                  setViewMode(mode);
-                  // 切换视图时重置缩放和滚动
-                  if (mode === '分时') {
-                    setZoomLevel(1);
-                    setScrollOffset(0);
-                  }
-                }}
-                className={`px-4 py-1.5 text-xs font-mono rounded transition-all ${
-                  viewMode === mode
-                    ? 'bg-cyan-600 text-white'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                }`}
-              >
-                {mode}
-              </button>
-            ))}
+          <div className="flex bg-slate-900/50 rounded p-1 border border-slate-800">
+            <div className="px-3 py-1 text-xs font-mono text-slate-400">REAL-TIME DATA VIA DEXSCREENER</div>
           </div>
           
           {/* 缩放控制（仅在K线图模式下显示） */}
@@ -806,162 +824,17 @@ const MarketSection = () => {
           )}
         </div>
 
-        {/* 图表区域 */}
-        <div className="flex-1 relative flex overflow-hidden">
-          {/* 左侧价格坐标轴 */}
-          <div className="w-16 border-r border-slate-800 bg-slate-900/30 relative">
-            {priceTicks.map((price, index) => {
-              // 价格从高到低，所以第一个是最高的，对应y=0
-              const yPercent = (index / Math.max(1, priceTicks.length - 1)) * 100;
-              return (
-                <div
-                  key={index}
-                  className="absolute left-0 right-0 px-2 text-right"
-                  style={{ top: `${yPercent}%`, transform: 'translateY(-50%)' }}
-                >
-                  <span className="text-[10px] font-mono text-slate-400">{price.toFixed(2)}</span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* 主图表区域 */}
-          <div 
-            className="flex-1 relative p-2 overflow-hidden cursor-grab active:cursor-grabbing hover:bg-slate-900/20 transition-colors"
-            onMouseDown={(e) => {
-              if (viewMode !== '分时') {
-                setIsDragging(true);
-                setDragStartX(e.clientX);
-                setDragStartOffset(scrollOffset);
-              }
+        {/* 图表区域 (DexScreener Embed) */}
+        <div className="flex-1 relative flex overflow-hidden rounded-lg border border-slate-800 bg-black m-2">
+          <iframe 
+            src="https://dexscreener.com/solana/6q88jmgqs5kikkjjvh7xgpy2rv3c2jps9yqsgqfvkrgt?embed=1&theme=dark&trades=0&info=0"
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 0
             }}
-            onMouseMove={(e) => {
-              if (isDragging && viewMode !== '分时') {
-                const deltaX = e.clientX - dragStartX;
-                const chartWidth = e.currentTarget.offsetWidth;
-                const deltaPercent = (deltaX / chartWidth) * 100;
-                const newOffset = Math.max(0, Math.min(100, dragStartOffset - deltaPercent));
-                setScrollOffset(newOffset);
-              }
-            }}
-            onMouseUp={() => {
-              setIsDragging(false);
-            }}
-            onMouseLeave={() => {
-              setIsDragging(false);
-            }}
-            onWheel={(e) => {
-              if (viewMode !== '分时') {
-                e.preventDefault();
-                const delta = e.deltaY > 0 ? 1 : -1;
-                const newZoom = Math.max(1, Math.min(10, zoomLevel + delta * 0.5));
-                setZoomLevel(newZoom);
-                // 调整滚动位置以保持当前视图中心
-                if (newZoom > zoomLevel) {
-                  // 放大时，稍微向右滚动
-                  setScrollOffset(Math.min(100, scrollOffset + 5));
-                }
-              }
-            }}
-            title={viewMode === '分时' ? '点击查看详情' : '滚轮缩放，拖拽滚动'}
-          >
-            <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
-              {/* 网格线（对应价格刻度） */}
-              {priceTicks.map((_, index) => {
-                const y = (index / Math.max(1, priceTicks.length - 1)) * 100;
-                return (
-                  <line
-                    key={index}
-                    x1="0"
-                    y1={y}
-                    x2="100"
-                    y2={y}
-                    stroke="#1e293b"
-                    strokeDasharray="2"
-                    strokeWidth="0.5"
-                  />
-                );
-              })}
-              
-              {visibleData.length > 0 ? (
-                <>
-                  {viewMode === '分时' ? (
-                    /* 分时图：折线图 */
-                    <>
-                      <path
-                        d={generateLinePath()}
-                        fill="none"
-                        stroke="#3b82f6"
-                        strokeWidth="0.3"
-                        className="opacity-90"
-                      />
-                      {/* 填充区域（可选） */}
-                      <path
-                        d={`${generateLinePath()} L 100,100 L 0,100 Z`}
-                        fill="url(#gradient)"
-                        opacity="0.1"
-                      />
-                      <defs>
-                        <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
-                          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-                        </linearGradient>
-                      </defs>
-                    </>
-                  ) : (
-                    /* K线图：蜡烛图 */
-                    <>
-                      {visibleData.map((item, index) => {
-                        const x = visibleData.length > 1 ? (index / (visibleData.length - 1)) * 100 : 50;
-                        const barWidth = visibleData.length > 0 ? (100 / visibleData.length) * 0.8 : 2;
-                        const color = item.close >= item.open ? '#10b981' : '#ef4444';
-                        const openY = scale(item.open);
-                        const closeY = scale(item.close);
-                        const highY = scale(item.high);
-                        const lowY = scale(item.low);
-                        const rectY = Math.min(openY, closeY);
-                        const rectHeight = Math.abs(openY - closeY) || 0.5;
-                        
-                        return (
-                          <g key={`${item.id}-${index}`}>
-                            {/* 上下影线 */}
-                            <line
-                              x1={x}
-                              y1={highY}
-                              x2={x}
-                              y2={lowY}
-                              stroke={color}
-                              strokeWidth="0.4"
-                            />
-                            {/* K线实体 */}
-                            <rect
-                              x={Math.max(0, x - barWidth / 2)}
-                              y={rectY}
-                              width={barWidth}
-                              height={rectHeight}
-                              fill={color}
-                            />
-                          </g>
-                        );
-                      })}
-                    </>
-                  )}
-                </>
-              ) : (
-                /* 无数据提示 */
-                <text
-                  x="50"
-                  y="50"
-                  textAnchor="middle"
-                  fill="#64748b"
-                  fontSize="3"
-                  className="font-mono"
-                >
-                  暂无数据
-                </text>
-              )}
-            </svg>
-          </div>
+            title="DexScreener Chart"
+          />
         </div>
 
         <div className="h-8 border-t border-slate-800 bg-slate-900 flex items-center justify-between px-4 text-[10px] text-slate-500 font-mono">
@@ -996,8 +869,10 @@ const MarketSection = () => {
         </div>
 
         <div className="h-12 border-t border-b border-slate-800 flex items-center justify-center bg-slate-800/30">
-          <span className="text-xl font-bold text-white">{currentPrice.toFixed(2)}</span>
-          <span className="text-xs ml-2 text-slate-400">≈ $19.8 USD</span>
+          <span className="text-xl font-bold text-white">
+            {currentPrice > 0 ? (currentPrice < 0.01 ? currentPrice.toFixed(6) : currentPrice.toFixed(2)) : '0.00'}
+          </span>
+          <span className="text-xs ml-2 text-slate-400">USD</span>
         </div>
 
         <div className="flex-1 px-2 py-2 space-y-1">

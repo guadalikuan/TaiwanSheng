@@ -8,10 +8,23 @@ const MarketDetailPage = () => {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [marketData, setMarketData] = useState(null);
+  const [realMarketData, setRealMarketData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedTradeId, setSelectedTradeId] = useState(searchParams.get('tradeId') || null);
 
   useEffect(() => {
+    const fetchRealPrice = async () => {
+      try {
+        const response = await fetch('https://api.dexscreener.com/latest/dex/pairs/solana/6q88jmgqs5kikkjjvh7xgpy2rv3c2jps9yqsgqfvkrgt');
+        const data = await response.json();
+        if (data.pair) {
+          setRealMarketData(data.pair);
+        }
+      } catch (err) {
+        console.error('Failed to fetch DexScreener data:', err);
+      }
+    };
+
     const loadData = async () => {
       try {
         const response = await getMarketData();
@@ -27,10 +40,15 @@ const MarketDetailPage = () => {
         setLoading(false);
       }
     };
+
+    fetchRealPrice();
     loadData();
 
     // 定期更新数据
-    const interval = setInterval(loadData, 1000);
+    const interval = setInterval(() => {
+      loadData();
+      fetchRealPrice();
+    }, 30000);
     return () => clearInterval(interval);
   }, [selectedTradeId]);
 
@@ -108,31 +126,38 @@ const MarketDetailPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6">
                 <div className="text-slate-500 text-xs font-mono uppercase mb-2">当前价格</div>
-                <div className="text-3xl font-bold text-green-500 font-mono">
-                  {marketData.currentPrice?.toFixed(2) || '0.00'}
+                <div className={`text-3xl font-bold font-mono ${
+                  (realMarketData?.priceChange?.h24 || 0) >= 0 ? 'text-green-500' : 'text-red-500'
+                }`}>
+                  {realMarketData ? (
+                    parseFloat(realMarketData.priceUsd) < 0.01 
+                      ? parseFloat(realMarketData.priceUsd).toFixed(6) 
+                      : parseFloat(realMarketData.priceUsd).toFixed(2)
+                  ) : (marketData.currentPrice?.toFixed(2) || '0.00')}
+                  <span className="text-xs ml-1 text-slate-500">USD</span>
                 </div>
                 <div className={`text-sm mt-2 flex items-center gap-1 ${
-                  (marketData.priceChange24h || 0) >= 0 ? 'text-green-500' : 'text-red-500'
+                  (realMarketData?.priceChange?.h24 || marketData.priceChange24h || 0) >= 0 ? 'text-green-500' : 'text-red-500'
                 }`}>
-                  {(marketData.priceChange24h || 0) >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                  {Math.abs(marketData.priceChange24h || 0).toFixed(2)}% (24H)
+                  {(realMarketData?.priceChange?.h24 || marketData.priceChange24h || 0) >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                  {Math.abs(realMarketData?.priceChange?.h24 || marketData.priceChange24h || 0).toFixed(2)}% (24H)
                 </div>
               </div>
               <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6">
                 <div className="text-slate-500 text-xs font-mono uppercase mb-2">24H交易量</div>
                 <div className="text-2xl font-bold text-white font-mono">
-                  ¥ {(marketData.volume24h || 0).toLocaleString()}
+                  $ {(realMarketData?.volume?.h24 || marketData.volume24h || 0).toLocaleString()}
                 </div>
               </div>
               <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6">
-                <div className="text-slate-500 text-xs font-mono uppercase mb-2">市场指数</div>
+                <div className="text-slate-500 text-xs font-mono uppercase mb-2">流动性 (USD)</div>
                 <div className="text-2xl font-bold text-cyan-400 font-mono">
-                  {marketData.marketIndex || 'N/A'}
+                  {realMarketData?.liquidity?.usd ? `$ ${realMarketData.liquidity.usd.toLocaleString()}` : 'N/A'}
                 </div>
               </div>
               <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6">
-                <div className="text-slate-500 text-xs font-mono uppercase mb-2">交易对</div>
-                <div className="text-2xl font-bold text-white font-mono">TWS/CNY</div>
+                <div className="text-slate-500 text-xs font-mono uppercase mb-2">交易对 (SOLANA)</div>
+                <div className="text-2xl font-bold text-white font-mono">TWS/SOL</div>
               </div>
             </div>
           </div>
@@ -141,40 +166,16 @@ const MarketDetailPage = () => {
         {/* Kline Tab */}
         {activeTab === 'kline' && (
           <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6">
-            <h2 className="text-xl font-bold mb-4 font-mono">K线图 (60个数据点)</h2>
-            <div className="h-96 relative bg-black rounded border border-slate-800 p-4">
-              <svg className="w-full h-full" preserveAspectRatio="none">
-                {klineData.map((item, index) => {
-                  const x = (index / Math.max(klineData.length - 1, 1)) * 100;
-                  const barWidth = (100 / Math.max(klineData.length, 1)) * 0.6;
-                  const color = item.close > item.open ? '#10b981' : '#ef4444';
-                  const openY = scale(item.open, minPrice, maxPrice);
-                  const closeY = scale(item.close, minPrice, maxPrice);
-                  const highY = scale(item.high, minPrice, maxPrice);
-                  const lowY = scale(item.low, minPrice, maxPrice);
-                  const rectY = Math.min(openY, closeY);
-                  const rectHeight = Math.abs(openY - closeY);
-                  return (
-                    <g key={item.id || index}>
-                      <line
-                        x1={`${x}%`}
-                        y1={`${highY}%`}
-                        x2={`${x}%`}
-                        y2={`${lowY}%`}
-                        stroke={color}
-                        strokeWidth="1"
-                      />
-                      <rect
-                        x={`${x - barWidth / 2}%`}
-                        y={`${rectY}%`}
-                        width={`${barWidth}%`}
-                        height={`${rectHeight}%`}
-                        fill={color}
-                      />
-                    </g>
-                  );
-                })}
-              </svg>
+            <h2 className="text-xl font-bold mb-4 font-mono">REAL-TIME K-LINE (DEXSCREENER)</h2>
+            <div className="h-[600px] relative bg-black rounded border border-slate-800 overflow-hidden">
+              <iframe 
+                src="https://dexscreener.com/solana/6q88jmgqs5kikkjjvh7xgpy2rv3c2jps9yqsgqfvkrgt?embed=1&theme=dark&trades=0&info=0"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 0
+                }}
+              />
             </div>
           </div>
         )}
