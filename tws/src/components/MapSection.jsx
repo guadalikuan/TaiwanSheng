@@ -102,83 +102,57 @@ const MapSection = () => {
     loadData();
   }, [isOnline]);
 
-  // 首次加载高德地图脚本
+  // 确保按顺序执行
   useEffect(() => {
-    loadAMapScript();
-  }, []);
+    let mounted = true;
+    const init = async () => {
+      await loadAMapScript();
+      if (!mounted || !window.AMap) return;
 
-  // 台湾地图初始化
-  useEffect(() => {
-    if (!taiwanMapContainerRef.current || !window.AMap) return;
-
-    const initTaiwanMap = () => {
       try {
-        // v1.4.15 不支持 pitchEnable, 使用 isHotspot 替代
-        const map = new window.AMap.Map(taiwanMapContainerRef.current, {
+        const taiwanMap = new window.AMap.Map(taiwanMapContainerRef.current, {
           zoom: 8,
-          center: new window.AMap.LngLat(120.9605, 23.6978),
-          mapStyle: AMAP_CONFIG.mapStyle,
+          center: [120.9605, 23.6978],
+          // 直接使用官方 styleId（不要调用 setMapStyle）
+          mapStyle: AMAP_CONFIG.defaultStyleId || 'amap://styles/darkblue',
           resizeEnable: true,
           showLabel: true,
-          rotateEnable: false,
-          tiltEnable: false,
           dragEnable: true,
-          zoomEnable: true,
           doubleClickZoom: true,
           keyboardEnable: true,
-          isHotspot: true,
-          defaultCursor: 'pointer',
         });
-        taiwanMapRef.current = map;
-        console.log('Taiwan map initialized successfully with v1.4.15');
-      } catch (error) {
-        console.error('Failed to initialize Taiwan map:', error);
+        taiwanMapRef.current = taiwanMap;
+        console.log('Taiwan map initialized with official dark style');
+      } catch (e) {
+        console.error('Failed to initialize Taiwan map:', e);
+      }
+
+      try {
+        const mainlandMap = new window.AMap.Map(mainlandMapContainerRef.current, {
+          zoom: 6,
+          center: [108.9398, 34.3416],
+          mapStyle: AMAP_CONFIG.defaultStyleId || 'amap://styles/darkblue',
+          resizeEnable: true,
+          showLabel: true,
+          dragEnable: true,
+          doubleClickZoom: true,
+          keyboardEnable: true,
+        });
+        mainlandMapRef.current = mainlandMap;
+        console.log('Mainland map initialized with official dark style');
+      } catch (e) {
+        console.error('Failed to initialize mainland map:', e);
       }
     };
 
-    const timer = setTimeout(initTaiwanMap, 500);
+    init();
 
     return () => {
-      clearTimeout(timer);
+      mounted = false;
       if (taiwanMapRef.current) {
         taiwanMapRef.current.destroy();
         taiwanMapRef.current = null;
       }
-    };
-  }, []);
-
-  // 大陆地图初始化
-  useEffect(() => {
-    if (!mainlandMapContainerRef.current || !window.AMap) return;
-
-    const initMainlandMap = () => {
-      try {
-        const map = new window.AMap.Map(mainlandMapContainerRef.current, {
-          zoom: 6,
-          center: new window.AMap.LngLat(108.9398, 34.3416),
-          mapStyle: AMAP_CONFIG.mapStyle,
-          resizeEnable: true,
-          showLabel: true,
-          rotateEnable: false,
-          tiltEnable: false,
-          dragEnable: true,
-          zoomEnable: true,
-          doubleClickZoom: true,
-          keyboardEnable: true,
-          isHotspot: true,
-          defaultCursor: 'pointer',
-        });
-        mainlandMapRef.current = map;
-        console.log('Mainland map initialized successfully with v1.4.15');
-      } catch (error) {
-        console.error('Failed to initialize mainland map:', error);
-      }
-    };
-
-    const timer = setTimeout(initMainlandMap, 500);
-
-    return () => {
-      clearTimeout(timer);
       if (mainlandMapRef.current) {
         mainlandMapRef.current.destroy();
         mainlandMapRef.current = null;
@@ -359,7 +333,7 @@ const MapSection = () => {
                 </div>
               </div>
             </div>
-            <div ref={mainlandMapContainerRef} className="w-full h-full rounded-lg overflow-hidden" />
+            <div ref={mainlandMapContainerRef} className="amap-container w-full h-full rounded-lg overflow-hidden" />
           </div>
         </article>
 
@@ -374,7 +348,7 @@ const MapSection = () => {
                 <span className="text-base font-bold">{twNodeCount.toLocaleString()}</span>
               </div>
             </div>
-            <div ref={taiwanMapContainerRef} className="w-full h-full rounded-lg overflow-hidden" />
+            <div ref={taiwanMapContainerRef} className="amap-container w-full h-full rounded-lg overflow-hidden" />
           </div>
         </article>
       </div>
