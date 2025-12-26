@@ -2,7 +2,7 @@
 export const AMAP_CONFIG = {
   // 请在此处填入您的高德地图 API Key
   apiKey: '9825256902b62fda10a1f457f80ee90b',
-
+ipLocationApi: "https://restapi.amap.com/v3/ip",
   // 官方样式 ID
   defaultStyleId: 'amap://styles/darkblue',
 

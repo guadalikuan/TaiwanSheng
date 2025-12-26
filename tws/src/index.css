@@ -345,3 +345,73 @@ body::before {
   fill: #9ca3af !important;
 }
 
+/* 蓝色用户位置标记（美化） */
+.user-location-blue-wrapper {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  display: inline-block;
+  transform: translateZ(0);
+  z-index: 1300 !important;
+  pointer-events: auto !important;
+}
+
+/* 中心实心点 */
+.user-location-blue {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  /* 细腻的径向+线性混合渐变 */
+  background: radial-gradient(circle at 35% 30%, #dff6ff 0%, #7ecbff 22%, #3ea0ff 55%, #1a73e8 100%);
+  /* 外部柔和光晕 + 内凹 */
+  box-shadow:
+    0 10px 20px rgba(26,115,232,0.16),
+    0 2px 6px rgba(10,20,30,0.25) inset;
+  border: 1px solid rgba(255,255,255,0.06);
+  will-change: transform, box-shadow;
+}
+
+/* 光环（柔和扩散） */
+.user-location-blue::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(26,115,232,0.22) 0%, rgba(26,115,232,0.06) 30%, rgba(26,115,232,0.00) 60%);
+  filter: blur(6px);
+  z-index: -1;
+  opacity: 0.95;
+  animation: user-halo-pulse 2.8s infinite;
+}
+
+/* 高光小点，增加质感 */
+.user-location-blue::after {
+  content: "";
+  position: absolute;
+  left: 35%;
+  top: 28%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.25));
+  box-shadow: 0 1px 4px rgba(255,255,255,0.12);
+  transform: translate(-50%, -50%) rotate(-15deg);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* 轻微呼吸动画（醒目但不突兀）*/
+@keyframes user-halo-pulse {
+  0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.9; }
+  50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.9; }
+}
+
