@@ -1,0 +1,27 @@
+# Render 忽略文件
+node_modules/
+.git/
+.env
+.env.local
+*.log
+dist/
+.DS_Store
+coverage/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 开发文件
+docs/
+scripts/
+contracts/
+hardhat.config.js
+docker-compose*.yml
+Dockerfile
+
+# 测试文件
+*.test.js
+*.spec.js
+

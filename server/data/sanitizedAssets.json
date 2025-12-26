@@ -11800,5 +11800,49 @@
     "tokenPrice": 258333,
     "imageUrl": "/assets/blueprints/shelter.png",
     "internalRef": "bot_asset_1766751190706_j3x6xp9"
+  },
+  {
+    "id": "bot_asset_1766759502988_rx5jx7y",
+    "codeName": "CN-INT-CMD-1415",
+    "displayId": "CN-INT-RES-188",
+    "title": "Inland Strategic Reserve (内陆战略储备) - COMMAND_POST (前线指挥所)",
+    "locationTag": "CN-INT-RES",
+    "region": "Inland Strategic Reserve (内陆战略储备)",
+    "zoneClass": "COMMAND_POST (前线指挥所)",
+    "securityLevel": 1,
+    "specs": {
+      "area": "152 m²",
+      "capacity": "7 Personnel",
+      "type": "COMMAND_POST (前线指挥所)"
+    },
+    "financials": {
+      "totalTokens": 352777,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Inland Strategic Reserve (内陆战略储备). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 352777,
+    "imageUrl": "/assets/blueprints/command_post.png",
+    "internalRef": "bot_asset_1766759502988_rx5jx7y",
+    "reviewedAt": 1766759529877,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1766759507910
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_bijus7",
+        "reviewedAt": 1766759529883
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_bijus7",
+    "purchasedBy": "0xdA2147e4c0e1838F39919172A49E682268670DD4",
+    "purchasedAt": 1766759529877
   }
 ]

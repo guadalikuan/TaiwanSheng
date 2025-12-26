@@ -1,0 +1,47 @@
+services:
+  # 后端 API 服务
+  - type: web
+    name: tws-backend
+    env: node
+    plan: starter  # 或 free, starter, standard 等
+    region: singapore  # 或选择其他区域
+    buildCommand: cd server && npm install
+    startCommand: cd server && node server.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000  # Render 会自动设置 PORT，但保留默认值
+      - key: MONGODB_URI
+        sync: false  # 需要在 Render Dashboard 中手动设置
+      - key: JWT_SECRET
+        sync: false  # 需要在 Render Dashboard 中手动设置
+      - key: BSC_RPC_URL
+        sync: false
+      - key: CONTRACT_ADDRESS
+        sync: false
+      - key: PLATFORM_WALLET
+        sync: false
+      - key: SOLANA_RPC_URL
+        value: https://api.mainnet-beta.solana.com
+      - key: ALLOWED_ORIGINS
+        fromService:
+          type: web
+          name: tws-frontend
+          property: url
+
+  # 前端静态站点
+  - type: web
+    name: tws-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: tws-backend
+          property: url
+      - key: VITE_SOLANA_RPC_URL
+        value: https://api.mainnet-beta.solana.com
+

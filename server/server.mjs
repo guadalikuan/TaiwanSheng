@@ -49,9 +49,36 @@ if (!existsSync(uploadsDir)) {
 
 // ==================== CORS 配置 ====================
 // 允许跨域访问，支持前端和倒计时App
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4173'];
+
 app.use(cors({
-  origin: true, // 允许所有来源，方便本地开发和文件系统访问
-  credentials: true
+  origin: (origin, callback) => {
+    // 允许无 origin 的请求（如移动应用、Postman）
+    if (!origin) return callback(null, true);
+    
+    // 在生产环境中，允许配置的域名
+    if (process.env.NODE_ENV === 'production') {
+      // 如果设置了 ALLOWED_ORIGINS，只允许这些域名
+      if (process.env.ALLOWED_ORIGINS) {
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      } else {
+        // 未设置时，允许所有来源（开发模式）
+        callback(null, true);
+      }
+    } else {
+      // 开发环境允许所有来源
+      callback(null, true);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Middleware
