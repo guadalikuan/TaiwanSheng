@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
+import tokenRoutes from './routes/token.js'; // 假设你的路由文件在 routes 目录下 
 
 // 加载环境变量 - 从项目根目录加载 .env 文件
 const __filename = fileURLToPath(import.meta.url);

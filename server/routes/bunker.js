@@ -4,7 +4,6 @@ import { getApprovedAssets, getAllAssets } from '../utils/storage.js';
 import { getAllUsers } from '../utils/userStorage.js';
 import { getLocationCoefficient } from '../utils/locationCoefficient.js';
 import { getTargetTime } from '../utils/timeManager.js';
-import { getTargetTime } from '../utils/timeManager.js';
 
 const router = express.Router();
 
