@@ -1,5 +1,8 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
+import { PublicKey } from '@solana/web3.js';
+import nacl from 'tweetnacl';
+import bs58 from 'bs58';
 import { 
   saveUser, 
   getUserByAddress, 
@@ -225,6 +228,233 @@ router.post('/login', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Login failed',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/auth/login-wallet - 钱包登录（使用签名验证）
+router.post('/login-wallet', async (req, res) => {
+  try {
+    const { address, signature, message } = req.body;
+
+    if (!address || !signature || !message) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields',
+        message: 'Address, signature, and message are required'
+      });
+    }
+
+    // 验证Solana地址格式（base58编码，长度32-44字符）
+    // Solana地址是base58编码的32字节公钥
+    const solanaAddressRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+    if (!solanaAddressRegex.test(address)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid address',
+        message: 'Invalid Solana wallet address format'
+      });
+    }
+
+    // 查找用户
+    const user = getUserByAddress(address);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+        message: '该钱包地址未注册，请先注册账户',
+        needsRegistration: true
+      });
+    }
+
+    // 验证Solana签名
+    try {
+      const publicKey = new PublicKey(address);
+      const messageBytes = new TextEncoder().encode(message);
+      const signatureBytes = Buffer.from(signature, 'base64');
+      
+      // 验证签名
+      const isValid = nacl.sign.detached.verify(
+        messageBytes,
+        signatureBytes,
+        publicKey.toBytes()
+      );
+      
+      if (!isValid) {
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid signature',
+          message: '签名验证失败'
+        });
+      }
+    } catch (error) {
+      console.error('签名验证错误:', error);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid signature',
+        message: '签名验证失败'
+      });
+    }
+
+    // 更新最后登录时间
+    updateUser(user.address, { lastLogin: Date.now() });
+
+    // 生成 JWT token
+    const token = generateToken(user);
+
+    res.json({
+      success: true,
+      message: 'Wallet login successful',
+      token,
+      user: {
+        address: user.address,
+        username: user.username,
+        role: user.role,
+        profile: user.profile
+      }
+    });
+
+  } catch (error) {
+    console.error('Wallet login error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Login failed',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/auth/register-wallet - 钱包注册（使用签名验证）
+router.post('/register-wallet', async (req, res) => {
+  try {
+    const { address, signature, message, username, password } = req.body;
+
+    if (!address || !signature || !message || !username || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields',
+        message: 'Address, signature, message, username, and password are required'
+      });
+    }
+
+    // 验证Solana地址格式（base58编码，长度32-44字符）
+    // Solana地址是base58编码的32字节公钥
+    const solanaAddressRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+    if (!solanaAddressRegex.test(address)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid address',
+        message: 'Invalid Solana wallet address format'
+      });
+    }
+
+    // 验证用户名格式
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid username',
+        message: 'Username must be 3-20 characters and contain only letters, numbers, and underscores'
+      });
+    }
+
+    // 验证密码强度
+    if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/.test(password)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Weak password',
+        message: 'Password must be at least 8 characters and contain both letters and numbers'
+      });
+    }
+
+    // 检查用户名是否已存在
+    const existingUser = getUserByUsername(username);
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: 'Username already exists',
+        message: 'This username is already taken'
+      });
+    }
+
+    // 检查地址是否已存在
+    const existingAddress = getUserByAddress(address);
+    if (existingAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'Address already exists',
+        message: 'This wallet address is already registered'
+      });
+    }
+
+    // 验证Solana签名
+    try {
+      const publicKey = new PublicKey(address);
+      const messageBytes = new TextEncoder().encode(message);
+      const signatureBytes = Buffer.from(signature, 'base64');
+      
+      // 验证签名
+      const isValid = nacl.sign.detached.verify(
+        messageBytes,
+        signatureBytes,
+        publicKey.toBytes()
+      );
+      
+      if (!isValid) {
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid signature',
+          message: '签名验证失败'
+        });
+      }
+    } catch (error) {
+      console.error('签名验证错误:', error);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid signature',
+        message: '签名验证失败'
+      });
+    }
+
+    // 加密密码
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // 创建用户数据（钱包注册不需要助记符）
+    const userData = {
+      address: address, // Solana地址不需要转小写
+      username,
+      passwordHash,
+      encryptedMnemonic: '', // 钱包注册不需要助记符
+      role: ROLES.USER,
+      profile: { 
+        displayName: username, 
+        avatar: '' 
+      },
+      lastLogin: null
+    };
+
+    const savedUser = saveUser(userData);
+
+    // 生成 JWT token
+    const token = generateToken(savedUser);
+
+    res.json({
+      success: true,
+      message: 'Wallet registration successful',
+      token,
+      user: {
+        address: savedUser.address,
+        username: savedUser.username,
+        role: savedUser.role,
+        profile: savedUser.profile
+      }
+    });
+
+  } catch (error) {
+    console.error('Wallet registration error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Registration failed',
       message: error.message
     });
   }

@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Shield, RefreshCw, CheckCircle, XCircle, AlertCircle, BarChart3 } from 'lucide-react';
 import { getPendingAssets, approveAsset, rejectAsset, getAssetStats, generateContract } from '../utils/api';
 import AssetComparisonCard from './AssetComparisonCard';
+import { useAuth } from '../contexts/AuthContext';
 
 const CommandCenter = () => {
+  const { user, isAuthenticated } = useAuth();
   const [pendingAssets, setPendingAssets] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -44,21 +46,23 @@ const CommandCenter = () => {
     loadData();
   }, []);
 
-  // 批准资产
+  // 批准资产（确权）
   const handleApprove = async (id) => {
-    if (!confirm('确认批准此资产？批准后资产将上架展示。')) {
+    const reviewNotes = prompt('请输入审核备注（可选）：') || '已审核通过，确权完成';
+    
+    if (!confirm(`确认批准此资产并完成确权？\n\n批准后：\n1. 资产状态将变为 AVAILABLE（可交易）\n2. 资产将上架展示\n3. 将自动生成区块链Token（如果配置了合约）\n\n审核备注：${reviewNotes}`)) {
       return;
     }
 
     try {
       setProcessing(true);
       const response = await approveAsset(id, {
-        reviewedBy: 'admin',
-        reviewNotes: 'Approved by admin'
+        reviewedBy: user?.username || user?.address || 'admin',
+        reviewNotes: reviewNotes
       });
 
       if (response.success) {
-        alert('资产已批准！');
+        alert(`✅ 资产已批准并确权！\n\n资产ID: ${id}\n状态: AVAILABLE\n${response.blockchain ? `区块链: ${response.blockchain.txHash}` : ''}`);
         await loadData(); // 重新加载数据
       } else {
         alert('批准失败：' + (response.message || '未知错误'));
@@ -73,20 +77,25 @@ const CommandCenter = () => {
 
   // 拒绝资产
   const handleReject = async (id) => {
-    const reason = prompt('请输入拒绝原因：');
-    if (!reason) {
+    const reason = prompt('请输入拒绝原因（必填）：');
+    if (!reason || reason.trim() === '') {
+      alert('拒绝原因不能为空');
+      return;
+    }
+
+    if (!confirm(`确认拒绝此资产？\n\n拒绝原因：${reason}\n\n拒绝后资产状态将变为 REJECTED，不会上架展示。`)) {
       return;
     }
 
     try {
       setProcessing(true);
       const response = await rejectAsset(id, {
-        reviewedBy: 'admin',
+        reviewedBy: user?.username || user?.address || 'admin',
         reviewNotes: reason
       });
 
       if (response.success) {
-        alert('资产已拒绝！');
+        alert('❌ 资产已拒绝！');
         await loadData(); // 重新加载数据
       } else {
         alert('拒绝失败：' + (response.message || '未知错误'));
@@ -123,7 +132,14 @@ const CommandCenter = () => {
               <Shield className="w-8 h-8 text-red-600" />
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">总司令审核台</h1>
-                <p className="text-sm text-slate-500">Command Center - Asset Review System</p>
+                <p className="text-sm text-slate-500">
+                  Command Center - Asset Review & Verification System
+                  {isAuthenticated && user && (
+                    <span className="ml-2 text-xs text-blue-600">
+                      | 审核员：{user.username || user.address?.slice(0, 8)} ({user.role})
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
             <button

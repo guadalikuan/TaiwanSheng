@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Radio, BarChart3, Map, Database, ShieldAlert, Activity, LogIn, LogOut, User } from 'lucide-react';
+import { Radio, BarChart3, Map, Database, ShieldAlert, Activity, LogIn, LogOut, User, Wallet, Loader, AlertCircle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getHomepageStats } from '../utils/api';
 import { useSSE } from '../contexts/SSEContext';
 import { useServerStatus } from '../contexts/ServerStatusContext';
+import { connectWallet, signMessage, isWalletInstalled } from '../utils/wallet';
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, loginWithWallet } = useAuth();
   const { isOnline } = useServerStatus();
   const [scrolled, setScrolled] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState(12405);
+  const [walletConnecting, setWalletConnecting] = useState(false);
+  const [walletError, setWalletError] = useState('');
   const isHomePage = location.pathname === '/';
 
   // 加载初始统计数据
@@ -62,6 +65,54 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // 连接钱包并登录
+  const handleConnectWallet = async () => {
+    if (!isWalletInstalled()) {
+      setWalletError('请安装Phantom钱包');
+      setTimeout(() => setWalletError(''), 3000);
+      return;
+    }
+
+    setWalletConnecting(true);
+    setWalletError('');
+
+    try {
+      // 连接钱包
+      const { address } = await connectWallet();
+      
+      // 生成登录消息
+      const message = `TWS Protocol 登录验证\n\n地址: ${address}\n时间: ${new Date().toISOString()}\n\n点击签名以登录。`;
+      
+      // 请求签名
+      const signature = await signMessage(message);
+      
+      // 尝试登录
+      const result = await loginWithWallet(address, signature, message);
+      
+      if (result.success) {
+        // 登录成功，刷新页面或跳转
+        window.location.reload();
+      } else if (result.needsRegistration) {
+        // 需要注册，跳转到登录页面并提示
+        navigate('/login', { 
+          state: { 
+            walletAddress: address,
+            needsRegistration: true 
+          } 
+        });
+      } else {
+        setWalletError(result.message || '登录失败');
+        setTimeout(() => setWalletError(''), 5000);
+      }
+    } catch (error) {
+      console.error('钱包连接错误:', error);
+      setWalletError(error.message || '连接钱包失败，请重试');
+      setTimeout(() => setWalletError(''), 5000);
+    } finally {
+      setWalletConnecting(false);
+    }
+  };
+
   const navLinks = [
     { id: 'omega', label: '天機 | OMEGA', icon: <Radio size={16} /> },
     { id: 'market', label: '戰圖 | MARKET', icon: <BarChart3 size={16} /> },
@@ -105,7 +156,7 @@ const Navbar = () => {
             </div>
           </div>
 
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-4 relative">
             <div className="flex flex-col items-end border-r border-white/10 pr-4">
               <div className="flex items-center text-xs text-green-500 font-mono">
                 <Activity size={12} className="mr-1" />
@@ -116,6 +167,14 @@ const Navbar = () => {
                 <span className="text-slate-500 text-xs"> CONN.</span>
               </div>
             </div>
+
+            {/* 钱包连接错误提示 */}
+            {walletError && (
+              <div className="absolute top-full right-0 mt-2 bg-red-900/90 border border-red-700 rounded p-2 text-xs text-red-200 flex items-center gap-2 z-50 max-w-xs shadow-lg">
+                <AlertCircle size={14} />
+                <span>{walletError}</span>
+              </div>
+            )}
 
             {isAuthenticated ? (
               <>
@@ -141,6 +200,30 @@ const Navbar = () => {
                 </button>
               </>
             ) : (
+              <div className="flex items-center gap-2">
+                {/* 钱包连接按钮 */}
+                {isWalletInstalled() && (
+                  <button
+                    onClick={handleConnectWallet}
+                    disabled={walletConnecting}
+                    className="bg-blue-900/20 border border-blue-900/50 text-blue-400 hover:bg-blue-600 hover:text-white px-4 py-1 rounded text-xs font-mono tracking-widest transition-all flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    type="button"
+                    title="连接钱包登录"
+                  >
+                    {walletConnecting ? (
+                      <>
+                        <Loader size={14} className="mr-2 animate-spin" />
+                        连接中...
+                      </>
+                    ) : (
+                      <>
+                        <Wallet size={14} className="mr-2" />
+                        连接钱包
+                      </>
+                    )}
+                  </button>
+                )}
+                {/* 传统登录按钮 */}
               <button
                 onClick={() => navigate('/login')}
                 className="bg-red-900/20 border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white px-4 py-1 rounded text-xs font-mono tracking-widest transition-all flex items-center"
@@ -149,6 +232,7 @@ const Navbar = () => {
                 <LogIn size={14} className="mr-2" />
                 登入 / LOGIN
               </button>
+              </div>
             )}
           </div>
         </div>

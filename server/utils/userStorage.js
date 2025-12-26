@@ -81,7 +81,8 @@ export const saveUser = (userData) => {
  */
 export const getUserByAddress = (address) => {
   const users = readUsers();
-  return users.find(u => u.address.toLowerCase() === address.toLowerCase()) || null;
+  // Solana地址是大小写敏感的，直接比较
+  return users.find(u => u.address === address) || null;
 };
 
 /**
@@ -102,7 +103,8 @@ export const getUserByUsername = (username) => {
  */
 export const updateUser = (address, updates) => {
   const users = readUsers();
-  const index = users.findIndex(u => u.address.toLowerCase() === address.toLowerCase());
+  // Solana地址是大小写敏感的，直接比较
+  const index = users.findIndex(u => u.address === address);
   
   if (index === -1) {
     return null;

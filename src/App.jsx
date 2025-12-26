@@ -15,6 +15,7 @@ import MapNodeDetailPage from './components/MapNodeDetailPage';
 import AssetDetailPage from './components/AssetDetailPage';
 import MapAssetDetailPage from './components/MapAssetDetailPage';
 import ChanganLetter from './components/ChanganLetter';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const App = () => (
   <Routes>
@@ -27,7 +28,15 @@ const App = () => (
     <Route path="/agent" element={<AgentApp />} />
     <Route path="/app" element={<TWSApp />} />
     <Route path="/arsenal" element={<ArsenalEntry />} />
-    <Route path="/command" element={<CommandCenter />} />
+    {/* 审核端需要 REVIEWER 或 ADMIN 权限 */}
+    <Route 
+      path="/command" 
+      element={
+        <ProtectedRoute allowedRoles={['REVIEWER', 'ADMIN']}>
+          <CommandCenter />
+        </ProtectedRoute>
+      } 
+    />
     <Route path="/market-detail" element={<MarketDetailPage />} />
     <Route path="/map-node/:id" element={<MapNodeDetailPage />} />
     <Route path="/asset-detail/:id" element={<AssetDetailPage />} />

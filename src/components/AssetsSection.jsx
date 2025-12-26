@@ -22,11 +22,19 @@ const AssetsSection = () => {
       try {
         const response = await getHomepageAssets();
         if (response && response.success && response.data && response.data.assets) {
-          setAssets(response.data.assets);
+          // 确保 assets 是数组
+          const assetsList = Array.isArray(response.data.assets) 
+            ? response.data.assets 
+            : [];
+          setAssets(assetsList);
         } else if (response && response.success === false) {
           // 处理错误响应（如服务器离线）
           // 完全静默处理，不输出任何日志
           // 保持空数组，不显示错误
+          setAssets([]);
+        } else {
+          // 响应格式不正确，设置为空数组
+          setAssets([]);
         }
       } catch (error) {
         // 连接错误已在 api.js 中处理，完全静默
@@ -34,11 +42,21 @@ const AssetsSection = () => {
         if (error.name !== 'ConnectionRefusedError' && !error.message?.includes('无法连接到服务器')) {
           console.error('Failed to load assets:', error);
         }
+        setAssets([]);
       } finally {
         setLoading(false);
       }
     };
     loadAssets();
+
+    // 每30秒自动刷新资产列表（可选）
+    const refreshInterval = setInterval(() => {
+      if (isOnline) {
+        loadAssets();
+      }
+    }, 30000);
+
+    return () => clearInterval(refreshInterval);
   }, [isOnline]);
   
   return (

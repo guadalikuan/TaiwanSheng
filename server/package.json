@@ -11,10 +11,12 @@
     "dev": "node server.mjs"
   },
   "dependencies": {
+    "@solana/web3.js": "^1.98.4",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.3",
     "bloom-filters": "^3.0.4",
+    "bs58": "^6.0.0",
     "cheerio": "^1.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -28,6 +30,7 @@
     "node-cron": "^3.0.3",
     "node-telegram-bot-api": "^0.65.1",
     "pdfkit": "^0.17.2",
+    "tweetnacl": "^1.0.3",
     "uuid": "^9.0.1",
     "ws": "^8.16.0"
   }

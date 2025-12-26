@@ -3,6 +3,8 @@ import {
   registerUser, 
   loginUser, 
   loginWithMnemonic, 
+  loginWithWallet,
+  registerWithWallet,
   getCurrentUser,
   updateUserProfile,
   changePassword
@@ -118,6 +120,48 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 钱包登录
+  const loginWithWalletAuth = async (address, signature, message) => {
+    try {
+      const response = await loginWithWallet(address, signature, message);
+      if (response.success) {
+        setToken(response.token);
+        setUser(response.user);
+        setIsAuthenticated(true);
+        localStorage.setItem('tws_token', response.token);
+        return { success: true };
+      } else {
+        return { 
+          success: false, 
+          message: response.message || '登录失败',
+          needsRegistration: response.needsRegistration || false
+        };
+      }
+    } catch (error) {
+      console.error('Wallet login error:', error);
+      return { success: false, message: error.message || '登录失败，请重试' };
+    }
+  };
+
+  // 钱包注册
+  const registerWithWalletAuth = async (address, signature, message, username, password) => {
+    try {
+      const response = await registerWithWallet(address, signature, message, username, password);
+      if (response.success) {
+        setToken(response.token);
+        setUser(response.user);
+        setIsAuthenticated(true);
+        localStorage.setItem('tws_token', response.token);
+        return { success: true };
+      } else {
+        return { success: false, message: response.message || '注册失败' };
+      }
+    } catch (error) {
+      console.error('Wallet registration error:', error);
+      return { success: false, message: error.message || '注册失败，请重试' };
+    }
+  };
+
   // 登出
   const logout = () => {
     localStorage.removeItem('tws_token');
@@ -165,6 +209,8 @@ export const AuthProvider = ({ children }) => {
     register,
     login,
     loginWithMnemonic: loginWithMnemonicAuth,
+    loginWithWallet: loginWithWalletAuth,
+    registerWithWallet: registerWithWalletAuth,
     logout,
     updateProfile,
     changePassword: changePasswordAuth

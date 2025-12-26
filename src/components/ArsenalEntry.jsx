@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, ShieldCheck, FileText, ChevronRight } from 'lucide-react';
-import { submitAsset } from '../utils/api';
+import { submitAsset, uploadFile } from '../utils/api';
 
 // --- 模拟：脱敏算法 ---
 // 当老板输入信息时，实时给他展示"如果不动产上链后会变成什么样"
@@ -57,24 +57,13 @@ const ArsenalEntry = () => {
     }
 
     setUploading(true);
-    setUploadProgress(0);
+    setUploadProgress(50); // 开始上传
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      // 使用 api.js 中的 uploadFile 函数
+      const result = await uploadFile(file);
 
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${API_BASE_URL}/api/arsenal/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('文件上传失败');
-      }
-
-      const result = await response.json();
-      if (result.success) {
+      if (result.success && result.file) {
         setUploadedFiles([...uploadedFiles, result.file]);
         setUploadProgress(100);
       } else {
@@ -82,7 +71,7 @@ const ArsenalEntry = () => {
       }
     } catch (error) {
       console.error('文件上传错误:', error);
-      alert('文件上传失败: ' + error.message);
+      alert('文件上传失败: ' + (error.message || '网络错误，请稍后重试'));
     } finally {
       setUploading(false);
       setTimeout(() => setUploadProgress(0), 1000);
@@ -108,6 +97,16 @@ const ArsenalEntry = () => {
     
     setSubmitting(true);
     try {
+      // 构建完整的文件 URL（如果后端返回的是相对路径，需要拼接完整 URL）
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const proofDocs = uploadedFiles.map(f => {
+        // 如果已经是完整 URL，直接使用；否则拼接 API_BASE_URL
+        if (f.url && f.url.startsWith('http')) {
+          return f.url;
+        }
+        return `${API_BASE_URL}${f.url || f.filename || ''}`;
+      });
+
       const result = await submitAsset({
         ownerName: formData.ownerName,
         phone: formData.phone,
@@ -115,19 +114,23 @@ const ArsenalEntry = () => {
         city: formData.city,
         area: formData.area,
         debtPrice: formData.debtPrice,
-        proofDocs: uploadedFiles.map(f => f.url),
+        proofDocs: proofDocs,
       });
       
+      // 检查返回结果
+      if (result.success) {
       // 更新预览代码为服务器返回的代号
       if (result.sanitizedAsset?.codeName) {
         setPreviewCode(result.sanitizedAsset.codeName);
       }
-      
-      setSubmitting(false);
       setStep(3);
+      } else {
+        throw new Error(result.message || '提交失败');
+      }
     } catch (error) {
       console.error('提交失败:', error);
       alert('提交失败: ' + (error.message || '网络错误，请稍后重试'));
+    } finally {
       setSubmitting(false);
     }
   };

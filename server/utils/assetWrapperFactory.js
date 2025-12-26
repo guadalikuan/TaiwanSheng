@@ -3,12 +3,46 @@
 // ACCESS LEVEL: TOP SECRET
 // =================================================================
 
-// 1. 战区映射表 (战略地图)
+import { getLocationCoefficient, getSectorCode, getSafetyLevel } from './locationCoefficient.js';
+
+// 1. 战区映射表 (战略地图) - 使用全国位置系数
+const getSectorInfo = (cityName) => {
+  const coefficient = getLocationCoefficient(cityName);
+  const sectorCode = getSectorCode(cityName);
+  const safetyLevel = getSafetyLevel(coefficient);
+  
+  // 根据位置系数生成描述
+  let description = "Inland Strategic Reserve (内陆战略储备)";
+  if (coefficient >= 1.8) {
+    description = "Ultra-Safe Deep Inland Zone (极度安全深内陆区)";
+  } else if (coefficient >= 1.5) {
+    description = "Deep Inland Reserve Zone (深度内陆储备区)";
+  } else if (coefficient >= 1.2) {
+    description = "Inland Strategic Reserve (内陆战略储备)";
+  } else if (coefficient >= 1.0) {
+    description = "Near-Inland Reserve Zone (近内陆储备区)";
+  } else if (coefficient >= 0.8) {
+    description = "Coastal Inland Zone (沿海内侧区)";
+  } else {
+    description = "Coastal Zone (沿海区)";
+  }
+  
+  return {
+    city: cityName || "Unknown",
+    sectorCode,
+    riskFactor: 1 - (coefficient / 2), // 转换为风险因子（系数越高，风险越低）
+    description,
+    locationCoefficient: coefficient,
+    safetyLevel
+  };
+};
+
+// 兼容旧数据的映射表（保留用于向后兼容）
 const STRATEGIC_SECTORS = {
   "西安": { 
     city: "Xi'an", 
     sectorCode: "CN-NW-CAPITAL", 
-    riskFactor: 0.2, // 相对繁华，不仅是避难，还有升值属性
+    riskFactor: 0.2,
     description: "Strategic Rear Capital (大后方核心指挥部)" 
   },
   "咸阳": { 
@@ -26,7 +60,7 @@ const STRATEGIC_SECTORS = {
   "商洛": { 
     city: "Shangluo", 
     sectorCode: "CN-QINLING-MTN", 
-    riskFactor: 0.05, // 极度安全，深山老林
+    riskFactor: 0.05,
     description: "Deep Mountain Nuclear Bunker (秦岭深山核掩体)" 
   },
   "DEFAULT": { 
@@ -49,17 +83,19 @@ const determineClass = (area, price) => {
 // 3. 生成代号
 const generateCodeName = (city, area) => {
   if (!city) return "WAITING_INPUT...";
-  const geoInfo = STRATEGIC_SECTORS[city] || STRATEGIC_SECTORS["DEFAULT"];
+  const geoInfo = getSectorInfo(city);
   const sizeCode = area > 120 ? "CMD" : "BKR"; // CMD=指挥所, BKR=地堡
   const randomNum = Math.floor(Math.random() * 9000) + 1000;
-  return `CN-${geoInfo.sectorCode.split('-')[1] || 'INT'}-${sizeCode}-${randomNum}`;
+  // 使用新的 sectorCode 格式
+  const sectorPart = geoInfo.sectorCode.replace('CN-', '').split('-')[0] || 'INT';
+  return `CN-${sectorPart}-${sizeCode}-${randomNum}`;
 };
 
 // 4. 包装主函数
 export const wrapAsset = (raw) => {
   
-  // A. 获取地理情报
-  const geoInfo = STRATEGIC_SECTORS[raw.city] || STRATEGIC_SECTORS["DEFAULT"];
+  // A. 获取地理情报（使用全国位置系数）
+  const geoInfo = getSectorInfo(raw.city);
   
   // B. 生成唯一代号
   const salt = Math.floor(Math.random() * 1000);

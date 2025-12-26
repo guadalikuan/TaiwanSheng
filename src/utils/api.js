@@ -206,11 +206,12 @@ export const submitAsset = async (formData) => {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to submit asset');
+      const errorData = await response.json().catch(() => ({ message: `HTTP ${response.status}` }));
+      throw new Error(errorData.message || errorData.error || 'Failed to submit asset');
     }
 
-    return await response.json();
+    const result = await response.json();
+    return result;
   } catch (error) {
     console.error('Error submitting asset:', error);
     throw error;
@@ -418,7 +419,7 @@ export const generateContract = async (id, download = true) => {
 export const uploadFile = async (file) => {
   try {
     const formData = new FormData();
-    formData.append('proofDocs', file); // 'proofDocs' 必须与 multer 配置的字段名一致
+    formData.append('file', file); // 'file' 必须与 multer 配置的字段名一致 (upload.single('file'))
 
     const response = await fetch(`${API_BASE_URL}/api/arsenal/upload`, {
       method: 'POST',
@@ -498,6 +499,50 @@ export const loginWithMnemonic = async (mnemonic, password) => {
     return await handleResponse(response);
   } catch (error) {
     console.error('API loginWithMnemonic error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 钱包登录（使用签名验证）
+ * @param {string} address - 钱包地址
+ * @param {string} signature - 签名
+ * @param {string} message - 签名的消息
+ * @returns {Promise<Object>}
+ */
+export const loginWithWallet = async (address, signature, message) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login-wallet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, signature, message }),
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API loginWithWallet error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 钱包注册（使用签名验证）
+ * @param {string} address - 钱包地址
+ * @param {string} signature - 签名
+ * @param {string} message - 签名的消息
+ * @param {string} username - 用户名
+ * @param {string} password - 密码
+ * @returns {Promise<Object>}
+ */
+export const registerWithWallet = async (address, signature, message, username, password) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/register-wallet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, signature, message, username, password }),
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API registerWithWallet error:', error);
     return { success: false, message: error.message || '网络错误，请检查服务器连接' };
   }
 };
@@ -743,6 +788,149 @@ export const generateNewMnemonic = async () => {
     return response.json();
   } catch (error) {
     console.error('API generateNewMnemonic error:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+// ==================== 地堡相关 API ====================
+
+/**
+ * 获取实时风险预警
+ * @returns {Promise<Object>}
+ */
+export const getRiskData = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/bunker/risk`);
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('Error getting risk data:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 获取社区统计
+ * @returns {Promise<Object>}
+ */
+export const getBunkerStats = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/bunker/stats`);
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('Error getting bunker stats:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 获取资产的真实避难场景
+ * @param {string} assetId - 资产ID
+ * @returns {Promise<Object>}
+ */
+export const getAssetScenario = async (assetId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/bunker/scenario/${assetId}`);
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('Error getting asset scenario:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 获取用户避险能力详情
+ * @param {string} userId - 用户ID（可选）
+ * @returns {Promise<Object>}
+ */
+export const getRefugeCapacity = async (userId) => {
+  try {
+    const url = userId 
+      ? `${API_BASE_URL}/api/bunker/refuge-capacity?userId=${userId}`
+      : `${API_BASE_URL}/api/bunker/refuge-capacity`;
+    const response = await fetch(url);
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('Error getting refuge capacity:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+// ==================== TWS代币相关 API ====================
+
+/**
+ * 获取TWS代币价格
+ * @param {string} riskLevel - 风险等级
+ * @returns {Promise<Object>}
+ */
+export const getTokenPrice = async (riskLevel = 'MEDIUM') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/token/price?riskLevel=${riskLevel}`);
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('Error getting token price:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 创建TWS代币购买订单
+ * @param {number} amount - 购买数量
+ * @param {string} riskLevel - 风险等级
+ * @param {string} token - JWT token
+ * @returns {Promise<Object>}
+ */
+export const createTokenPurchaseOrder = async (amount, riskLevel = 'MEDIUM', token) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/token/purchase`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ amount, riskLevel })
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('Error creating token purchase order:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 验证TWS代币购买
+ * @param {string} orderId - 订单ID
+ * @param {string} txHash - 交易哈希
+ * @param {string} token - JWT token
+ * @returns {Promise<Object>}
+ */
+export const verifyTokenPurchase = async (orderId, txHash, token) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/token/verify-purchase`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ orderId, txHash })
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('Error verifying token purchase:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 获取用户TWS代币余额
+ * @param {string} address - 用户地址
+ * @returns {Promise<Object>}
+ */
+export const getTokenBalance = async (address) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/token/balance/${address}`);
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('Error getting token balance:', error);
     return { success: false, message: 'Network error' };
   }
 };

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Loader } from 'lucide-react';
 import { generateUniqueId } from '../utils/uniqueId';
 import { getOmegaData } from '../utils/api';
 import { useSSE } from '../contexts/SSEContext';
 import { useServerStatus } from '../contexts/ServerStatusContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const crisisEvents = [
   'DETECTED: 12 PLA Aircraft crossed median line. (-6 Hours)',
@@ -19,12 +20,14 @@ const formatSegment = (value, length) => String(value).padStart(length, '0');
 const OmegaSection = () => {
   const navigate = useNavigate();
   const { isOnline } = useServerStatus();
+  const { isAuthenticated } = useAuth();
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
   const [premium, setPremium] = useState(142.5);
   const [logs, setLogs] = useState([]);
   const [isGlitching, setIsGlitching] = useState(false);
   const [alertMessage, setAlertMessage] = useState('⚠ SYSTEM ALERT: GEOPOLITICAL TENSION RISING');
   const [loading, setLoading] = useState(true);
+  const [isEntering, setIsEntering] = useState(false);
   // Default to 2027-12-31 to match server-side TimeManager default
   // This prevents the "600 days" flicker on initial load
   const targetRef = useRef(new Date('2027-12-31T00:00:00.000Z').getTime());
@@ -172,6 +175,25 @@ const OmegaSection = () => {
     };
   }, [subscribe, premium, logs.length]);
 
+  // 处理进入地堡按钮点击
+  const handleEnterBunker = () => {
+    // 设置进入状态，显示加载反馈
+    setIsEntering(true);
+    
+    // 可选：如果要求登录但未登录，跳转到登录页
+    // 当前策略：允许游客访问，但功能受限
+    // if (!isAuthenticated) {
+    //   navigate('/login', { state: { from: '/bunker' } });
+    //   return;
+    // }
+    
+    // 延迟导航，让按钮反馈有时间显示
+    // 同时可以在这里预加载地堡数据
+    setTimeout(() => {
+      navigate('/bunker');
+    }, 300);
+  };
+
   return (
     <div className="relative flex h-screen flex-col bg-black text-slate-100 overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(248,113,113,0.08),transparent_60%)] pointer-events-none" />
@@ -250,11 +272,23 @@ const OmegaSection = () => {
       {/* 底部按钮区域 - 固定在第一屏底部，确保在视口内 */}
       <div className="relative z-20 w-full flex justify-center shrink-0 pb-4 md:pb-6">
         <button
-          onClick={() => navigate('/bunker')}
-          className="px-6 md:px-8 py-2.5 md:py-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs md:text-sm tracking-widest rounded-lg shadow-[0_0_20px_rgba(220,38,38,0.5)] transition-all hover:scale-105 active:scale-95 flex items-center gap-2 animate-pulse"
+          onClick={handleEnterBunker}
+          disabled={isEntering}
+          className={`px-6 md:px-8 py-2.5 md:py-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs md:text-sm tracking-widest rounded-lg shadow-[0_0_20px_rgba(220,38,38,0.5)] transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${
+            isEntering ? 'opacity-75 cursor-not-allowed' : 'animate-pulse'
+          }`}
         >
+          {isEntering ? (
+            <>
+              <Loader size={16} className="md:w-[18px] md:h-[18px] animate-spin" />
+              <span>正在进入...</span>
+            </>
+          ) : (
+            <>
           <ShieldCheck size={16} className="md:w-[18px] md:h-[18px]" />
           进入地堡 / ENTER BUNKER
+            </>
+          )}
         </button>
       </div>
     </div>
