@@ -212,15 +212,8 @@ const MapSection = () => {
       };
     };
 
-    // 初始化地图标记（不添加日志）
-    for (let i = 0; i < 45; i += 1) {
-      const loc = getRandomLocation();
-      const marker = L.marker([loc.lat, loc.lng], { icon: pulseIcon, interactive: true }).addTo(map);
-      marker.on('click', () => {
-        const nodeId = `NODE-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-        navigate(`/map-node/${nodeId}`);
-      });
-    }
+   
+    
 
     return () => {
       clearInterval(taiwanIntervalRef.current);
@@ -383,59 +376,12 @@ const MapSection = () => {
       iconAnchor: [8, 8],
     });
 
-    mainlandNodes.forEach((node) => {
-      const marker = L.marker([node.lat, node.lng], { icon: beaconIcon, interactive: false }).addTo(map);
-      marker.bindTooltip(node.name, {
-        permanent: true,
-        direction: 'bottom',
-        className: 'map-tooltip',
-      });
-    });
-
     // spawnAsset函数已移除，现在使用真实日志数据生成标记
 
     // 处理资产数据更新的辅助函数
     const handleAssetLogUpdate = (log) => {
       if (!mainlandMapRef.current) return;
       
-      // 使用日志中的位置信息，偏移从 0.8 度减少到 0.05 度（约5.5公里）
-      let lat, lng;
-      if (log.nodeLocation && log.nodeLocation.lat && log.nodeLocation.lng) {
-        const rawLat = log.nodeLocation.lat + (Math.random() - 0.5) * 0.05;
-        const rawLng = log.nodeLocation.lng + (Math.random() - 0.5) * 0.05;
-        const validated = validateAndFixCoordinates(rawLat, rawLng, 'mainland');
-        lat = validated.lat;
-        lng = validated.lng;
-      } else {
-        const baseNode = mainlandNodes[Math.floor(Math.random() * mainlandNodes.length)];
-        const rawLat = baseNode.lat + (Math.random() - 0.5) * 0.05;
-        const rawLng = baseNode.lng + (Math.random() - 0.5) * 0.05;
-        const validated = validateAndFixCoordinates(rawLat, rawLng, 'mainland');
-        lat = validated.lat;
-        lng = validated.lng;
-      }
-      
-      const assetId = log.assetId || log.id || `ASSET-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-      
-      const point = L.circleMarker([lat, lng], {
-        radius: 2,
-        color: '#fbbf24',
-        fillOpacity: 1,
-        opacity: 0.9,
-      }).addTo(mainlandMapRef.current);
-      
-      // 使用真实资产ID
-      point.on('click', () => {
-        navigate(`/map-asset/${assetId}`);
-      });
-      
-      // 2秒后移除标记
-      const timeout = setTimeout(() => {
-        if (mainlandMapRef.current && mainlandMapRef.current.hasLayer(point)) {
-          mainlandMapRef.current.removeLayer(point);
-        }
-      }, 2000);
-      mainlandTimeoutsRef.current.push(timeout);
     };
     
     // 订阅 map 数据更新（资产部分）
