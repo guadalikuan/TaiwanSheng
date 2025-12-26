@@ -3,77 +3,89 @@ export const AMAP_CONFIG = {
   // 请在此处填入您的高德地图 API Key
   apiKey: '9825256902b62fda10a1f457f80ee90b',
   
-  // 地图瓦片服务配置
-  tileLayer: {
-    // 标准地图
-    normal: 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
-    // 卫星地图
-    satellite: 'https://webst0{s}.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}',
-    // 路网地图
-    road: 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}',
-  },
-  
-  // 子域名配置
-  subdomains: ['1', '2', '3', '4'],
-  
-  // 地图样式配置
-  mapStyles: {
-    dark: {
-      // 深色主题配置
-      style: 'amap://styles/dark',
-      tileUrl: 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}'
+  // JSAPI 1.4.15 的 mapStyle 格式 - 使用正确的字符串数组格式
+  mapStyle: [
+    'amap://styles/normal',  // 先使用正常样式作为基础
+    {
+      featureType: 'land',
+      elementType: 'geometry',
+      stylers: {
+        color: '#1a1a2e'
+      }
     },
-    normal: {
-      // 标准主题配置
-      style: 'amap://styles/normal',
-      tileUrl: 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}'
+    {
+      featureType: 'water',
+      elementType: 'geometry',
+      stylers: {
+        color: '#16213e'
+      }
+    },
+    {
+      featureType: 'building',
+      elementType: 'geometry',
+      stylers: {
+        color: '#0f3460'
+      }
+    },
+    {
+      featureType: 'road',
+      elementType: 'geometry',
+      stylers: {
+        color: '#2d3e50'
+      }
+    },
+    {
+      featureType: 'road.highway',
+      elementType: 'geometry',
+      stylers: {
+        color: '#34495e'
+      }
+    },
+    {
+      featureType: 'text',
+      elementType: 'labels.text.fill',
+      stylers: {
+        color: '#cbd5e1'
+      }
+    },
+    {
+      featureType: 'administrative',
+      elementType: 'geometry.stroke',
+      stylers: {
+        color: '#34495e'
+      }
+    },
+    {
+      featureType: 'poi',
+      elementType: 'geometry',
+      stylers: {
+        color: '#0f3460'
+      }
     }
-  }
+  ]
 };
 
-// 高德地图初始化函数
-export const initAMap = (containerId, options = {}) => {
-  return new Promise((resolve, reject) => {
-    if (!window.AMap) {
-      // 动态加载高德地图 JS API
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_CONFIG.apiKey}`;
-      script.onload = () => {
-        const map = new window.AMap.Map(containerId, {
-          zoom: options.zoom || 10,
-          center: options.center || [116.397428, 39.90923],
-          viewMode: '3D',
-          mapStyle: options.style || AMAP_CONFIG.mapStyles.normal.style,
-          ...options
-        });
-        resolve(map);
-      };
-      script.onerror = reject;
-      document.head.appendChild(script);
-    } else {
-      const map = new window.AMap.Map(containerId, {
-        zoom: options.zoom || 10,
-        center: options.center || [116.397428, 39.90923],
-        viewMode: '3D',
-        mapStyle: options.style || AMAP_CONFIG.mapStyles.normal.style,
-        ...options
-      });
-      resolve(map);
+// 加载高德地图脚本 - 使用 v1.4.15 版本
+export const loadAMapScript = () => {
+  return new Promise((resolve) => {
+    if (window.AMap) {
+      resolve();
+      return;
     }
+    
+    const script = document.createElement('script');
+    // 明确指定 v1.4.15 版本
+    script.src = `https://webapi.amap.com/maps?v=1.4.15&key=${AMAP_CONFIG.apiKey}`;
+    script.async = true;
+    script.type = 'text/javascript';
+    script.onload = () => {
+      console.log('AMap v1.4.15 script loaded successfully');
+      resolve();
+    };
+    script.onerror = () => {
+      console.error('Failed to load AMap script');
+      resolve();
+    };
+    document.head.appendChild(script);
   });
-};
-
-// Leaflet 与高德地图集成配置
-export const AMAP_LEAFLET_CONFIG = {
-  // 高德地图瓦片服务 URL
-  tileUrl: AMAP_CONFIG.tileLayer.normal,
-  subdomains: AMAP_CONFIG.subdomains,
-  
-  // 地图参数
-  maxZoom: 19,
-  minZoom: 3,
-  
-  // 版权信息
-  attribution: '&copy; <a href="https://ditu.amap.com/">高德地图</a>'
 };
