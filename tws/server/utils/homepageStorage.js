@@ -50,7 +50,8 @@ const getDefaultData = () => {
     map: {
       taiwan: {
         nodeCount: 12458,
-        logs: []
+        logs: [],
+        walletLogs: []
       },
       mainland: {
         assetPoolValue: 1425000000,
@@ -81,7 +82,15 @@ const readHomepageData = () => {
     return {
       omega: { ...defaultData.omega, ...(parsed.omega || {}) },
       market: { ...defaultData.market, ...(parsed.market || {}) },
-      map: { ...defaultData.map, ...(parsed.map || {}) }
+      map: {
+        ...defaultData.map,
+        ...(parsed.map || {}),
+        taiwan: {
+          ...defaultData.map.taiwan,
+          ...(parsed.map?.taiwan || {}),
+          walletLogs: parsed.map?.taiwan?.walletLogs || defaultData.map.taiwan.walletLogs
+        }
+      }
     };
   } catch (error) {
     console.error('Error reading homepage data:', error);
@@ -701,6 +710,42 @@ export const addAssetLog = (lotOrLog, location) => {
       log: newLog,
       assetPoolValue: data.map.mainland.assetPoolValue,
       unitCount: data.map.mainland.unitCount
+    });
+    return newLog;
+  }
+  return null;
+};
+
+/**
+ * 添加钱包连接日志
+ * @param {Object} walletData - 钱包数据 { address, userId, username, location, city, ip }
+ * @returns {Object|null} 新日志
+ */
+export const addWalletLog = (walletData) => {
+  const data = readHomepageData();
+  if (!data) return null;
+  
+  const newLog = {
+    id: walletData.id || `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    address: walletData.address,
+    userId: walletData.userId || null,
+    username: walletData.username || null,
+    location: walletData.location || null,
+    city: walletData.city || null,
+    timestamp: walletData.timestamp || Date.now()
+  };
+  
+  if (!data.map.taiwan.walletLogs) {
+    data.map.taiwan.walletLogs = [];
+  }
+  
+  data.map.taiwan.walletLogs = [newLog, ...data.map.taiwan.walletLogs].slice(0, 6);
+  
+  if (writeHomepageData(data)) {
+    // 推送 SSE 更新（增量）
+    pushUpdate('map', 'incremental', {
+      type: 'walletLog',
+      log: newLog
     });
     return newLog;
   }

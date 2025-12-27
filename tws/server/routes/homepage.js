@@ -225,17 +225,24 @@ router.post('/map/node', (req, res) => {
   }
 });
 
-// POST /api/homepage/map/asset - 添加资产确认（用于模拟）
+// POST /api/homepage/map/asset - 添加资产确认
 router.post('/map/asset', (req, res) => {
   try {
-    const { lot, location } = req.body;
-    if (!lot || !location) {
+    const { lot, location, value } = req.body;
+    if (!location || (!location.lat && !location.lng)) {
       return res.status(400).json({
         success: false,
-        error: 'Lot and location are required'
+        error: 'Location with lat and lng are required'
       });
     }
-    const log = addAssetLog(lot, location);
+    // 支持新的完整日志对象格式
+    const logData = {
+      lot: lot || `LOT-${Date.now()}`,
+      location: location,
+      value: value,
+      timestamp: Date.now()
+    };
+    const log = addAssetLog(logData);
     if (log) {
       res.json({
         success: true,

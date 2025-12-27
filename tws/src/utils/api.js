@@ -583,6 +583,29 @@ export const getMapData = async () => {
 };
 
 /**
+ * 提交地图资产标注
+ * @param {Object} assetData - 资产数据 { lot, location: { lat, lng }, value }
+ * @returns {Promise<Object>}
+ */
+export const postMapAsset = async (assetData) => {
+  try {
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/homepage/map/asset`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(assetData)
+      },
+      3, // 最多重试3次
+      1000 // 基础延迟1秒
+    );
+  } catch (error) {
+    console.error('API postMapAsset error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
  * 获取首页资产列表
  * @returns {Promise<Object>}
  */
