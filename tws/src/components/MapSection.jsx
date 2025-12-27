@@ -5,6 +5,7 @@ import { generateUniqueId } from '../utils/uniqueId';
 import { getMapData } from '../utils/api';
 import { useSSE } from '../contexts/SSEContext';
 import { useServerStatus } from '../contexts/ServerStatusContext';
+import { getIpLocation } from '../utils/ipLocation';
 
 const taiwanHotspots = [
   { name: 'Taipei (Xinyi)', lat: 25.033, lng: 121.5654 },
@@ -57,9 +58,8 @@ const MapSection = () => {
   const taiwanMapContainerRef = useRef(null);
   const mainlandMapContainerRef = useRef(null);
   const taiwanMapRef = useRef(null);
-  const mainlandMapRef = useRef(null);
-  const taiwanMarkersRef = useRef([]);
-  const mainlandMarkersRef = useRef([]);
+  const mainlandMapRef = useRef(null); // AMap.Map 实例
+  const userMarkerRef = useRef(null);
 
   // 加载初始数据
   useEffect(() => {
@@ -140,6 +140,20 @@ const MapSection = () => {
         });
         mainlandMapRef.current = mainlandMap;
         console.log('Mainland map initialized with official dark style');
+
+        // 在地图加载完成后再尝试添加用户位置标记，并做延迟重试以提高兼容性
+        if (mainlandMap && mainlandMap.on) {
+          mainlandMap.on('complete', () => {
+            console.log('mainland map complete event fired');
+            try { addUserLocationMarker(); } catch (e) { console.warn('addUserLocationMarker error on complete:', e); }
+          });
+        }
+        // 备用：短延迟后再次尝试（防止 complete 事件未触发）
+        setTimeout(() => {
+          if (mainlandMapRef.current && !userMarkerRef.current) {
+            try { addUserLocationMarker(); } catch (e) { console.warn('delayed addUserLocationMarker failed:', e); }
+          }
+        }, 1200);
       } catch (e) {
         console.error('Failed to initialize mainland map:', e);
       }
@@ -296,6 +310,64 @@ const MapSection = () => {
     
     return unsubscribe;
   }, [subscribe]);
+
+  // 添加/更新用户位置（使用 AMap API，而非 Leaflet）
+  const addUserLocationMarker = async () => {
+    try {
+      console.log('addUserLocationMarker start');
+      const loc = await getIpLocation();
+      console.log('getIpLocation result:', loc);
+      if (!loc) return;
+
+      // 验证并修正坐标（沿用项目内 validateAndFixCoordinates）
+      const { lat, lng } = validateAndFixCoordinates(Number(loc.lat), Number(loc.lng), 'mainland');
+      const map = mainlandMapRef.current;
+      console.log('validated coords', { lat, lng, mapExists: !!map, hasAMap: !!window.AMap });
+      if (!map || !window.AMap) return;
+
+      // 移除旧标记
+      if (userMarkerRef.current) {
+        try { userMarkerRef.current.setMap(null); } catch (e) {}
+        userMarkerRef.current = null;
+      }
+
+      // 使用 AMap.Marker 并用自定义 DOM 内容（蓝色渐变圆点）
+      const html = `<div class="user-location-blue-wrapper" style="z-index:1300;pointer-events:auto;"><div class="user-location-blue"></div></div>`;
+      const marker = new window.AMap.Marker({
+        content: html,
+        position: new window.AMap.LngLat(Number(lng), Number(lat)),
+        offset: new window.AMap.Pixel(-11, -11), // 居中
+        zIndex: 1200,
+      });
+      marker.setMap(map);
+      userMarkerRef.current = marker;
+      console.log('user marker added at', { lat, lng });
+      // 调试：把地图中心移动到定位点并提升缩放以确保可见（确认后可删除）
+      try {
+        const pos = marker.getPosition();
+        map.setCenter(pos);
+        const currentZoom = map.getZoom ? map.getZoom() : 6;
+        map.setZoom(Math.max(currentZoom, 6));
+        console.log('map centered to marker', pos);
+      } catch (e) { console.warn('center marker failed', e); }
+    } catch (err) {
+      console.error('添加用户位置失败', err);
+    }
+  };
+
+  // 注意：不要依赖 ref.current 作为 useEffect 依赖（不会触发重跑）。
+  // 地图初始化处已经在 mainlandMap.on('complete') 与延迟重试中调用 addUserLocationMarker。
+  // 若需其它触发逻辑，请在地图创建回调中显式调用 addUserLocationMarker()。
+   
+   // 组件卸载清理
+   useEffect(() => {
+     return () => {
+       if (userMarkerRef.current) {
+         try { userMarkerRef.current.setMap(null); } catch (e) {}
+         userMarkerRef.current = null;
+       }
+     };
+   }, []);
 
   return (
     <div className="w-full h-full bg-slate-950 relative overflow-hidden flex flex-col pt-16 md:pt-20">

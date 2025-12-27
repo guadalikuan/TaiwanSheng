@@ -345,3 +345,76 @@ body::before {
   fill: #9ca3af !important;
 }
 
+/* 蓝色用户位置标记（美化） */
+.user-location-blue-wrapper {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: inline-block;
+  transform: translateZ(0);
+  z-index: 1300 !important;
+  pointer-events: auto !important;
+}
+
+/* 中心非实心圆点 */
+.user-location-blue {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  /* 半透明中心，非实心效果 */
+  background: rgba(26, 115, 232, 0.6);
+  border: 2px solid rgba(126, 203, 255, 0.8);
+  /* 中心高光增强通透感 */
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3) inset,
+              0 0 8px rgba(26, 115, 232, 0.6);
+  z-index: 2;
+}
+
+/* 第一层水波 */
+.user-location-blue::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(126, 203, 255, 0.7);
+  opacity: 0;
+  animation: wave 2s ease-out infinite;
+  z-index: 1;
+}
+
+/* 第二层水波 */
+.user-location-blue::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(26, 115, 232, 0.5);
+  opacity: 0;
+  animation: wave 2s ease-out 0.6s infinite; /* 延迟0.6s形成层次感 */
+  z-index: 0;
+}
+
+/* 水波扩散动画 */
+@keyframes wave {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3); /* 小范围扩散（3倍大小） */
+    opacity: 0;
+    border-width: 1px;
+  }
+}
