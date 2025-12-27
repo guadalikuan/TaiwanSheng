@@ -208,6 +208,44 @@ router.post('/login', async (req, res) => {
     // 生成 JWT token
     const token = generateToken(user);
 
+    // 记录钱包连接（异步，不阻塞登录响应）
+    try {
+      const { addWalletLog } = await import('../utils/homepageStorage.js');
+      const clientIp = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] || '127.0.0.1';
+      
+      // 简单的IP定位：根据IP返回一个默认的台湾位置
+      // 这里可以后续集成真实的IP定位服务
+      const taiwanHotspots = [
+        { name: 'Taipei (Xinyi)', lat: 25.033, lng: 121.5654 },
+        { name: 'New Taipei', lat: 25.012, lng: 121.4654 },
+        { name: 'Taichung', lat: 24.1477, lng: 120.6736 },
+        { name: 'Kaohsiung', lat: 22.6273, lng: 120.3014 },
+        { name: 'Tainan', lat: 22.9997, lng: 120.227 },
+        { name: 'Hsinchu (Science Park)', lat: 24.8138, lng: 120.9675 },
+        { name: 'Taoyuan (Airport)', lat: 25.0724, lng: 121.2272 },
+      ];
+      
+      // 根据IP地址的hash值选择一个位置（确保同一IP总是返回相同位置）
+      const ipHash = clientIp.split('.').reduce((acc, val) => acc + parseInt(val || 0), 0);
+      const selectedSpot = taiwanHotspots[ipHash % taiwanHotspots.length];
+      
+      // 添加一些随机偏移，使位置更自然
+      const lat = selectedSpot.lat + (Math.random() - 0.5) * 0.04;
+      const lng = selectedSpot.lng + (Math.random() - 0.5) * 0.04;
+      
+      addWalletLog({
+        address: user.address,
+        userId: user.id || user.address,
+        username: user.username,
+        location: { lat, lng },
+        city: selectedSpot.name,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      // 钱包日志记录失败不影响登录流程
+      console.warn('Failed to log wallet connection:', error);
+    }
+
     res.json({
       success: true,
       message: 'Login successful',
@@ -280,6 +318,43 @@ router.post('/login-mnemonic', async (req, res) => {
 
     // 生成 JWT token
     const token = generateToken(user);
+
+    // 记录钱包连接（异步，不阻塞登录响应）
+    try {
+      const { addWalletLog } = await import('../utils/homepageStorage.js');
+      const clientIp = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] || '127.0.0.1';
+      
+      // 简单的IP定位：根据IP返回一个默认的台湾位置
+      const taiwanHotspots = [
+        { name: 'Taipei (Xinyi)', lat: 25.033, lng: 121.5654 },
+        { name: 'New Taipei', lat: 25.012, lng: 121.4654 },
+        { name: 'Taichung', lat: 24.1477, lng: 120.6736 },
+        { name: 'Kaohsiung', lat: 22.6273, lng: 120.3014 },
+        { name: 'Tainan', lat: 22.9997, lng: 120.227 },
+        { name: 'Hsinchu (Science Park)', lat: 24.8138, lng: 120.9675 },
+        { name: 'Taoyuan (Airport)', lat: 25.0724, lng: 121.2272 },
+      ];
+      
+      // 根据IP地址的hash值选择一个位置（确保同一IP总是返回相同位置）
+      const ipHash = clientIp.split('.').reduce((acc, val) => acc + parseInt(val || 0), 0);
+      const selectedSpot = taiwanHotspots[ipHash % taiwanHotspots.length];
+      
+      // 添加一些随机偏移，使位置更自然
+      const lat = selectedSpot.lat + (Math.random() - 0.5) * 0.04;
+      const lng = selectedSpot.lng + (Math.random() - 0.5) * 0.04;
+      
+      addWalletLog({
+        address: user.address,
+        userId: user.id || user.address,
+        username: user.username,
+        location: { lat, lng },
+        city: selectedSpot.name,
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      // 钱包日志记录失败不影响登录流程
+      console.warn('Failed to log wallet connection:', error);
+    }
 
     res.json({
       success: true,

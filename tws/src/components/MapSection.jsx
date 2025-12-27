@@ -6,6 +6,8 @@ import { getMapData } from '../utils/api';
 import { useSSE } from '../contexts/SSEContext';
 import { useServerStatus } from '../contexts/ServerStatusContext';
 import { getIpLocation } from '../utils/ipLocation';
+import MapNewTagsBox from './MapNewTagsBox';
+import MapNewWalletsBox from './MapNewWalletsBox';
 
 const taiwanHotspots = [
   { name: 'Taipei (Xinyi)', lat: 25.033, lng: 121.5654 },
@@ -52,6 +54,7 @@ const MapSection = () => {
   const [assetValue, setAssetValue] = useState(1425000000);
   const [unitCount, setUnitCount] = useState(42109);
   const [assetLogs, setAssetLogs] = useState([]);
+  const [walletLogs, setWalletLogs] = useState([]);
   const [blockHeight, setBlockHeight] = useState('8922104');
   const [loading, setLoading] = useState(true);
 
@@ -60,6 +63,9 @@ const MapSection = () => {
   const taiwanMapRef = useRef(null);
   const mainlandMapRef = useRef(null); // AMap.Map 实例
   const userMarkerRef = useRef(null);
+  const taiwanMarkersRef = useRef([]);
+  const mainlandMarkersRef = useRef([]);
+  const walletMarkersRef = useRef([]);
 
   // 加载初始数据
   useEffect(() => {
@@ -79,6 +85,23 @@ const MapSection = () => {
               id: log.id || generateUniqueId(),
               message: log.message || ''
             })));
+            const walletLogsData = (mapData.taiwan.walletLogs || []).map(log => ({
+              id: log.id || generateUniqueId(),
+              address: log.address || '',
+              location: log.location || null,
+              city: log.city || null,
+              timestamp: log.timestamp || Date.now()
+            }));
+            setWalletLogs(walletLogsData);
+            
+            // 为已有的钱包日志添加地图标记（延迟执行，确保地图已初始化）
+            setTimeout(() => {
+              walletLogsData.forEach(log => {
+                if (log.location || log.city) {
+                  handleWalletLogUpdate(log);
+                }
+              });
+            }, 1500);
           }
           if (mapData.mainland) {
             setAssetValue(mapData.mainland.assetPoolValue || 0);
@@ -171,6 +194,19 @@ const MapSection = () => {
         mainlandMapRef.current.destroy();
         mainlandMapRef.current = null;
       }
+      // 清理标记
+      taiwanMarkersRef.current.forEach(marker => {
+        try { marker.setMap(null); } catch (e) {}
+      });
+      mainlandMarkersRef.current.forEach(marker => {
+        try { marker.setMap(null); } catch (e) {}
+      });
+      walletMarkersRef.current.forEach(marker => {
+        try { marker.setMap(null); } catch (e) {}
+      });
+      taiwanMarkersRef.current = [];
+      mainlandMarkersRef.current = [];
+      walletMarkersRef.current = [];
     };
   }, []);
 
@@ -270,6 +306,15 @@ const MapSection = () => {
             }));
             setTwLogs(formattedLogs);
           }
+          if (taiwanData.walletLogs && Array.isArray(taiwanData.walletLogs)) {
+            setWalletLogs(taiwanData.walletLogs.map(log => ({
+              id: log.id || generateUniqueId(),
+              address: log.address || '',
+              location: log.location || null,
+              city: log.city || null,
+              timestamp: log.timestamp || Date.now()
+            })));
+          }
         }
         if (mapData.mainland) {
           const mainlandData = mapData.mainland;
@@ -305,11 +350,144 @@ const MapSection = () => {
           setTwNodeCount(message.data.nodeCount);
         }
         handleTaiwanLogUpdate(log);
+      } else if (message.type === 'incremental' && message.data.type === 'walletLog') {
+        const log = message.data.log;
+        setWalletLogs(prevLogs => {
+          const formattedLog = {
+            id: log.id || generateUniqueId(),
+            address: log.address || '',
+            location: log.location || null,
+            city: log.city || null,
+            timestamp: log.timestamp || Date.now()
+          };
+          return [formattedLog, ...prevLogs].slice(0, 6);
+        });
+        // 添加钱包标记到地图
+        handleWalletLogUpdate(log);
+      } else if (message.type === 'incremental' && message.data.type === 'assetLog') {
+        const log = message.data.log;
+        setAssetLogs(prevLogs => {
+          const formattedLog = {
+            id: log.id || generateUniqueId(),
+            lot: log.lot || '',
+            location: log.location || '',
+            assetId: log.assetId || null,
+            nodeLocation: log.nodeLocation || null,
+            timestamp: log.timestamp || Date.now()
+          };
+          return [formattedLog, ...prevLogs].slice(0, 5);
+        });
+        if (message.data.assetPoolValue !== undefined) {
+          setAssetValue(message.data.assetPoolValue);
+        }
+        if (message.data.unitCount !== undefined) {
+          setUnitCount(message.data.unitCount);
+        }
       }
     });
     
     return unsubscribe;
   }, [subscribe]);
+
+  // 添加钱包连接标记（使用高德地图IP定位API）
+  const handleWalletLogUpdate = async (log) => {
+    if (!taiwanMapRef.current || !window.AMap) return;
+    
+    let lat, lng;
+    
+    // 如果日志中已有位置信息，直接使用
+    if (log.location && log.location.lat && log.location.lng) {
+      const validated = validateAndFixCoordinates(log.location.lat, log.location.lng, 'taiwan');
+      lat = validated.lat;
+      lng = validated.lng;
+    } else if (log.city) {
+      // 根据城市名称查找位置
+      const cityData = taiwanHotspots.find(c => c.name.includes(log.city));
+      if (cityData) {
+        const rawLat = cityData.lat + (Math.random() - 0.5) * 0.04;
+        const rawLng = cityData.lng + (Math.random() - 0.5) * 0.04;
+        const validated = validateAndFixCoordinates(rawLat, rawLng, 'taiwan');
+        lat = validated.lat;
+        lng = validated.lng;
+      } else {
+        // 如果找不到城市，使用随机台湾位置
+        const city = taiwanHotspots[Math.floor(Math.random() * taiwanHotspots.length)];
+        const rawLat = city.lat + (Math.random() - 0.5) * 0.04;
+        const rawLng = city.lng + (Math.random() - 0.5) * 0.04;
+        const validated = validateAndFixCoordinates(rawLat, rawLng, 'taiwan');
+        lat = validated.lat;
+        lng = validated.lng;
+      }
+    } else {
+      // 如果没有位置信息，尝试使用高德地图IP定位API
+      try {
+        const loc = await getIpLocation();
+        if (loc && loc.lat && loc.lng) {
+          // 如果定位成功，验证并修正坐标
+          const validated = validateAndFixCoordinates(Number(loc.lat), Number(loc.lng), 'taiwan');
+          lat = validated.lat;
+          lng = validated.lng;
+        } else {
+          // 定位失败，使用随机台湾位置
+          const city = taiwanHotspots[Math.floor(Math.random() * taiwanHotspots.length)];
+          const rawLat = city.lat + (Math.random() - 0.5) * 0.04;
+          const rawLng = city.lng + (Math.random() - 0.5) * 0.04;
+          const validated = validateAndFixCoordinates(rawLat, rawLng, 'taiwan');
+          lat = validated.lat;
+          lng = validated.lng;
+        }
+      } catch (error) {
+        console.warn('IP定位失败，使用默认位置:', error);
+        // 定位失败，使用随机台湾位置
+        const city = taiwanHotspots[Math.floor(Math.random() * taiwanHotspots.length)];
+        const rawLat = city.lat + (Math.random() - 0.5) * 0.04;
+        const rawLng = city.lng + (Math.random() - 0.5) * 0.04;
+        const validated = validateAndFixCoordinates(rawLat, rawLng, 'taiwan');
+        lat = validated.lat;
+        lng = validated.lng;
+      }
+    }
+    
+    // 添加钱包标记到地图
+    addWalletMarker(lat, lng, log.address || log.id);
+  };
+
+  // 添加钱包标记到台湾地图（带水波动画效果）
+  const addWalletMarker = (lat, lng, walletId) => {
+    if (!taiwanMapRef.current || !window.AMap) return;
+
+    // 创建水波动画效果的HTML
+    const html = `
+      <div class="wallet-location-green-wrapper" style="z-index:1100;pointer-events:auto;">
+        <div class="wallet-location-green"></div>
+      </div>
+    `;
+
+    const marker = new window.AMap.Marker({
+      content: html,
+      position: new window.AMap.LngLat(lng, lat),
+      offset: new window.AMap.Pixel(-20, -20), // 居中
+      zIndex: 1100,
+    });
+
+    marker.on('click', () => {
+      // 可以导航到钱包详情页面
+      console.log('Wallet clicked:', walletId);
+    });
+
+    marker.setMap(taiwanMapRef.current);
+    walletMarkersRef.current.push(marker);
+
+    // 限制标记数量，只保留最近20个
+    if (walletMarkersRef.current.length > 20) {
+      const oldMarker = walletMarkersRef.current.shift();
+      try {
+        oldMarker.setMap(null);
+      } catch (e) {
+        console.warn('Failed to remove old wallet marker:', e);
+      }
+    }
+  };
 
   // 添加/更新用户位置（使用 AMap API，而非 Leaflet）
   const addUserLocationMarker = async () => {
@@ -405,6 +583,9 @@ const MapSection = () => {
                 </div>
               </div>
             </div>
+            <div className="absolute bottom-4 right-4 z-10 pointer-events-auto">
+              <MapNewTagsBox assetLogs={assetLogs} assetValue={assetValue} unitCount={unitCount} />
+            </div>
             <div ref={mainlandMapContainerRef} className="amap-container w-full h-full rounded-lg overflow-hidden" />
           </div>
         </article>
@@ -419,6 +600,9 @@ const MapSection = () => {
                 <span>Active Nodes</span>
                 <span className="text-base font-bold">{twNodeCount.toLocaleString()}</span>
               </div>
+            </div>
+            <div className="absolute bottom-4 right-4 z-10 pointer-events-auto">
+              <MapNewWalletsBox walletLogs={walletLogs} />
             </div>
             <div ref={taiwanMapContainerRef} className="amap-container w-full h-full rounded-lg overflow-hidden" />
           </div>
