@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Radio, BarChart3, Map, Database, ShieldAlert, Activity, LogIn, LogOut, User } from 'lucide-react';
+import { Radio, BarChart3, Map, Database, ShieldAlert, LogIn, LogOut, User } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getHomepageStats } from '../utils/api';
@@ -111,23 +111,12 @@ const Navbar = () => {
                 className="flex items-center text-slate-300 hover:text-red-500 px-3 py-2 rounded-md text-sm font-medium transition-all hover:bg-white/5 group"
               >
                 <span className="mr-2 opacity-50 group-hover:opacity-100 group-hover:animate-bounce"><ShieldAlert size={16} /></span>
-                拍賣 | AUCTION
+                處置 | DISPOSAL
               </button>
             </div>
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            <div className="flex flex-col items-end border-r border-white/10 pr-4">
-              <div className="flex items-center text-xs text-green-500 font-mono">
-                <Activity size={12} className="mr-1" />
-                LIVE NODE
-              </div>
-              <div className="text-slate-200 font-mono text-sm">
-                {onlineUsers.toLocaleString()}
-                <span className="text-slate-500 text-xs"> CONN.</span>
-              </div>
-            </div>
-
             {isAuthenticated ? (
               <>
                 <div className="flex items-center space-x-2 border-r border-white/10 pr-4">
