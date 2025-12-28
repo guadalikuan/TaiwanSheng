@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台湾省统一助手</title>
+    <link rel="stylesheet" href="popup.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部：倒计时和今日运势 -->
+        <div class="header">
+            <div class="countdown-section">
+                <h2>距离统一还有</h2>
+                <div id="countdown" class="countdown">
+                    <span id="days">--</span>天
+                    <span id="hours">--</span>时
+                    <span id="minutes">--</span>分
+                    <span id="seconds">--</span>秒
+                </div>
+            </div>
+            <div class="fortune-section">
+                <h3>朱重八·今日运势</h3>
+                <div class="fortune-content">
+                    <div class="fortune-header">
+                        <span id="fortune-icon" class="fortune-icon">🔴</span>
+                        <div class="fortune-main">
+                            <span id="fortune-text" class="fortune-text">大吉大利</span>
+                            <span id="fortune-score" class="fortune-score" title="运势评分">85分</span>
+                        </div>
+                    </div>
+                    <div class="fortune-details">
+                        <div class="fortune-item">
+                            <span class="label">今日宜：</span>
+                            <span id="fortune-yi" class="value">囤积物资、买入 TWS、学习简体字</span>
+                        </div>
+                        <div class="fortune-item">
+                            <span class="label">今日忌：</span>
+                            <span id="fortune-ji" class="value">相信绿媒、投资台股、去总统府附近</span>
+                        </div>
+                        <div class="fortune-item">
+                            <span class="label">当局气数：</span>
+                            <span id="gov-fortune" class="value">13%</span>
+                        </div>
+                    </div>
+                    <div id="lucky-info" class="lucky-info">
+                        <div class="lucky-item">
+                            <span class="lucky-label">幸运数字：</span>
+                            <span class="lucky-value">7</span>
+                        </div>
+                        <div class="lucky-item">
+                            <span class="lucky-label">吉利方位：</span>
+                            <span class="lucky-value">东方</span>
+                        </div>
+                        <div class="lucky-item">
+                            <span class="lucky-label">吉时：</span>
+                            <span class="lucky-value">午时(11-13点)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 币价信息 -->
+        <div class="price-section">
+            <h3>TWS 实时价格</h3>
+            <div class="price-info">
+                <div class="price-item">
+                    <span class="label">当前价格:</span>
+                    <span id="current-price" class="value">--</span>
+                </div>
+                <div class="price-item">
+                    <span class="label">24h涨跌:</span>
+                    <span id="price-change" class="value change">--</span>
+                </div>
+                <div class="price-item">
+                    <span class="label">台湾持币人数:</span>
+                    <span id="holder-count" class="value">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 社区链接 -->
+        <div class="community-section">
+            <h3>一键加入社区</h3>
+            <div class="community-links">
+                <button id="facebook-btn" class="community-btn facebook" data-url="https://facebook.com/groups/twstaiwan">
+                    <span class="icon">📘</span>
+                    <span>Facebook</span>
+                </button>
+                <button id="discord-btn" class="community-btn discord" data-url="https://discord.gg/twstaiwan">
+                    <span class="icon">💬</span>
+                    <span>Discord</span>
+                </button>
+                <button id="twitter-btn" class="community-btn twitter" data-url="https://twitter.com/twstaiwan">
+                    <span class="icon">🐦</span>
+                    <span>Twitter</span>
+                </button>
+                <button id="telegram-btn" class="community-btn telegram" data-url="https://t.me/twstaiwan">
+                    <span class="icon">📢</span>
+                    <span>Telegram</span>
+                </button>
+                <button id="wechat-btn" class="community-btn wechat" data-url="#" data-type="wechat">
+                    <span class="icon">💚</span>
+                    <span>微信</span>
+                </button>
+                <button id="line-btn" class="community-btn line" data-url="https://line.me/R/ti/g/twstaiwan">
+                    <span class="icon">💚</span>
+                    <span>Line</span>
+                </button>
+            </div>
+            <div class="community-stats">
+                <span>社区总人数: <span id="community-total">15,000+</span></span>
+                <span>在线人数: <span id="community-online">1,200+</span></span>
+            </div>
+        </div>
+
+        <!-- 最新公告 -->
+        <div class="announcement-section">
+            <h3>最新公告</h3>
+            <div id="announcement" class="announcement">
+                公告加载中...
+            </div>
+        </div>
+
+        <!-- 其他玩法 -->
+        <div class="games-section">
+            <h3>其他玩法</h3>
+            <div class="games-list">
+                <button class="game-btn">价格锚定</button>
+                <button class="game-btn">每日签到</button>
+                <button class="game-btn">任务中心</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

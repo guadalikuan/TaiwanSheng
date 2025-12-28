@@ -1,0 +1,434 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    width: 1000px;
+    min-height: 600px;
+    font-family: 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #333;
+}
+
+.container {
+    padding: 15px;
+}
+
+/* 头部样式 */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    margin-bottom: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    gap: 15px;
+}
+
+.countdown-section {
+    flex: 0 0 180px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.countdown-section h2 {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.countdown {
+    font-size: 18px;
+    font-weight: bold;
+    color: #e74c3c;
+    text-align: center;
+}
+
+.countdown span {
+    display: inline-block;
+    min-width: 30px;
+    text-align: center;
+    background: #fff;
+    padding: 3px 6px;
+    border-radius: 4px;
+    margin: 0 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.fortune-section {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.fortune-content {
+    position: relative;
+}
+
+.fortune-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(155, 89, 182, 0.1) 100%);
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+}
+
+.fortune-icon {
+    font-size: 36px;
+    margin-right: 20px;
+    animation: pulse 2s infinite;
+}
+
+.fortune-main {
+    flex: 1;
+    text-align: left;
+}
+
+.fortune-text {
+    font-size: 20px;
+    font-weight: bold;
+    color: #2c3e50;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.fortune-score {
+    font-size: 14px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    color: #6c757d;
+    font-weight: bold;
+}
+
+.fortune-details {
+    margin-bottom: 15px;
+}
+
+.fortune-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.fortune-item:last-child {
+    border-bottom: none;
+}
+
+.fortune-item .label {
+    font-size: 15px;
+    color: #666;
+    min-width: 100px;
+    font-weight: 500;
+}
+
+.fortune-item .value {
+    font-size: 15px;
+    font-weight: bold;
+    color: #2c3e50;
+    text-align: right;
+    flex: 1;
+    margin-left: 15px;
+    line-height: 1.4;
+}
+
+.lucky-info {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.lucky-item {
+    text-align: center;
+    padding: 10px;
+}
+
+.lucky-label {
+    display: block;
+    font-size: 14px;
+    color: #6c757d;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.lucky-value {
+    display: block;
+    font-size: 16px;
+    font-weight: bold;
+    color: #495057;
+    background: white;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 运势颜色主题 */
+.fortune-gold {
+    border-left-color: #ffd700 !important;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 193, 7, 0.1) 100%) !important;
+}
+
+.fortune-purple {
+    border-left-color: #9b59b6 !important;
+    background: linear-gradient(135deg, rgba(155, 89, 182, 0.1) 0%, rgba(142, 68, 173, 0.1) 100%) !important;
+}
+
+.fortune-red {
+    border-left-color: #e74c3c !important;
+    background: linear-gradient(135deg, rgba(231, 76, 60, 0.1) 0%, rgba(192, 57, 43, 0.1) 100%) !important;
+}
+
+/* 运势评分颜色 */
+.score-excellent {
+    background: #d4edda !important;
+    border-color: #c3e6cb !important;
+    color: #155724 !important;
+}
+
+.score-good {
+    background: #cce7ff !important;
+    border-color: #b3d9ff !important;
+    color: #004085 !important;
+}
+
+.score-average {
+    background: #fff3cd !important;
+    border-color: #ffeaa7 !important;
+    color: #856404 !important;
+}
+
+.score-poor {
+    background: #f8d7da !important;
+    border-color: #f5c6cb !important;
+    color: #721c24 !important;
+}
+
+/* 动画效果 */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.fortune-animate {
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 各区块样式 */
+.price-section, .fortune-detail, .community-section, 
+.announcement-section, .games-section {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h3 {
+    font-size: 16px;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 5px;
+}
+
+/* 价格信息样式 */
+.price-item, .fortune-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 5px 0;
+}
+
+.label {
+    font-size: 14px;
+    color: #666;
+}
+
+.value {
+    font-size: 14px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.change.positive {
+    color: #27ae60;
+}
+
+.change.negative {
+    color: #e74c3c;
+}
+
+/* 社区按钮样式 */
+.community-links {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.community-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 5px;
+    border: none;
+    border-radius: 8px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-height: 50px;
+}
+
+.community-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.community-btn .icon {
+    font-size: 16px;
+    margin-bottom: 3px;
+}
+
+.facebook {
+    background: #1877f2;
+    color: white;
+}
+
+.discord {
+    background: #5865f2;
+    color: white;
+}
+
+.twitter {
+    background: #1da1f2;
+    color: white;
+}
+
+.telegram {
+    background: #0088cc;
+    color: white;
+}
+
+.wechat {
+    background: #07c160;
+    color: white;
+}
+
+.line {
+    background: #00c300;
+    color: white;
+}
+
+/* 社区统计信息 */
+.community-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #666;
+    padding: 5px 0;
+    border-top: 1px solid #eee;
+}
+
+/* 公告样式 */
+.announcement {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #856404;
+}
+
+/* 游戏按钮样式 */
+.games-list {
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+}
+
+.game-btn {
+    flex: 1;
+    padding: 8px 5px;
+    border: 2px solid #3498db;
+    border-radius: 8px;
+    background: white;
+    color: #3498db;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.game-btn:hover {
+    background: #3498db;
+    color: white;
+}
+
+/* 运势详情样式 */
+.fortune-detail .fortune-item {
+    border-bottom: 1px solid #eee;
+    padding: 8px 0;
+}
+
+.fortune-detail .fortune-item:last-child {
+    border-bottom: none;
+}
+
+/* 响应式调整 */
+@media (max-width: 400px) {
+    body {
+        width: 100%;
+    }
+    
+    .container {
+        padding: 10px;
+    }
+    
+    .header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .community-links, .games-list {
+        flex-direction: column;
+    }
+}
