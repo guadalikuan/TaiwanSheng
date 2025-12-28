@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import HomePage from './components/HomePage';
 import BunkerApp from './components/BunkerApp';
+import DespairBunker from './components/DespairBunker';
 import BlackMarket from './components/BlackMarket';
 import MyLoadout from './components/MyLoadout';
 import AgentApp from './components/AgentApp';
@@ -24,7 +25,8 @@ const App = () => (
     <Route path="/" element={<HomePage />} />
     <Route path="/register" element={<RegisterPage />} />
     <Route path="/login" element={<LoginPage />} />
-    <Route path="/bunker" element={<BunkerApp />} />
+    <Route path="/bunker" element={<DespairBunker />} />
+    <Route path="/bunker-old" element={<BunkerApp />} />
     <Route path="/market" element={<BlackMarket />} />
     <Route path="/loadout" element={<MyLoadout />} />
     <Route path="/agent" element={<AgentApp />} />

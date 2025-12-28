@@ -25,6 +25,9 @@ export default {
         shine: 'shine 1.2s ease-out forwards',
         'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
         'pulse-fast': 'pulse 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        flicker: 'flicker 4s infinite alternate',
+        redPulse: 'redPulse 2s infinite ease-in-out',
+        slideIn: 'slideIn 0.3s forwards',
       },
       keyframes: {
         marquee: {
@@ -49,6 +52,19 @@ export default {
           '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
           '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
           '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+        },
+        flicker: {
+          '0%, 19%, 21%, 23%, 25%, 54%, 56%, 100%': { opacity: '1' },
+          '20%, 24%, 55%': { opacity: '0.8' }
+        },
+        redPulse: {
+          '0%': { boxShadow: 'inset 0 0 0px rgba(255, 0, 0, 0)' },
+          '50%': { boxShadow: 'inset 0 0 150px rgba(139, 0, 0, 0.4)' },
+          '100%': { boxShadow: 'inset 0 0 0px rgba(255, 0, 0, 0)' }
+        },
+        slideIn: {
+          'from': { transform: 'translateY(20px)', opacity: '0' },
+          'to': { transform: 'translateY(0)', opacity: '1' }
         }
       },
     },
