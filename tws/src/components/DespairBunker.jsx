@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 const DespairBunker = () => {
   const navigate = useNavigate();
   const [mousePos, setMousePos] = useState({ x: '50%', y: '50%' });
-  const [lightSize, setLightSize] = useState(150);
+  const [lightSize, setLightSize] = useState(250);
   const [stats, setStats] = useState({ water: 100, power: 100, sanity: 100 });
   const [currentPrice, setCurrentPrice] = useState(50);
   const [inflationActive, setInflationActive] = useState(true);
@@ -53,7 +53,7 @@ const DespairBunker = () => {
   // 手电筒闪烁效果
   useEffect(() => {
     flickerIntervalRef.current = setInterval(() => {
-      const baseSize = 150;
+      const baseSize = 250;
       const flicker = Math.random() * 20 - 10;
       setLightSize(baseSize + flicker);
     }, 100);
