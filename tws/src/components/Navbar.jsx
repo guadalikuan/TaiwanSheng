@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Radio, BarChart3, Map, Database, ShieldAlert, LogIn, LogOut, User } from 'lucide-react';
+import { Radio, BarChart3, Map, Database, ShieldAlert, LogOut, User } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getHomepageStats } from '../utils/api';
 import { useSSE } from '../contexts/SSEContext';
 import { useServerStatus } from '../contexts/ServerStatusContext';
+import WalletConnectButton from './WalletConnectButton';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -141,14 +142,10 @@ const Navbar = () => {
                 </button>
               </>
             ) : (
-              <button
-                onClick={() => navigate('/login')}
-                className="bg-red-900/20 border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white px-4 py-1 rounded text-xs font-mono tracking-widest transition-all flex items-center"
-                type="button"
-              >
-                <LogIn size={14} className="mr-2" />
-                登入 / LOGIN
-              </button>
+              <WalletConnectButton 
+                className="bg-red-900/20 border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white px-4 py-1 rounded text-xs font-mono tracking-widest transition-all"
+                variant="compact"
+              />
             )}
           </div>
         </div>
