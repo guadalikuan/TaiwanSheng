@@ -6445,5 +6445,225 @@
     "reviewNotes": "Purchased by bot user bot_user_y66h27",
     "purchasedBy": "0xde1230C5c1f8E6A4c83d1b7595cCCD0587053ce5",
     "purchasedAt": 1766908153739
+  },
+  {
+    "id": "bot_asset_1766908282921_ik40t1i",
+    "codeName": "CN-QINLING-BKR-8848",
+    "displayId": "CN-QINLING-MTN-96",
+    "title": "Deep Mountain Nuclear Bunker (秦岭深山核掩体) - BUNKER (加固地堡)",
+    "locationTag": "CN-QINLING-MTN",
+    "region": "Deep Mountain Nuclear Bunker (秦岭深山核掩体)",
+    "zoneClass": "BUNKER (加固地堡)",
+    "securityLevel": 5,
+    "specs": {
+      "area": "100 m²",
+      "capacity": "5 Personnel",
+      "type": "BUNKER (加固地堡)"
+    },
+    "financials": {
+      "totalTokens": 193055,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Deep Mountain Nuclear Bunker (秦岭深山核掩体). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 193055,
+    "imageUrl": "/assets/blueprints/bunker.png",
+    "internalRef": "bot_asset_1766908282921_ik40t1i",
+    "reviewedAt": 1766908449383,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1766908287295
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_3er99n",
+        "reviewedAt": 1766908449385
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_3er99n",
+    "purchasedBy": "0xdf494A72b0cb7c6F9D7EAAC888d9F9CAC5E574E3",
+    "purchasedAt": 1766908449383
+  },
+  {
+    "id": "bot_asset_1766908860181_51jmv0e",
+    "codeName": "CN-INT-CMD-5939",
+    "displayId": "CN-INT-RES-667",
+    "title": "Inland Strategic Reserve (内陆战略储备) - COMMAND_POST (前线指挥所)",
+    "locationTag": "CN-INT-RES",
+    "region": "Inland Strategic Reserve (内陆战略储备)",
+    "zoneClass": "COMMAND_POST (前线指挥所)",
+    "securityLevel": 4,
+    "specs": {
+      "area": "177 m²",
+      "capacity": "8 Personnel",
+      "type": "COMMAND_POST (前线指挥所)"
+    },
+    "financials": {
+      "totalTokens": 550000,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Inland Strategic Reserve (内陆战略储备). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 550000,
+    "imageUrl": "/assets/blueprints/command_post.png",
+    "internalRef": "bot_asset_1766908860181_51jmv0e",
+    "reviewedAt": 1766908989437,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1766908865433
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_m3207k",
+        "reviewedAt": 1766908989439
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_m3207k",
+    "purchasedBy": "0xfa01EE1437961b367597BEd403b47d0C4b2a4Ff8",
+    "purchasedAt": 1766908989437
+  },
+  {
+    "id": "bot_asset_1766909420722_o5xe1ni",
+    "codeName": "CN-INT-BKR-6128",
+    "displayId": "CN-INT-RES-851",
+    "title": "Inland Strategic Reserve (内陆战略储备) - BUNKER (加固地堡)",
+    "locationTag": "CN-INT-RES",
+    "region": "Inland Strategic Reserve (内陆战略储备)",
+    "zoneClass": "BUNKER (加固地堡)",
+    "securityLevel": 4,
+    "specs": {
+      "area": "92 m²",
+      "capacity": "4 Personnel",
+      "type": "BUNKER (加固地堡)"
+    },
+    "financials": {
+      "totalTokens": 136111,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Inland Strategic Reserve (内陆战略储备). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 136111,
+    "imageUrl": "/assets/blueprints/bunker.png",
+    "internalRef": "bot_asset_1766909420722_o5xe1ni",
+    "reviewedAt": 1766909779939,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1766909426492
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_k1ntli",
+        "reviewedAt": 1766909779942
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_k1ntli",
+    "purchasedBy": "0xE581Dbe267cc9db73Ca2fc88331F05324FF34b59",
+    "purchasedAt": 1766909779939
+  },
+  {
+    "id": "bot_asset_1766910015689_n1pn170",
+    "codeName": "CN-NW-BKR-4720",
+    "displayId": "CN-NW-SUB-184",
+    "title": "Suburban Reserve Zone (近郊储备区) - BUNKER (加固地堡)",
+    "locationTag": "CN-NW-SUB",
+    "region": "Suburban Reserve Zone (近郊储备区)",
+    "zoneClass": "BUNKER (加固地堡)",
+    "securityLevel": 4,
+    "specs": {
+      "area": "106 m²",
+      "capacity": "5 Personnel",
+      "type": "BUNKER (加固地堡)"
+    },
+    "financials": {
+      "totalTokens": 294444,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Suburban Reserve Zone (近郊储备区). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 294444,
+    "imageUrl": "/assets/blueprints/bunker.png",
+    "internalRef": "bot_asset_1766910015689_n1pn170",
+    "reviewedAt": 1766910178682,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1766910019055
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_k0772l",
+        "reviewedAt": 1766910178685
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_k0772l",
+    "purchasedBy": "0x31dc6E4A82d3AdF62c20B6aBBd862a4eeBe66221",
+    "purchasedAt": 1766910178682
+  },
+  {
+    "id": "bot_asset_1766910822950_m2ttcnb",
+    "codeName": "CN-INT-CMD-1721",
+    "displayId": "CN-INT-RES-166",
+    "title": "Inland Strategic Reserve (内陆战略储备) - COMMAND_POST (前线指挥所)",
+    "locationTag": "CN-INT-RES",
+    "region": "Inland Strategic Reserve (内陆战略储备)",
+    "zoneClass": "COMMAND_POST (前线指挥所)",
+    "securityLevel": 4,
+    "specs": {
+      "area": "173 m²",
+      "capacity": "8 Personnel",
+      "type": "COMMAND_POST (前线指挥所)"
+    },
+    "financials": {
+      "totalTokens": 87500,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Inland Strategic Reserve (内陆战略储备). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 87500,
+    "imageUrl": "/assets/blueprints/command_post.png",
+    "internalRef": "bot_asset_1766910822950_m2ttcnb",
+    "reviewedAt": 1766910932965,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1766910826938
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_npsrsq",
+        "reviewedAt": 1766910932967
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_npsrsq",
+    "purchasedBy": "0xD9f42deBae17c9D7616E157D6BAF56d35012cB7c",
+    "purchasedAt": 1766910932965
   }
 ]

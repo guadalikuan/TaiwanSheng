@@ -397,7 +397,8 @@ function showWechatQRCode() {
             background: white;
             border-radius: 10px;
             padding: 20px;
-            max-width: 300px;
+            max-width: 90%;
+            width: min(360px, 90%);
             text-align: center;
         }
         .modal-header {
@@ -531,8 +532,10 @@ function showStatusMessage(message) {
         font-size: 12px;
         z-index: 10000;
         animation: fadeInOut 2s ease-in-out;
-        min-width: 500px;
-    `;
+        max-width: 90%;
+        min-width: 240px;
+        width: auto;
+    `; 
     
     document.body.appendChild(statusDiv);
     
@@ -637,7 +640,8 @@ function createModal(title, content) {
         background: white;
         padding: 20px;
         border-radius: 10px;
-        max-width: 300px;
+        max-width: 90%;
+        width: min(360px, 90%);
         max-height: 400px;
         overflow-y: auto;
     `;
