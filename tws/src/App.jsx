@@ -19,7 +19,6 @@ import ChanganLetter from './components/ChanganLetter';
 import TelegramHome from './telegramapp/TelegramHome';
 import Market from './telegramapp/Market';
 import PredictionHome from './components/PredictionMarket/PredictionHome';
-import AuctionPage from './auction/AuctionPage';
 
 const App = () => (
   <Routes>
@@ -42,7 +41,6 @@ const App = () => (
     <Route path="/tg" element={<TelegramHome />} /> 
     <Route path="/tg-market" element={<Market />} />
     <Route path="/predict" element={<PredictionHome />} />
-    <Route path="/auction" element={<AuctionPage />} />
   </Routes>
 );
 

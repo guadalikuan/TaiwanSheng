@@ -6,7 +6,6 @@ import homepageRoutes from './routes/homepage.js';
 import oracleRoutes from './routes/oracle.js';
 import paymentRoutes from './routes/payment.js';
 import referralRoutes from './routes/referral.js';
-import auctionRoutes from './routes/auction.js';
 import sseRoutes, { startSSEKeepalive } from './routes/sse.js';
 import { startBackgroundTasks } from './utils/backgroundTasks.js';
 import { startScanning } from './utils/oracle.js';
@@ -144,7 +143,6 @@ app.use('/api/homepage', homepageRoutes);
 app.use('/api/oracle', oracleRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/referral', referralRoutes);
-app.use('/api/auction', auctionRoutes);
 
 // 调试：列出所有注册的路由
 console.log('📋 已注册的路由:');
@@ -155,7 +153,6 @@ console.log('  - /api/homepage');
 console.log('  - /api/oracle');
 console.log('  - /api/payment');
 console.log('  - /api/referral');
-console.log('  - /api/auction');
 
 // 验证 SSE 路由是否正确加载
 if (sseRoutes) {
@@ -181,8 +178,7 @@ app.get('/', (req, res) => {
         homepage: '/api/homepage',
         oracle: '/api/oracle',
         payment: '/api/payment',
-        referral: '/api/referral',
-        auction: '/api/auction'
+        referral: '/api/referral'
       }
     },
     timestamp: new Date().toISOString()

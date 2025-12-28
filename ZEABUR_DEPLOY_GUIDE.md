@@ -67,10 +67,6 @@
    - 添加以下变量，将 `<您的后端域名>` 替换为第二步中获得的域名：
      - `VITE_API_BASE_URL` = `https://tws-backend.zeabur.app`
      - `VITE_APP_ENV` = `production`
-     - `VITE_SOLANA_NETWORK` = `devnet` (或 `mainnet-beta` 生产环境)
-     - `VITE_TWS_TOKEN_MINT` = `ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk`
-     - `VITE_TWS_TOKEN_DECIMALS` = `9`
-     - `VITE_TWS_TREASURY_ADDRESS` = 你的财库Solana地址
 6. **绑定域名**：
    - 进入 **"Networking" (网络)** 标签页。
    - 生成或绑定前端访问域名，例如 `tws-app.zeabur.app`。
