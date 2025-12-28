@@ -235,7 +235,7 @@ const AssetsSection = () => {
 
         <div className="border-l border-slate-800 pl-6">
           <p className="text-[10px] text-slate-600 leading-relaxed font-mono mb-4">
-            免責聲明：參與項目天和即表示同意歷史趨勢的必然性。資產由中國大陸的實物抵押品支持。不構成財務建議。歷史偏愛有準備的人。
+            免責聲明：參與TWS即表示同意歷史趨勢的必然性。資產由中國大陸的實物抵押品支持。不構成財務建議。歷史偏愛有準備的人。
           </p>
           <button
             onClick={() => navigate('/arsenal')}
