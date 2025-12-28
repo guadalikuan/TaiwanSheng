@@ -3,6 +3,13 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# 安装构建工具（用于编译原生模块如 usb）
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    linux-headers
+
 # 复制依赖文件
 COPY package*.json ./
 
