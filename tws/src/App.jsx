@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import HomePage from './components/HomePage';
 import BunkerApp from './components/BunkerApp';
+import DespairBunker from './components/DespairBunker';
 import BlackMarket from './components/BlackMarket';
 import MyLoadout from './components/MyLoadout';
 import AgentApp from './components/AgentApp';
@@ -17,13 +18,19 @@ import MapAssetDetailPage from './components/MapAssetDetailPage';
 import ChanganLetter from './components/ChanganLetter';
 import TelegramHome from './telegramapp/TelegramHome';
 import Market from './telegramapp/Market';
+<<<<<<< HEAD
 import PredictionHome from './components/PredictionMarket/PredictionHome';
+=======
+import AuctionPage from './auction/AuctionPage';
+
+>>>>>>> c2a122a082e6d53aebae375a0f065975513f98be
 const App = () => (
   <Routes>
     <Route path="/" element={<HomePage />} />
     <Route path="/register" element={<RegisterPage />} />
     <Route path="/login" element={<LoginPage />} />
-    <Route path="/bunker" element={<BunkerApp />} />
+    <Route path="/bunker" element={<DespairBunker />} />
+    <Route path="/bunker-old" element={<BunkerApp />} />
     <Route path="/market" element={<BlackMarket />} />
     <Route path="/loadout" element={<MyLoadout />} />
     <Route path="/agent" element={<AgentApp />} />
@@ -37,7 +44,11 @@ const App = () => (
     <Route path="/letter" element={<ChanganLetter />} />
     <Route path="/tg" element={<TelegramHome />} /> 
     <Route path="/tg-market" element={<Market />} />
+<<<<<<< HEAD
     <Route path="/predict" element={<PredictionHome />} />
+=======
+    <Route path="/auction" element={<AuctionPage />} />
+>>>>>>> c2a122a082e6d53aebae375a0f065975513f98be
   </Routes>
 );
 

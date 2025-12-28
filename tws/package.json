@@ -20,12 +20,27 @@
     "docker:compose:down": "docker-compose down"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@project-serum/anchor": "^0.26.0",
     "@solana/web3.js": "^1.98.4",
+=======
+    "@solana/web3.js": "^1.95.0",
+    "@solana/spl-token": "^0.4.8",
+    "@solana/wallet-adapter-base": "^0.9.23",
+    "@solana/wallet-adapter-react": "^0.15.35",
+    "@solana/wallet-adapter-react-ui": "^0.9.35",
+    "@solana/wallet-adapter-wallets": "^0.19.32",
+>>>>>>> c2a122a082e6d53aebae375a0f065975513f98be
     "@tonconnect/ui-react": "^2.3.1",
     "@twa-dev/sdk": "^8.0.2",
     "bip39": "^3.1.0",
     "buffer": "^6.0.3",
+<<<<<<< HEAD
+=======
+    "clsx": "^2.1.1",
+    "process": "^0.11.10",
+    "util": "^0.12.5",
+>>>>>>> c2a122a082e6d53aebae375a0f065975513f98be
     "ethers": "^6.13.0",
     "framer-motion": "^12.23.25",
     "leaflet": "^1.9.4",
@@ -33,7 +48,8 @@
     "process": "^0.11.10",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.9.6"
+    "react-router-dom": "^7.9.6",
+    "tailwind-merge": "^2.5.4"
   },
   "devDependencies": {
     "@types/react": "^18.3.7",
