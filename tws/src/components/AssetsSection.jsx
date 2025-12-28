@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Database, ShieldCheck, ArrowRight, Lock, FileText, Globe, Zap, Key, Package } from 'lucide-react';
+import { Database, ShieldCheck, ArrowRight, Lock, FileText, Globe, Zap, Key, Package, Github } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getHomepageAssets } from '../utils/api';
 import { useServerStatus } from '../contexts/ServerStatusContext';
@@ -141,18 +141,21 @@ const AssetsSection = () => {
         <div>
           <div className="text-2xl font-black text-white tracking-tighter mb-4">TWS</div>
           <div className="text-xs text-slate-500 font-mono">
-            項目天和
+            项目：TWS
             <br />
-            行動：統一
+            行动：新型和平统一
             <br />
-            成立於 2024
+            成立于2025.12
           </div>
         </div>
 
         <div>
           <h4 className="text-white font-bold mb-4 text-sm uppercase">協議</h4>
           <ul className="space-y-2 text-xs text-slate-400 font-mono">
-            <li className="hover:text-gold cursor-pointer flex items-center">
+            <li 
+              onClick={() => navigate('/letter')}
+              className="hover:text-gold cursor-pointer flex items-center"
+            >
               <FileText size={10} className="mr-2" /> 長安家書
             </li>
             <li className="hover:text-gold cursor-pointer flex items-center">
@@ -213,6 +216,18 @@ const AssetsSection = () => {
                 className="w-full"
               >
                 Discord
+              </a>
+            </li>
+            {/* 👇 新增 GitHub 链接 */}
+            <li className="hover:text-cyan-400 cursor-pointer flex items-center">
+              <Github size={10} className="mr-2" />
+              <a 
+                href="https://github.com/guadalikuan/TaiwanSheng"
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-full"
+              >
+                GitHub
               </a>
             </li>
           </ul>
