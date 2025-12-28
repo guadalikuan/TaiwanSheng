@@ -266,7 +266,7 @@ const DespairBunker = () => {
         '--x': mousePos.x,
         '--y': mousePos.y,
         '--light-size': `${lightSize}px`,
-      } as React.CSSProperties}
+      }}
     >
       {/* Phase 1: 混凝土墙壁背景 */}
       <div 
