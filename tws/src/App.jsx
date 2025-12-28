@@ -17,6 +17,8 @@ import MapAssetDetailPage from './components/MapAssetDetailPage';
 import ChanganLetter from './components/ChanganLetter';
 import TelegramHome from './telegramapp/TelegramHome';
 import Market from './telegramapp/Market';
+import AuctionPage from './auction/AuctionPage';
+
 const App = () => (
   <Routes>
     <Route path="/" element={<HomePage />} />
@@ -36,6 +38,7 @@ const App = () => (
     <Route path="/letter" element={<ChanganLetter />} />
     <Route path="/tg" element={<TelegramHome />} /> 
     <Route path="/tg-market" element={<Market />} />
+    <Route path="/auction" element={<AuctionPage />} />
   </Routes>
 );
 

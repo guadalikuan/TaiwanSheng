@@ -69,6 +69,10 @@ const Navbar = () => {
     { id: 'assets', label: '資產 | ASSETS', icon: <Database size={16} /> },
   ];
 
+  const handleAuctionClick = () => {
+    navigate('/auction');
+  };
+
   return (
     <nav
       className={`fixed top-0 w-full z-50 transition-all duration-300 border-b border-white/5 ${
@@ -102,6 +106,13 @@ const Navbar = () => {
                   {link.label}
                 </a>
               ))}
+              <button
+                onClick={handleAuctionClick}
+                className="flex items-center text-slate-300 hover:text-red-500 px-3 py-2 rounded-md text-sm font-medium transition-all hover:bg-white/5 group"
+              >
+                <span className="mr-2 opacity-50 group-hover:opacity-100 group-hover:animate-bounce"><ShieldAlert size={16} /></span>
+                拍賣 | AUCTION
+              </button>
             </div>
           </div>
 
