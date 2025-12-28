@@ -506,7 +506,7 @@ const MarketSection = () => {
             {/* 现价 */}
             <div className="flex items-baseline space-x-2">
               <span className={`text-3xl font-mono font-bold ${priceChange24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {currentPrice > 0 ? (currentPrice < 0.01 ? currentPrice.toFixed(6) : currentPrice.toFixed(2)) : '0.00'}
+                {currentPrice > 0 ? currentPrice.toFixed(5) : '0.00000'}
                 <span className="text-xs ml-1 text-slate-500">USD</span>
               </span>
               {priceChange24h >= 0 ? (
