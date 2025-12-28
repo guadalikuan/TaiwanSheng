@@ -1,5 +1,6 @@
 # 多阶段构建 - 构建阶段
-FROM node:18-alpine AS builder
+# 使用 Node 20 以满足 Solana 包的要求（需要 >= 20.18.0）
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -19,7 +20,9 @@ RUN apk add --no-cache \
 COPY package*.json ./
 
 # 安装依赖
-RUN npm ci --only=production=false
+# 使用 --ignore-scripts 跳过原生模块编译（前端项目不需要）
+# 这样可以避免 USB 包的编译错误，同时不影响功能
+RUN npm ci --only=production=false --ignore-scripts
 
 # 接收构建参数
 ARG VITE_API_BASE_URL
