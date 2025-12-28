@@ -9,12 +9,13 @@ import { useServerStatus } from '../contexts/ServerStatusContext';
 const MarketSection = () => {
   const navigate = useNavigate();
   const { isOnline } = useServerStatus();
+  const { subscribe } = useSSE(); // Restore useSSE hook
   const [rawData, setRawData] = useState([]); // 原始K线数据
   const [data, setData] = useState([]); // 当前视图的数据（聚合后的）
   const [viewMode, setViewMode] = useState('分时'); // 视图模式：分时、日K、周K、月K
-  const [currentPrice, setCurrentPrice] = useState(142.85);
-  const [priceChange24h, setPriceChange24h] = useState(12.4);
-  const [volume24h, setVolume24h] = useState(4291002911);
+  const [currentPrice, setCurrentPrice] = useState(null);
+  const [priceChange24h, setPriceChange24h] = useState(0);
+  const [volume24h, setVolume24h] = useState(0);
   const [marketIndex, setMarketIndex] = useState('STRONG BUY');
   const [orderBook, setOrderBook] = useState({ asks: [], bids: [] });
   const [trades, setTrades] = useState([]);
@@ -39,13 +40,22 @@ const MarketSection = () => {
   useEffect(() => {
     const fetchRealPrice = async () => {
       try {
-        const response = await fetch('https://api.dexscreener.com/latest/dex/pairs/solana/6q88jmgqs5kikkjjvh7xgpy2rv3c2jps9yqsgqfvkrgt');
+        // 使用 Token Address 获取数据，以找到流动性最好的交易对
+        const tokenAddress = 'ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk';
+        const response = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${tokenAddress}`);
         const data = await response.json();
-        if (data.pair) {
-          setRealMarketData(data.pair);
-          setCurrentPrice(parseFloat(data.pair.priceUsd));
-          setPriceChange24h(parseFloat(data.pair.priceChange.h24));
-          setVolume24h(parseFloat(data.pair.volume.h24));
+        
+        if (data.pairs && data.pairs.length > 0) {
+          // 按流动性排序，取最大的
+          const bestPair = data.pairs.sort((a, b) => b.liquidity.usd - a.liquidity.usd)[0];
+          
+          console.log('DexScreener Data Fetched:', bestPair);
+          setRealMarketData(bestPair);
+          setCurrentPrice(parseFloat(bestPair.priceUsd));
+          setPriceChange24h(parseFloat(bestPair.priceChange.h24));
+          setVolume24h(parseFloat(bestPair.volume.h24));
+        } else {
+            console.warn('No pairs found for token:', tokenAddress);
         }
       } catch (err) {
         console.error('Failed to fetch DexScreener data:', err);
@@ -53,272 +63,26 @@ const MarketSection = () => {
     };
 
     fetchRealPrice();
-    const interval = setInterval(fetchRealPrice, 30000); // 每30秒更新一次价格
+    const interval = setInterval(fetchRealPrice, 5000); // 加快更新频率到5秒
     return () => clearInterval(interval);
   }, []);
 
-  // 加载初始数据（带重试机制）
+  // 移除虚拟数据加载逻辑，仅保留真实数据相关的状态初始化
   useEffect(() => {
-    // 如果服务器离线，不发起请求，避免浏览器控制台显示错误
-    if (!isOnline) {
-      setLoading(false);
-      return;
-    }
+    // 初始状态清理
+    setLoading(false);
+    setRawData([]); // 清空虚拟K线
+    setOrderBook({ asks: [], bids: [] }); // 清空虚拟订单簿
+    setTrades([]); // 清空虚拟交易记录
+  }, []);
 
-    const loadData = async (retry = 0) => {
-      try {
-        setError(null);
-        const response = await getMarketData();
-        
-        if (response && response.success && response.data) {
-          const marketData = response.data;
-          
-          // 转换K线数据格式
-          if (marketData.klineData && Array.isArray(marketData.klineData) && marketData.klineData.length > 0) {
-            const formattedData = marketData.klineData
-              .filter(item => item && (item.open !== undefined || item.close !== undefined))
-              .map(item => ({
-                id: item.id || 0,
-                timestamp: item.timestamp || Date.now(),
-                open: typeof item.open === 'number' ? item.open : parseFloat(item.open) || 0,
-                close: typeof item.close === 'number' ? item.close : parseFloat(item.close) || 0,
-                high: typeof item.high === 'number' ? item.high : parseFloat(item.high) || 0,
-                low: typeof item.low === 'number' ? item.low : parseFloat(item.low) || 0,
-                vol: typeof item.volume === 'number' ? item.volume : (typeof item.vol === 'number' ? item.vol : parseFloat(item.volume || item.vol) || 0)
-              }))
-              .filter(item => item.open > 0 || item.close > 0)
-              .sort((a, b) => a.timestamp - b.timestamp); // 按时间排序
-            setRawData(formattedData);
-            
-            // 计算昨收价（使用第一个数据点的open作为昨收，或使用当前价格的95%作为模拟值）
-            if (formattedData.length > 0) {
-              const firstDataPoint = formattedData[0];
-              setYesterdayClose(firstDataPoint.open || currentPrice * 0.95);
-            } else {
-              setYesterdayClose(currentPrice * 0.95);
-            }
-            
-            // 计算今日最高最低（从今天的数据中）
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const todayStart = today.getTime();
-            const todayData = formattedData.filter(item => item.timestamp >= todayStart);
-            if (todayData.length > 0) {
-              const highs = todayData.map(d => d.high).filter(h => h > 0);
-              const lows = todayData.map(d => d.low).filter(l => l > 0);
-              if (highs.length > 0) setTodayHigh(Math.max(...highs));
-              if (lows.length > 0) setTodayLow(Math.min(...lows));
-            }
-          } else {
-            // 如果K线数据为空，设置为空数组
-            setRawData([]);
-            setYesterdayClose(currentPrice * 0.95);
-          }
-          
-          if (marketData.currentPrice !== undefined) {
-            setCurrentPrice(marketData.currentPrice);
-          }
-          if (marketData.priceChange24h !== undefined) {
-            setPriceChange24h(marketData.priceChange24h);
-          }
-          if (marketData.volume24h !== undefined) {
-            setVolume24h(marketData.volume24h);
-          }
-          if (marketData.marketIndex) {
-            setMarketIndex(marketData.marketIndex);
-          }
-          if (marketData.orderBook) {
-            setOrderBook(marketData.orderBook);
-          }
-          if (marketData.recentTrades && Array.isArray(marketData.recentTrades)) {
-            setTrades(marketData.recentTrades.map(trade => ({
-              id: trade.id || generateUniqueId(),
-              price: trade.price,
-              amount: trade.amount,
-              type: trade.type,
-              time: trade.time || new Date(trade.timestamp).toLocaleTimeString()
-            })));
-          }
-          
-          setRetryCount(0); // 重置重试计数
-        } else {
-          // 处理错误响应
-          if (response && response.success === false) {
-            // 服务器返回的错误响应（如 ConnectionRefusedError）
-            const errorMessage = response.message || '无法加载市场数据';
-            setError(errorMessage);
-            
-            // 如果是连接错误，不进行重试
-            if (response.error === 'ConnectionRefusedError') {
-              // 完全静默处理，不输出任何日志
-              return; // 立即返回，不进行重试
-            }
-          } else {
-            // 响应格式不正确，只在开发环境输出
-            if (import.meta.env.DEV) {
-              console.warn('Market data response format unexpected:', response);
-            }
-          }
-          
-          // 只有在非连接错误时才进行重试
-          if (retry < 2 && (!response || response.error !== 'ConnectionRefusedError')) {
-            setTimeout(() => loadData(retry + 1), 2000 * (retry + 1));
-            setRetryCount(retry + 1);
-          } else {
-            setError('无法加载市场数据，请检查服务器连接');
-          }
-        }
-      } catch (error) {
-        // 如果是连接错误，完全静默处理，不设置错误，不输出日志
-        if (error.name === 'ConnectionRefusedError' || error.message?.includes('无法连接到服务器')) {
-          // 完全静默处理，不设置错误，不输出日志
-          return;
-        }
-        // 只记录非连接错误
-        console.error('Failed to load market data:', error);
-        const errorMessage = error.message || '网络错误，请检查服务器连接';
-        setError(errorMessage);
-        
-        // 重试机制：最多重试3次
-        if (retry < 3) {
-          console.log(`Retrying market data load (${retry + 1}/3)...`);
-          setTimeout(() => loadData(retry + 1), 2000 * (retry + 1));
-          setRetryCount(retry + 1);
-        }
-      } finally {
-        if (retry === 0 || retry >= 3) {
-          setLoading(false);
-        }
-      }
-    };
-    loadData();
-  }, [isOnline]);
-
-  // 使用 SSE 接收实时更新
-  const { subscribe, getData } = useSSE();
-  
-  // 处理市场数据更新的辅助函数
-  const updateMarketDataFromSSE = (marketData) => {
-    // 更新价格 - 注意：不再从 SSE 更新价格，以保持与 DexScreener K线图同步
-    /*
-    if (marketData.currentPrice !== undefined) {
-      setCurrentPrice(marketData.currentPrice);
-    }
-    */
-    
-    // 更新K线数据
-    if (marketData.klineData && Array.isArray(marketData.klineData) && marketData.klineData.length > 0) {
-      const formattedData = marketData.klineData
-        .filter(item => item && (item.open !== undefined || item.close !== undefined))
-        .map(item => ({
-          id: item.id || 0,
-          timestamp: item.timestamp || Date.now(),
-          open: typeof item.open === 'number' ? item.open : parseFloat(item.open) || 0,
-          close: typeof item.close === 'number' ? item.close : parseFloat(item.close) || 0,
-          high: typeof item.high === 'number' ? item.high : parseFloat(item.high) || 0,
-          low: typeof item.low === 'number' ? item.low : parseFloat(item.low) || 0,
-          vol: typeof item.volume === 'number' ? item.volume : (typeof item.vol === 'number' ? item.vol : parseFloat(item.volume || item.vol) || 0)
-        }))
-        .filter(item => item.open > 0 || item.close > 0)
-        .sort((a, b) => a.timestamp - b.timestamp);
-      setRawData(formattedData);
-      
-      // 更新今日最高最低
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayStart = today.getTime();
-      const todayData = formattedData.filter(item => item.timestamp >= todayStart);
-      if (todayData.length > 0) {
-        const highs = todayData.map(d => d.high).filter(h => h > 0);
-        const lows = todayData.map(d => d.low).filter(l => l > 0);
-        if (highs.length > 0) setTodayHigh(Math.max(...highs));
-        if (lows.length > 0) setTodayLow(Math.min(...lows));
-      }
-    }
-    
-    // 更新交易记录
-    if (marketData.recentTrades && Array.isArray(marketData.recentTrades)) {
-      setTrades(marketData.recentTrades.map(trade => ({
-        id: trade.id || generateUniqueId(),
-        price: trade.price,
-        amount: trade.amount,
-        type: trade.type,
-        time: trade.time || new Date(trade.timestamp).toLocaleTimeString()
-      })));
-    }
-    
-    // 更新订单簿
-    if (marketData.orderBook) {
-      setOrderBook(marketData.orderBook);
-    }
-    
-    // 更新24小时变化和成交量
-    if (marketData.priceChange24h !== undefined) {
-      setPriceChange24h(marketData.priceChange24h);
-    }
-    if (marketData.volume24h !== undefined) {
-      setVolume24h(marketData.volume24h);
-    }
-    if (marketData.marketIndex) {
-      setMarketIndex(marketData.marketIndex);
-    }
-  };
-  
+  // 这里的 SSE 订阅逻辑也应该移除对虚拟数据的处理
   useEffect(() => {
-    // 订阅 market 数据更新
+    // 仅保留对真实数据事件的监听（如果后端有真实数据源接入）
+    // 目前后端已禁用模拟数据，所以这里实际上不会收到 update
     const unsubscribe = subscribe('market', (message) => {
-      if (message.type === 'update' && message.data) {
-        // 全量更新：直接使用SSE推送的完整数据，不需要再次调用API
-        updateMarketDataFromSSE(message.data);
-      } else if (message.type === 'incremental' && message.data.klinePoint) {
-        // 增量更新：K线数据点
-        const klinePoint = message.data.klinePoint;
-        setRawData(prevData => {
-          const newData = [...prevData, {
-            id: prevData.length,
-            timestamp: klinePoint.timestamp || Date.now(),
-            open: klinePoint.open || 0,
-            close: klinePoint.close || 0,
-            high: klinePoint.high || 0,
-            low: klinePoint.low || 0,
-            vol: klinePoint.volume || 0
-          }].filter(item => item.open > 0 || item.close > 0)
-            .sort((a, b) => a.timestamp - b.timestamp)
-            .slice(-60); // 保持最多60个数据点
-          
-          // 更新今日最高最低
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const todayStart = today.getTime();
-          const todayData = newData.filter(item => item.timestamp >= todayStart);
-          if (todayData.length > 0) {
-            const highs = todayData.map(d => d.high).filter(h => h > 0);
-            const lows = todayData.map(d => d.low).filter(l => l > 0);
-            if (highs.length > 0) setTodayHigh(Math.max(...highs));
-            if (lows.length > 0) setTodayLow(Math.min(...lows));
-          }
-          
-          return newData;
-        });
-      }
-      
-      // 更新价格相关数据
-    // 注意：不再从 SSE 更新价格，以保持与 DexScreener K线图同步
-    /* 
-    if (message.data.currentPrice !== undefined) {
-      setCurrentPrice(message.data.currentPrice);
-    }
-    if (message.data.priceChange24h !== undefined) {
-      setPriceChange24h(message.data.priceChange24h);
-    }
-    if (message.data.volume24h !== undefined) {
-      setVolume24h(message.data.volume24h);
-    }
-    */
-    if (message.data.orderBook) {
-      setOrderBook(message.data.orderBook);
-    }
-  });
+      // 忽略模拟数据更新
+    });
     
     return unsubscribe;
   }, [subscribe]);
@@ -742,7 +506,7 @@ const MarketSection = () => {
             {/* 现价 */}
             <div className="flex items-baseline space-x-2">
               <span className={`text-3xl font-mono font-bold ${priceChange24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {currentPrice > 0 ? (currentPrice < 0.01 ? currentPrice.toFixed(6) : currentPrice.toFixed(2)) : '0.00'}
+                {currentPrice > 0 ? currentPrice.toFixed(5) : '0.00000'}
                 <span className="text-xs ml-1 text-slate-500">USD</span>
               </span>
               {priceChange24h >= 0 ? (
@@ -827,7 +591,7 @@ const MarketSection = () => {
         {/* 图表区域 (DexScreener Embed) */}
         <div className="flex-1 relative flex overflow-hidden rounded-lg border border-slate-800 bg-black m-2">
           <iframe 
-            src="https://dexscreener.com/solana/6q88jmgqs5kikkjjvh7xgpy2rv3c2jps9yqsgqfvkrgt?embed=1&theme=dark&trades=0&info=0"
+            src={`https://dexscreener.com/solana/${realMarketData?.pairAddress || '6q88jmgqs5kikkjjvh7xgpy2rv3c2jps9yqsgqfvkrgt'}?embed=1&theme=dark&trades=1&info=0`}
             style={{
               width: '100%',
               height: '100%',
@@ -845,70 +609,69 @@ const MarketSection = () => {
       </div>
 
       <div className="relative z-10 w-full md:w-1/4 bg-slate-900/30 backdrop-blur flex flex-col font-mono">
-        <div className="h-10 border-b border-slate-800 flex items-center px-4 text-xs text-slate-400 uppercase tracking-wider bg-slate-900">
-          <Database size={14} className="mr-2" /> Order Book
-        </div>
-
-        <div className="flex-1 overflow-hidden relative">
-          <div className="absolute bottom-0 w-full px-2 py-2 space-y-1">
-            {orderBook.asks && orderBook.asks.length > 0 ? (
-              orderBook.asks.slice(0, 5).map((ask, index) => (
-                <div 
-                  key={`sell-${ask.price}-${index}`} 
-                  className="flex justify-between text-xs cursor-pointer hover:bg-slate-800/50 transition-colors"
-                  onClick={() => navigate('/market-detail?tab=orderbook')}
-                >
-                  <span className="text-red-500">{Number(ask.price).toFixed(2)}</span>
-                  <span className="text-slate-500">{Number(ask.amount).toFixed(4)}</span>
+        {/* Buy Channel Section */}
+        <div className="h-2/3 flex flex-col border-b border-slate-800">
+            <div className="h-10 border-b border-slate-800 flex items-center px-4 text-xs text-slate-400 uppercase tracking-wider bg-slate-900">
+              <ShoppingBag size={14} className="mr-2" /> Buy TWSCoin
+            </div>
+            <div className="flex-1 p-4 flex flex-col justify-center items-center space-y-4 bg-slate-900/20">
+                <div className="text-center">
+                    <h3 className="text-lg font-bold text-white mb-1">Trade on Raydium</h3>
+                    <p className="text-xs text-slate-400">Best liquidity for TWSCoin</p>
                 </div>
-              ))
-            ) : (
-              <div className="text-slate-500 text-xs">No asks</div>
-            )}
-          </div>
-        </div>
-
-        <div className="h-12 border-t border-b border-slate-800 flex items-center justify-center bg-slate-800/30">
-          <span className="text-xl font-bold text-white">
-            {currentPrice > 0 ? (currentPrice < 0.01 ? currentPrice.toFixed(6) : currentPrice.toFixed(2)) : '0.00'}
-          </span>
-          <span className="text-xs ml-2 text-slate-400">USD</span>
-        </div>
-
-        <div className="flex-1 px-2 py-2 space-y-1">
-            {orderBook.bids && orderBook.bids.length > 0 ? (
-              orderBook.bids.slice(0, 7).map((bid, index) => (
-                <div 
-                  key={`buy-${bid.price}-${index}`} 
-                  className="flex justify-between text-xs relative cursor-pointer hover:bg-slate-800/30 transition-colors"
-                  onClick={() => navigate('/market-detail?tab=orderbook')}
+                
+                <a 
+                    href="https://raydium.io/swap/?inputMint=sol&outputMint=ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold rounded-lg text-center transition-all transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2"
                 >
-                  <div className="absolute right-0 top-0 bottom-0 bg-green-900/20" style={{ width: `${60 + index * 5}%` }} />
-                  <span className="text-green-500 relative z-10">{Number(bid.price).toFixed(2)}</span>
-                  <span className="text-slate-300 relative z-10">{Number(bid.amount).toFixed(4)}</span>
+                    <span>Buy Now</span>
+                    <Globe size={16} />
+                </a>
+
+                <div className="text-[10px] text-slate-500 text-center max-w-[200px]">
+                    Clicking will open the official Raydium Swap page with the pair pre-loaded.
                 </div>
-              ))
-            ) : (
-              <div className="text-slate-500 text-xs">No bids</div>
-            )}
+            </div>
         </div>
 
-        <div className="h-1/3 border-t border-slate-800 bg-black/20 p-2">
+        {/* Market Stats Section (Moved to bottom) */}
+        <div className="h-1/3 border-t border-slate-800 bg-black/20 p-2 flex flex-col">
           <div className="text-[10px] text-slate-500 mb-2 flex justify-between">
-            <span>PRICE</span>
-            <span>TIME</span>
+            <span>MARKET STATS</span>
+            <span className="text-green-500">REAL-TIME</span>
           </div>
-          <div className="space-y-1 overflow-hidden">
-          {trades.map((trade, index) => (
-              <div 
-                key={`${trade.id}-${index}`} 
-                className="flex justify-between text-[10px] animate-fade-in-down cursor-pointer hover:bg-slate-800/50 px-1 py-0.5 rounded transition-colors"
-                onClick={() => navigate(`/market-detail?tab=trades&tradeId=${trade.id}`)}
-              >
-                <span className={trade.type === 'buy' ? 'text-green-500' : 'text-red-500'}>{trade.price}</span>
-                <span className="text-slate-400">{trade.time}</span>
-              </div>
-            ))}
+          <div className="space-y-2 overflow-y-auto flex-1 text-xs">
+             {realMarketData ? (
+                <>
+                    <div className="flex justify-between">
+                        <span className="text-slate-500">TXNS (24H)</span>
+                        <span className="text-slate-300">
+                            <span className="text-green-500">{realMarketData.txns.h24.buys}</span> / <span className="text-red-500">{realMarketData.txns.h24.sells}</span>
+                        </span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-slate-500">VOLUME (24H)</span>
+                        <span className="text-slate-300">${realMarketData.volume.h24.toLocaleString()}</span>
+                    </div>
+                     <div className="flex justify-between">
+                        <span className="text-slate-500">LIQUIDITY</span>
+                        <span className="text-slate-300">${realMarketData.liquidity.usd.toLocaleString()}</span>
+                    </div>
+                     <div className="flex justify-between">
+                        <span className="text-slate-500">PRICE (SOL)</span>
+                        <span className="text-slate-300">{realMarketData.priceNative} SOL</span>
+                    </div>
+                     <div className="mt-2 text-[10px] text-slate-600 text-center">
+                        Individual trades list available in main chart
+                    </div>
+                </>
+             ) : (
+                 <div className="flex items-center justify-center h-full text-slate-600">
+                     Loading stats...
+                 </div>
+             )}
           </div>
         </div>
       </div>

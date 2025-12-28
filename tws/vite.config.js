@@ -1,8 +1,46 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    nodePolyfills({
+      globals: {
+        Buffer: true,
+        global: true,
+        process: true,
+      },
+    }),
+  ],
+  
+  // 配置 resolve 以支持 Node.js polyfills
+  resolve: {
+    alias: {
+      // 移除手动 buffer 别名，由插件自动处理
+    },
+  },
+  
+  // 定义全局变量
+  define: {
+    'process.env': '{}',
+    'process.browser': 'true',
+    global: 'globalThis',
+  },
+  
+  // 优化依赖处理
+  optimizeDeps: {
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',
+      },
+    },
+  },
   
   // 构建配置
   build: {
