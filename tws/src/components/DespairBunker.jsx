@@ -16,6 +16,19 @@ const DespairBunker = () => {
   const [hasDied, setHasDied] = useState(false);
   const [showDeathScreen, setShowDeathScreen] = useState(false);
   
+  // 新增state：散落的台币、物资箱、日记、出口标志等
+  const [scatteredMoney, setScatteredMoney] = useState([]);
+  const [supplyBoxes, setSupplyBoxes] = useState([]);
+  const [diaryNotes, setDiaryNotes] = useState([]);
+  const [exitSigns, setExitSigns] = useState([]);
+  const [distantVoices, setDistantVoices] = useState([]);
+  const [explosionActive, setExplosionActive] = useState(false);
+  const [noticeBoardText, setNoticeBoardText] = useState("物资即将到达，请耐心等待...");
+  const [noticeBoardOpacity, setNoticeBoardOpacity] = useState(1);
+  const [radioNews, setRadioNews] = useState(0);
+  const [selectedDiary, setSelectedDiary] = useState(null);
+  const [hoveredItem, setHoveredItem] = useState(null);
+  
   const rootRef = useRef(null);
   const flickerIntervalRef = useRef(null);
   const statsIntervalRef = useRef(null);
@@ -167,6 +180,166 @@ const DespairBunker = () => {
     }
   }, [stats.sanity]);
 
+  // 初始化散落的台币 - 使用百分比定位
+  useEffect(() => {
+    const generateRandomPosition = (existingItems, minDistance = 8) => {
+      // 使用百分比，确保在 10%-90% 范围内，留出边距
+      let attempts = 0;
+      let pos;
+      do {
+        pos = {
+          x: Math.random() * 80 + 10, // 10% 到 90%
+          y: Math.random() * 80 + 10, // 10% 到 90%
+          rotation: Math.random() * 360 - 180,
+          id: Date.now() + Math.random()
+        };
+        attempts++;
+      } while (
+        attempts < 50 && 
+        existingItems.some(item => {
+          const dist = Math.sqrt(Math.pow(item.x - pos.x, 2) + Math.pow(item.y - pos.y, 2));
+          return dist < minDistance;
+        })
+      );
+      return pos;
+    };
+
+    const money = [];
+    for (let i = 0; i < 6; i++) {
+      money.push(generateRandomPosition(money));
+    }
+    setScatteredMoney(money);
+  }, []);
+
+  // 初始化物资箱 - 使用百分比定位
+  useEffect(() => {
+    const boxes = [
+      { id: 1, x: 15, y: 65, opened: false }, // 使用百分比
+      { id: 2, x: 75, y: 35, opened: false },
+      { id: 3, x: 25, y: 80, opened: false },
+    ];
+    setSupplyBoxes(boxes);
+  }, []);
+
+  // 初始化日记纸条 - 使用百分比定位
+  useEffect(() => {
+    const notes = [
+      { 
+        id: 1, 
+        x: 20,  // 百分比
+        y: 45,
+        preview: "第3天...",
+        content: "第3天，水没了，大家都在互相欺骗...没有人愿意分享，法币已经变成废纸。"
+      },
+      { 
+        id: 2, 
+        x: 70, 
+        y: 60,
+        preview: "只有TWS...",
+        content: "只有TWS能救我们，但已经太晚了...那些提前准备的人早就离开了。"
+      },
+      { 
+        id: 3, 
+        x: 50, 
+        y: 75,
+        preview: "法币变成...",
+        content: "法币变成废纸，我们都被骗了...政府承诺的救援永远不会来。"
+      },
+    ];
+    setDiaryNotes(notes);
+  }, []);
+
+  // 初始化紧急出口标志 - 使用百分比定位
+  useEffect(() => {
+    const signs = [
+      { id: 1, x: 10, y: 30 }, // 百分比
+      { id: 2, x: 85, y: 70 },
+    ];
+    setExitSigns(signs);
+  }, []);
+
+  // 公告板文字逐渐消失
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNoticeBoardOpacity(prev => Math.max(0, prev - 0.02));
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 收音机新闻循环
+  useEffect(() => {
+    const news = [
+      "政府承诺物资即将到达...",
+      "救援队在路上，请保持耐心...",
+      "银行系统正在恢复中...",
+      "请相信政府，一切都会好起来..."
+    ];
+    const interval = setInterval(() => {
+      setRadioNews(prev => (prev + 1) % news.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 随机触发爆炸/震动效果
+  useEffect(() => {
+    const triggerExplosion = () => {
+      setExplosionActive(true);
+      setStats(prev => ({
+        ...prev,
+        sanity: Math.max(0, prev.sanity - 5)
+      }));
+      setTimeout(() => setExplosionActive(false), 1000);
+      
+      const nextDelay = Math.random() * 30000 + 30000; // 30-60秒
+      setTimeout(triggerExplosion, nextDelay);
+    };
+    
+    const initialDelay = Math.random() * 30000 + 10000; // 10-40秒后首次触发
+    const timeout = setTimeout(triggerExplosion, initialDelay);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  // 远处传来的声音文字
+  useEffect(() => {
+    const voices = ["救命...", "水...", "食物...", "不要开门...", "他们在外面..."];
+    const addVoice = () => {
+      const voice = voices[Math.floor(Math.random() * voices.length)];
+      const side = Math.random() > 0.5 ? 'left' : 'right';
+      const id = Date.now();
+      setDistantVoices(prev => [...prev, { id, text: voice, side }]);
+      
+      setTimeout(() => {
+        setDistantVoices(prev => prev.filter(v => v.id !== id));
+      }, 3000);
+      
+      const nextDelay = Math.random() * 20000 + 20000; // 20-40秒
+      setTimeout(addVoice, nextDelay);
+    };
+    
+    const initialDelay = Math.random() * 20000 + 10000;
+    const timeout = setTimeout(addVoice, initialDelay);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  // 光照检测函数 - 适配百分比定位
+  const isIlluminated = (itemXPercent, itemYPercent) => {
+    if (typeof window === 'undefined') return false;
+    const width = window.innerWidth || 1920;
+    const height = window.innerHeight || 1080;
+    
+    // 将百分比转换为像素
+    const itemX = (itemXPercent / 100) * width;
+    const itemY = (itemYPercent / 100) * height;
+    
+    const mouseX = parseInt(mousePos.x) || width / 2;
+    const mouseY = parseInt(mousePos.y) || height / 2;
+    
+    const distance = Math.sqrt(
+      Math.pow(itemX - mouseX, 2) + Math.pow(itemY - mouseY, 2)
+    );
+    return distance < lightSize / 2;
+  };
+
   // 购买尝试
   const handlePurchase = () => {
     if (soldOut) return;
@@ -228,7 +401,63 @@ const DespairBunker = () => {
     setTwsGateActive(false);
     setInstructionVisible(true);
     setIsScanning(false);
+    setSelectedDiary(null);
+    setHoveredItem(null);
     localStorage.removeItem('bunker_died');
+  };
+
+  // 处理台币点击
+  const handleMoneyClick = (moneyId) => {
+    setStats(prev => ({
+      ...prev,
+      sanity: Math.max(0, prev.sanity - 3)
+    }));
+    setInstructionVisible(true);
+    setTimeout(() => setInstructionVisible(false), 2000);
+  };
+
+  // 处理物资箱点击
+  const handleBoxClick = (boxId) => {
+    setSupplyBoxes(prev => prev.map(box => 
+      box.id === boxId ? { ...box, opened: true } : box
+    ));
+    setStats(prev => ({
+      ...prev,
+      sanity: Math.max(0, prev.sanity - 5)
+    }));
+  };
+
+  // 处理日记点击
+  const handleDiaryClick = (note) => {
+    setSelectedDiary(note);
+  };
+
+  // 处理出口标志点击
+  const handleExitClick = () => {
+    setInstructionVisible(true);
+    setTimeout(() => setInstructionVisible(false), 3000);
+  };
+
+  // 处理ATM点击
+  const handleATMClick = () => {
+    setInstructionVisible(true);
+    setTimeout(() => setInstructionVisible(false), 3000);
+  };
+
+  // 处理公告板点击
+  const handleNoticeClick = () => {
+    setInstructionVisible(true);
+    setTimeout(() => setInstructionVisible(false), 2000);
+  };
+
+  // 处理聊天室诈骗消息点击
+  const handleScamClick = () => {
+    setStats(prev => ({
+      ...prev,
+      sanity: Math.max(0, prev.sanity - 30)
+    }));
+    setInstructionVisible(true);
+    setTimeout(() => setInstructionVisible(false), 3000);
   };
 
   // 如果显示死亡屏幕
@@ -294,11 +523,307 @@ const DespairBunker = () => {
         <div className="absolute bottom-[10%] right-[20%] text-red-900 opacity-30 font-bold text-xl pointer-events-none select-none mix-blend-overlay">
           DON'T OPEN
         </div>
+        
+        {/* 新增涂鸦/血字 */}
+        <div className="absolute top-[30%] right-[10%] text-red-600 opacity-20 font-bold text-xl transform rotate-[5deg] pointer-events-none select-none mix-blend-overlay animate-pulse">
+          不要相信任何人
+        </div>
+        <div className="absolute top-[50%] left-[5%] text-green-400 opacity-15 font-bold text-2xl transform -rotate-[3deg] pointer-events-none select-none mix-blend-overlay">
+          TWS是唯一出路
+        </div>
+        <div className="absolute bottom-[30%] left-[15%] text-yellow-500 opacity-25 font-bold text-lg transform rotate-[8deg] pointer-events-none select-none mix-blend-overlay">
+          法币=废纸
+        </div>
+        <div className="absolute top-[70%] right-[25%] text-white opacity-15 font-bold text-sm transform -rotate-[2deg] pointer-events-none select-none mix-blend-overlay">
+          第7天，我们还在等...
+        </div>
       </div>
+
+      {/* 废弃的ATM机 */}
+      <div 
+        className="absolute bottom-[10%] left-[5%] w-[180px] h-[220px] bg-[#333] border-2 border-[#555] rounded z-[3] p-3 cursor-pointer"
+        onClick={handleATMClick}
+        onMouseEnter={() => setHoveredItem('atm')}
+        onMouseLeave={() => setHoveredItem(null)}
+      >
+        <div className="w-full h-[120px] bg-black border border-[#666] mb-2 flex items-center justify-center relative overflow-hidden">
+          <div className="text-red-500 text-xs font-mono animate-pulse">
+            系统维护中
+          </div>
+          {Math.random() > 0.7 && (
+            <div className="absolute inset-0 bg-red-500/30 animate-ping" />
+          )}
+        </div>
+        <div className="h-[60px] bg-[#222] rounded flex items-center justify-center">
+          <div className="w-[40px] h-[40px] bg-[#444] rounded-full"></div>
+        </div>
+        {hoveredItem === 'atm' && (
+          <div className="absolute -top-8 left-0 bg-black/90 text-white text-xs p-2 rounded whitespace-nowrap">
+            点击查看账户状态
+          </div>
+        )}
+      </div>
+
+      {/* 破损的公告板 */}
+      <div 
+        className="absolute top-[15%] left-[25%] w-[200px] bg-[#8B4513] border-4 border-[#654321] rounded z-[3] p-3 cursor-pointer shadow-lg"
+        onClick={handleNoticeClick}
+        style={{ opacity: noticeBoardOpacity }}
+      >
+        <div className="bg-[#D2691E] text-white text-xs p-2 rounded mb-2 font-bold">
+          政府公告
+        </div>
+        <div className="text-white text-[10px] leading-tight">
+          {noticeBoardText}
+        </div>
+        <div className="mt-2 flex gap-1">
+          <div className="w-2 h-2 bg-[#654321] rounded-full"></div>
+          <div className="w-2 h-2 bg-[#654321] rounded-full"></div>
+          <div className="w-2 h-2 bg-[#654321] rounded-full"></div>
+        </div>
+      </div>
+
+      {/* 散落的台币 */}
+      {scatteredMoney.map((money) => {
+        const illuminated = isIlluminated(money.x, money.y);
+        return (
+          <div
+            key={money.id}
+            className="absolute z-[3] cursor-pointer transition-all duration-300"
+            style={{
+              left: `${money.x}%`,
+              top: `${money.y}%`,
+              transform: `translate(-50%, -50%) rotate(${money.rotation}deg) ${hoveredItem === `money-${money.id}` ? 'translateY(-5px)' : ''}`,
+              opacity: illuminated ? 1 : 0.3
+            }}
+            onClick={() => handleMoneyClick(money.id)}
+            onMouseEnter={() => setHoveredItem(`money-${money.id}`)}
+            onMouseLeave={() => setHoveredItem(null)}
+          >
+            <div 
+              className="w-[80px] h-[40px] bg-gradient-to-r from-blue-600 to-blue-800 border-2 border-blue-900 rounded relative shadow-lg"
+              style={{
+                background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1e40af 100%)'
+              }}
+            >
+              <div className="text-white text-[8px] font-bold text-center mt-1">NT$ 1000</div>
+              <div className="text-white text-[6px] text-center mt-0.5 opacity-70">已失效</div>
+            </div>
+            {hoveredItem === `money-${money.id}` && (
+              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black/90 text-white text-xs p-1 rounded whitespace-nowrap">
+                法币已崩溃
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* 空的物资箱 */}
+      {supplyBoxes.map((box) => {
+        const illuminated = isIlluminated(box.x, box.y);
+        return (
+          <div
+            key={box.id}
+            className="absolute z-[3] cursor-pointer transition-all duration-300"
+            style={{
+              left: `${box.x}%`,
+              top: `${box.y}%`,
+              transform: `translate(-50%, -50%) ${box.opened ? 'scale(1.1) rotate(15deg)' : 'scale(1)'}`,
+              opacity: illuminated ? 1 : 0.3
+            }}
+            onClick={() => handleBoxClick(box.id)}
+            onMouseEnter={() => setHoveredItem(`box-${box.id}`)}
+            onMouseLeave={() => setHoveredItem(null)}
+          >
+            <div 
+              className="w-[100px] h-[80px] bg-gradient-to-br from-[#8B4513] to-[#654321] border-2 border-[#3e2723] rounded shadow-lg relative"
+              style={{
+                background: 'linear-gradient(135deg, #8B4513 0%, #654321 50%, #5D4037 100%)',
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.5)'
+              }}
+            >
+              {box.opened ? (
+                <div className="w-full h-full flex items-center justify-center text-red-500 text-xs font-bold">
+                  什么都没有
+                </div>
+              ) : (
+                <>
+                  <div className="absolute top-1 left-1 right-1 h-1 bg-[#3e2723]"></div>
+                  <div className="absolute bottom-1 left-1 right-1 h-1 bg-[#3e2723]"></div>
+                  {hoveredItem === `box-${box.id}` && (
+                    <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black/90 text-white text-xs p-1 rounded whitespace-nowrap">
+                      已清空
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* 散落的日记/纸条 */}
+      {diaryNotes.map((note) => {
+        const illuminated = isIlluminated(note.x, note.y);
+        const rotation = (note.id * 13) % 20 - 10; // 使用id生成固定旋转角度
+        return (
+          <div
+            key={note.id}
+            className="absolute z-[3] cursor-pointer transition-all duration-300"
+            style={{
+              left: `${note.x}%`,
+              top: `${note.y}%`,
+              transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+              opacity: illuminated ? 1 : 0.3
+            }}
+            onClick={() => handleDiaryClick(note)}
+            onMouseEnter={() => setHoveredItem(`diary-${note.id}`)}
+            onMouseLeave={() => setHoveredItem(null)}
+          >
+            <div 
+              className="w-[60px] h-[80px] bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-300 rounded shadow-lg p-1"
+              style={{
+                background: 'linear-gradient(135deg, #fef9e7 0%, #fef3c7 100%)',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+              }}
+            >
+              <div className="text-[8px] text-gray-800 leading-tight font-serif">
+                {note.preview}
+              </div>
+            </div>
+            {hoveredItem === `diary-${note.id}` && (
+              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/90 text-white text-xs p-1 rounded whitespace-nowrap">
+                点击阅读
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* 日记弹窗 */}
+      {selectedDiary && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-[30] flex items-center justify-center"
+          onClick={() => setSelectedDiary(null)}
+        >
+          <div 
+            className="bg-yellow-50 w-[400px] max-w-[90vw] p-6 rounded shadow-2xl border-2 border-yellow-300 cursor-pointer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-gray-800 font-serif text-sm leading-relaxed mb-4">
+              {selectedDiary.content}
+            </div>
+            <button
+              onClick={() => setSelectedDiary(null)}
+              className="w-full py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors"
+            >
+              关闭
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 废弃的收音机 */}
+      <div 
+        className="absolute bottom-[25%] left-[50%] transform -translate-x-1/2 w-[200px] h-[120px] bg-black border-2 border-[#444] rounded z-[3] p-3"
+      >
+        <div className="w-full h-[60px] bg-[#111] border border-[#333] mb-2 flex items-center justify-center relative overflow-hidden">
+          <div className="text-green-400 text-[10px] font-mono animate-pulse">
+            {["政府承诺物资即将到达...", "救援队在路上，请保持耐心...", "银行系统正在恢复中...", "请相信政府，一切都会好起来..."][radioNews]}
+          </div>
+          <div className="absolute inset-0 bg-green-500/10 animate-ping" style={{ animationDuration: '2s' }}></div>
+        </div>
+        <div className="flex justify-between items-center">
+          <div className="w-[30px] h-[30px] bg-[#333] rounded-full border border-[#555]"></div>
+          <div className="w-[20px] h-[20px] bg-[#333] rounded-full border border-[#555]"></div>
+          <div className="w-[60px] h-[8px] bg-[#333] border border-[#555] rounded"></div>
+        </div>
+        <div className="absolute top-2 right-2 w-[4px] h-[40px] bg-[#555]"></div>
+      </div>
+
+      {/* 闪烁的紧急出口标志 */}
+      {exitSigns.map((sign) => (
+        <div
+          key={sign.id}
+          className="absolute z-[3] cursor-pointer animate-pulse"
+          style={{
+            left: `${sign.x}%`,
+            top: `${sign.y}%`,
+            transform: 'translate(-50%, -50%)'
+          }}
+          onClick={handleExitClick}
+          onMouseEnter={() => setHoveredItem(`exit-${sign.id}`)}
+          onMouseLeave={() => setHoveredItem(null)}
+        >
+          <div className="w-[80px] h-[40px] bg-green-600 border-2 border-green-800 rounded flex items-center justify-center shadow-lg">
+            <div className="text-white font-bold text-sm">EXIT</div>
+          </div>
+          {hoveredItem === `exit-${sign.id}` && (
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black/90 text-white text-xs p-1 rounded whitespace-nowrap">
+              门已封锁，需要TWS认证
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* 破损的监控屏幕 */}
+      <div 
+        className="absolute top-[5%] right-[5%] w-[150px] h-[100px] bg-[#111] border-2 border-[#333] rounded z-[3] p-2"
+      >
+        <div className="w-full h-full bg-black border border-[#333] relative overflow-hidden">
+          <div 
+            className="absolute inset-0 opacity-30"
+            style={{
+              background: 'linear-gradient(45deg, #1a1a1a 25%, transparent 25%, transparent 75%, #1a1a1a 75%, #1a1a1a), linear-gradient(45deg, #1a1a1a 25%, transparent 25%, transparent 75%, #1a1a1a 75%, #1a1a1a)',
+              backgroundSize: '20px 20px',
+              backgroundPosition: '0 0, 10px 10px'
+            }}
+          ></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-red-500 text-[8px] font-mono animate-pulse">
+              {Math.random() > 0.5 ? '信号中断' : '监控离线'}
+            </div>
+          </div>
+          {Math.random() > 0.7 && (
+            <div className="absolute inset-0 bg-red-500/20 animate-ping" style={{ animationDuration: '1s' }}></div>
+          )}
+        </div>
+      </div>
+
+      {/* 远处传来的声音文字 */}
+      {distantVoices.map((voice) => (
+        <div
+          key={voice.id}
+          className={`absolute z-[6] text-red-400 text-lg font-bold pointer-events-none animate-[slideInFromEdge_3s_ease-out] ${
+            voice.side === 'left' ? 'left-0' : 'right-0'
+          }`}
+          style={{
+            top: `${Math.random() * 60 + 20}%`,
+            animation: voice.side === 'left' 
+              ? 'slideInFromLeft 3s ease-out forwards' 
+              : 'slideInFromRight 3s ease-out forwards'
+          }}
+        >
+          {voice.text}
+        </div>
+      ))}
+
+      {/* 爆炸/震动效果 */}
+      {explosionActive && (
+        <>
+          <div 
+            className="fixed inset-0 bg-red-500/30 z-[25] animate-ping"
+            style={{ animationDuration: '0.5s' }}
+          ></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[26] text-red-500 text-2xl font-bold pointer-events-none">
+            远处传来爆炸声...
+          </div>
+        </>
+      )}
 
       {/* Phase 2: 生存HUD */}
       <div 
-        className={`absolute top-5 left-5 z-[5] text-green-500 font-mono text-sm bg-[rgba(0,20,0,0.8)] border border-green-500 p-2.5 w-[200px] ${
+        className={`absolute top-5 left-5 z-[5] text-green-500 font-mono text-sm bg-[rgba(0,20,0,0.8)] border border-green-500 p-2.5 w-[220px] ${
           stats.sanity < 30 ? 'text-red-500 border-red-500' : ''
         }`}
         style={{ textShadow: '0 0 5px #0f0' }}
@@ -334,9 +859,28 @@ const DespairBunker = () => {
             />
           </div>
         </div>
+        <div className="flex justify-between mb-1 mt-2">
+          <span>TEMP</span>
+          <div className="w-[100px] bg-[#003300] h-2.5 mt-1">
+            <div 
+              className="h-full bg-blue-500 transition-all duration-500"
+              style={{ width: `${Math.max(0, 100 - (100 - stats.water) * 0.5)}%` }}
+            />
+          </div>
+        </div>
         <div className="mt-2.5 text-[10px] opacity-70">
           BUNKER STATUS: CRITICAL
         </div>
+        <div className="mt-1 text-[9px] text-red-400">
+          预计存活: {Math.floor(stats.sanity / 10)}小时
+        </div>
+      </div>
+
+      {/* 贩卖机周围的垃圾 */}
+      <div className="absolute top-[45%] left-[48%] transform -translate-x-1/2 -translate-y-1/2 z-[1]">
+        <div className="absolute w-[20px] h-[30px] bg-[#444] rounded-sm opacity-60" style={{ left: '-60px', top: '80px', transform: 'rotate(15deg)' }}></div>
+        <div className="absolute w-[25px] h-[25px] bg-[#555] rounded-full opacity-60" style={{ left: '-40px', top: '100px', transform: 'rotate(-10deg)' }}></div>
+        <div className="absolute w-[30px] h-[20px] bg-[#333] rounded-sm opacity-60" style={{ left: '60px', top: '90px', transform: 'rotate(-20deg)' }}></div>
       </div>
 
       {/* Phase 2: 恶性通胀贩卖机 */}
@@ -393,7 +937,10 @@ const DespairBunker = () => {
           {chatMessages.map((msg, idx) => (
             <div 
               key={idx}
-              className="mb-2 leading-snug opacity-0 animate-slideIn"
+              className={`mb-2 leading-snug opacity-0 animate-slideIn ${
+                msg.type === 'scam' ? 'cursor-pointer hover:bg-red-900/30 rounded p-1' : ''
+              }`}
+              onClick={() => msg.type === 'scam' && handleScamClick()}
             >
               {msg.type === 'sys' ? (
                 <span className="text-yellow-500 italic">
@@ -402,6 +949,7 @@ const DespairBunker = () => {
               ) : msg.type === 'scam' ? (
                 <>
                   <span className="text-red-500 font-bold">{msg.name}</span>: {msg.text}
+                  <span className="text-red-400 text-[10px] ml-1">[点击查看]</span>
                 </>
               ) : (
                 <>
@@ -471,6 +1019,20 @@ const DespairBunker = () => {
               交易失败：法币已失效<br />
               资产冻结中...
             </>
+          ) : hoveredItem === 'atm' ? (
+            <>
+              您的账户已被冻结<br />
+              请联系TWS资产认证
+            </>
+          ) : hoveredItem?.startsWith('exit') ? (
+            <>
+              门已封锁<br />
+              需要TWS认证
+            </>
+          ) : hoveredItem?.startsWith('money') ? (
+            <>
+              法币已崩溃，无法使用
+            </>
           ) : (
             <>
               SYSTEM FAILURE...<br />
@@ -500,7 +1062,44 @@ const DespairBunker = () => {
             );
           }
         }
+        
+        @keyframes slideInFromLeft {
+          from {
+            transform: translateX(-100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        
+        @keyframes slideInFromRight {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        
+        @keyframes shake {
+          0%, 100% { transform: translate(0, 0); }
+          10%, 30%, 50%, 70%, 90% { transform: translate(-2px, -2px); }
+          20%, 40%, 60%, 80% { transform: translate(2px, 2px); }
+        }
       `}</style>
+      
+      {/* 震动效果 */}
+      {explosionActive && (
+        <style>{`
+          body {
+            animation: shake 0.5s;
+          }
+        `}</style>
+      )}
     </div>
   );
 };
