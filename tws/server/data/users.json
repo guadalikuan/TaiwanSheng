@@ -1874,5 +1874,89 @@
     "lastLogin": null,
     "createdAt": 1766909961486,
     "updatedAt": 1766909961486
+  },
+  {
+    "address": "0x2c086696593e8d0D53D275B65506f093FB65AB95",
+    "username": "bot_user_7tu2th",
+    "passwordHash": "$2a$10$T3/vWwukMw2OcbqhOrL0P.vaE8T.ZhhOR/Nx9lkV7O06j.PlE3A0a",
+    "encryptedMnemonic": "U2FsdGVkX1/MwhRCuEIHTTIxl0v6y0n/HMJ+WbuNRL7MW9NW17d2DPw+M5p87bfT/U3/r45dYnaV+eVnAadKBYEHeguhDdH+hKyoyQByC4ZRit/bOt8l9Rgsvka8f3Ej",
+    "role": "USER",
+    "profile": {
+      "displayName": "bot_user_7tu2th",
+      "avatar": ""
+    },
+    "lastLogin": null,
+    "createdAt": 1766911080694,
+    "updatedAt": 1766911080694
+  },
+  {
+    "address": "0xcDE0a6a59ca7ee0594C25EDca4e2e11284813628",
+    "username": "bot_user_8k0fwn",
+    "passwordHash": "$2a$10$oUVOd1ZZZqHNh3ni5FXr8emuy90gAsFTHhE3sz9mvi7jrw2bvR4RG",
+    "encryptedMnemonic": "U2FsdGVkX1/eZ7sYlcVLNeBIwTb9Z03w/xHv1KYga7WGczXIqs3R/MS2JMuXenfzSP+g07Gta8Jp3EcVjxiiytK6SyU9XvUJhK1Vzd0qFVgXTavDUkaLQMqbI22PTFMx",
+    "role": "USER",
+    "profile": {
+      "displayName": "bot_user_8k0fwn",
+      "avatar": ""
+    },
+    "lastLogin": null,
+    "createdAt": 1766911462141,
+    "updatedAt": 1766911462141
+  },
+  {
+    "address": "0x1eB63079E59Ee76fdfD4040743262020AA96262b",
+    "username": "bot_user_r6hzhs",
+    "passwordHash": "$2a$10$Hw84hGvSdjyizJZcVxdlXOh7HOt8c5eR0K5ioLwrcSQHioJh8YnwK",
+    "encryptedMnemonic": "U2FsdGVkX1+6SC92czZ22eyiembJtSNMS36M0yaCdOBzs7UVQxUXSx7YZsgIFBJbYmQ1fHX/+UsicyQm1Tu1mZT+XA4Czaiq4ObWotAy/uTOC9azUJAzsmjFRn/lc+xt",
+    "role": "USER",
+    "profile": {
+      "displayName": "bot_user_r6hzhs",
+      "avatar": ""
+    },
+    "lastLogin": null,
+    "createdAt": 1766911931437,
+    "updatedAt": 1766911931437
+  },
+  {
+    "address": "0xF20A278d2442B3540bda959E51e4023E3960a892",
+    "username": "bot_user_ixe27v",
+    "passwordHash": "$2a$10$pCrdGewpAtwpdDRhzDPareQPPlv3K9GQIhl/WkgS9l/WdkFqz56yu",
+    "encryptedMnemonic": "U2FsdGVkX1/KHqLcdww7VXZBdobFX0GRdkmCEEWYvyUd0Nqz+Weq5Gds2vDGyIzYDyqafbySlBs0526E1iBN9dwuROo3ZNb+Mz1ZqtpM8I91yZoYTiVVB94ov1V8sf0RY0NKo5aLtxXN1HVwCjYAbg==",
+    "role": "SUBMITTER",
+    "profile": {
+      "displayName": "bot_user_ixe27v",
+      "avatar": ""
+    },
+    "lastLogin": null,
+    "createdAt": 1766912449573,
+    "updatedAt": 1766912449573
+  },
+  {
+    "address": "0x903C4AAEAcF5990e82b7Bf40463539840e69e02B",
+    "username": "bot_user_s83vez",
+    "passwordHash": "$2a$10$F0x3L9QB6uEF9.YVoA.dZ.Js2R7yZ0wl7M2O.wA0hqrx0V74MXZka",
+    "encryptedMnemonic": "U2FsdGVkX19kl56+v67NxcOJZetfcMa4+lW8QE7iXpV6qR5ahHQN1Z1PdDJmJzSrREBCWuy/xJX5+mirwFSidj2C9PSKWq6CL/NRY5Mh03qZcqBaRxhF91gMutnuZ8ZE",
+    "role": "USER",
+    "profile": {
+      "displayName": "bot_user_s83vez",
+      "avatar": ""
+    },
+    "lastLogin": null,
+    "createdAt": 1766913219430,
+    "updatedAt": 1766913219430
+  },
+  {
+    "address": "0x56211f852b231a867854365a4a923Ca3DB5FAF0b",
+    "username": "bot_user_ao9sm9",
+    "passwordHash": "$2a$10$KaIfiUQpwmLpSHzBrAgHG.K/GqzDmilgMC8j1/yGQ6VKmNSfjwvpW",
+    "encryptedMnemonic": "U2FsdGVkX19Il/pzdcXYiCfNqcTmNnx0dt6Je+AorbXFOoFK4Ce9AwpfRjQxiNOfwXDFZiqlVmVKSQD/pj0D0rTywa9FGIX6HM7W55QRdmOzGxIwGxEJp53EHaSEuREm",
+    "role": "USER",
+    "profile": {
+      "displayName": "bot_user_ao9sm9",
+      "avatar": ""
+    },
+    "lastLogin": null,
+    "createdAt": 1766914154235,
+    "updatedAt": 1766914154235
   }
 ]
