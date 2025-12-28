@@ -1,28 +1,16 @@
 {
   "buys": [
     {
-      "id": "order_1766913532941_5wgup5y",
-      "userId": "bot_1764684210026_7z9oeee",
-      "username": "bot_user_46r1tn",
+      "id": "order_1766913559840_04xkck0",
+      "userId": "bot_1764844556941_4jvxvqj",
+      "username": "bot_user_tuwmql",
       "type": "buy",
-      "price": 5405363.84,
-      "amount": 10.2646,
-      "timestamp": 1766913532941,
-      "remainingAmount": 10.2646,
+      "price": 5345287.53,
+      "amount": 17.3075,
+      "timestamp": 1766913559840,
+      "remainingAmount": 17.3075,
       "status": "pending",
-      "createdAt": 1766913532941
-    },
-    {
-      "id": "order_1766913527787_qeyj5tq",
-      "userId": "bot_1764771550915_jwb6lgz",
-      "username": "bot_user_4vbg75",
-      "type": "buy",
-      "price": 5377808.67,
-      "amount": 85.4639,
-      "timestamp": 1766913527787,
-      "remainingAmount": 74.47569999999999,
-      "status": "pending",
-      "createdAt": 1766913527787
+      "createdAt": 1766913559840
     },
     {
       "id": "order_1766913528558_u4v5rdx",
@@ -32,9 +20,57 @@
       "price": 5271888.13,
       "amount": 63.6736,
       "timestamp": 1766913528558,
-      "remainingAmount": 63.6736,
+      "remainingAmount": 2.3673999999999893,
       "status": "pending",
       "createdAt": 1766913528558
+    },
+    {
+      "id": "order_1766913546284_h3a37n6",
+      "userId": "bot_1764767535936_atmbsrk",
+      "username": "bot_user_vi7kzr",
+      "type": "buy",
+      "price": 5251856.52,
+      "amount": 50.0954,
+      "timestamp": 1766913546284,
+      "remainingAmount": 50.0954,
+      "status": "pending",
+      "createdAt": 1766913546284
+    },
+    {
+      "id": "order_1766913554522_13t3r3l",
+      "userId": "bot_1764684209270_m4nkn17",
+      "username": "bot_user_2vldam",
+      "type": "buy",
+      "price": 5212057.73,
+      "amount": 68.2917,
+      "timestamp": 1766913554522,
+      "remainingAmount": 68.2917,
+      "status": "pending",
+      "createdAt": 1766913554522
+    },
+    {
+      "id": "order_1766913555902_aevapts",
+      "userId": "bot_1764684209559_jv5kqyj",
+      "username": "bot_user_3er99n",
+      "type": "buy",
+      "price": 5202894.7,
+      "amount": 81.9422,
+      "timestamp": 1766913555902,
+      "remainingAmount": 81.9422,
+      "status": "pending",
+      "createdAt": 1766913555902
+    },
+    {
+      "id": "order_1766913542387_73vtq20",
+      "userId": "bot_1764779713681_vvt1h3u",
+      "username": "bot_user_3nl6yv",
+      "type": "buy",
+      "price": 5190870.45,
+      "amount": 44.1834,
+      "timestamp": 1766913542387,
+      "remainingAmount": 44.1834,
+      "status": "pending",
+      "createdAt": 1766913542387
     },
     {
       "id": "order_1766646413091_576nc1h",
@@ -83103,18 +83139,6 @@
   ],
   "sells": [
     {
-      "id": "order_1766646472872_c6ctac7",
-      "userId": "bot_1764898646225_ze9zopd",
-      "username": "bot_user_3xt5tm",
-      "type": "sell",
-      "price": 5421402.14,
-      "amount": 102.5844,
-      "timestamp": 1766646472872,
-      "remainingAmount": 30.6169,
-      "status": "pending",
-      "createdAt": 1766646472872
-    },
-    {
       "id": "order_1766646475742_akqg0t1",
       "userId": "bot_1764691753937_nrr489y",
       "username": "bot_user_077ija",
@@ -83122,7 +83146,7 @@
       "price": 5425683.66,
       "amount": 83.6829,
       "timestamp": 1766646475742,
-      "remainingAmount": 83.6829,
+      "remainingAmount": 10.58550000000001,
       "status": "pending",
       "createdAt": 1766646475742
     },
@@ -83161,6 +83185,18 @@
       "remainingAmount": 21.6205,
       "status": "pending",
       "createdAt": 1766913500028
+    },
+    {
+      "id": "order_1766913541190_26dy29k",
+      "userId": "bot_1764817913237_5to725o",
+      "username": "bot_user_unmiup",
+      "type": "sell",
+      "price": 5482822.21,
+      "amount": 108.943,
+      "timestamp": 1766913541190,
+      "remainingAmount": 108.943,
+      "status": "pending",
+      "createdAt": 1766913541190
     },
     {
       "id": "order_1766646439068_lj24mv4",
