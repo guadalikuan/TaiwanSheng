@@ -1,9 +1,7 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import AuctionHeader from './components/AuctionHeader';
 import AuctionCard from './components/AuctionCard';
 import BarrageSystem from './components/BarrageSystem';
+import AuctionPanel from './components/AuctionPanel';
 
 // 资产信息（可以从后端或链上获取）
 const ASSET_INFO = {
@@ -16,32 +14,10 @@ const ASSET_INFO = {
 };
 
 export default function AuctionPage() {
-  const { isAuthenticated, loading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      navigate('/login?redirect=/auction');
-    }
-  }, [isAuthenticated, loading, navigate]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-tws-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-tws-red border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400">验证身份中...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return null; // 会重定向到登录页
-  }
+  // 移除登录检查，允许游客直接访问
 
   return (
-    <div className="min-h-screen bg-blood-trail text-white font-sans selection:bg-tws-red selection:text-white relative overflow-hidden">
+    <div className="h-screen bg-blood-trail text-white font-sans selection:bg-tws-red selection:text-white relative overflow-hidden flex flex-col">
       {/* 背景氛围层 - 极简的网格背景，暗示数字化控制 */}
       <div 
         className="absolute inset-0 z-0 opacity-10 pointer-events-none" 
@@ -58,42 +34,25 @@ export default function AuctionPage() {
       {/* 顶部导航栏 */}
       <AuctionHeader />
 
-      {/* 主要内容区 - 强制单屏显示 */}
-      <main className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 pb-20 pt-24">
-        {/* 顶部标语 - 挑衅与使命感 */}
-        <div className="text-center mb-8 animate-fade-in-down">
-          <div className="mb-2">
-            <span className="text-sm text-gray-400 font-mono">TWS-ASSET-001</span>
+      {/* 三栏主内容区 - 强制一屏显示 */}
+      <main className="flex-1 relative z-10 flex overflow-hidden pt-16">
+        {/* 左侧：弹幕系统 */}
+        <div className="w-80 border-r border-gray-800/50 flex-shrink-0">
+          <BarrageSystem />
+        </div>
+
+        {/* 中间：拍品展示 */}
+        <div className="flex-1 flex items-center justify-center p-6 overflow-hidden">
+          <div className="w-full max-w-2xl">
+            <AuctionCard asset={ASSET_INFO} />
           </div>
-          <h2 className="text-xl md:text-2xl font-bold text-gray-400 tracking-widest uppercase mb-2">
-            Target Locked: <span className="text-white">Yu Bei-chen</span>
-          </h2>
-          <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-tws-gold to-yellow-200 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)] mb-2">
-            ASSET LIQUIDATION
-          </h1>
-          <p className="text-tws-red font-bold text-lg italic mb-2">
-            {ASSET_INFO.name}
-          </p>
-          <p className="mt-4 text-gray-500 text-sm max-w-md mx-auto">
-            这是一场基于 <span className="text-tws-red font-bold">荷兰式博弈</span> 的资产重组。
-            <br/>历史不会等待犹豫者。
-          </p>
         </div>
 
-        {/* 核心卡片 - 战场中心 */}
-        <div className="w-full max-w-2xl transform transition-all hover:scale-[1.01]">
-          <AuctionCard asset={ASSET_INFO} />
-        </div>
-
-        {/* 底部提示 - 增加紧迫感 */}
-        <div className="mt-8 text-xs text-gray-600 font-mono text-center max-w-2xl">
-          <p>⚠️ 警告：出价即视为签署《TWS 战后资产接收协议》</p>
-          <p className="mt-1">Contract: {import.meta.env.VITE_SOLANA_NETWORK || 'devnet'} (Solana)</p>
+        {/* 右侧：拍卖操作和记录 */}
+        <div className="w-96 border-l border-gray-800/50 flex-shrink-0 overflow-hidden">
+          <AuctionPanel asset={ASSET_INFO} />
         </div>
       </main>
-
-      {/* 悬浮组件层 */}
-      <BarrageSystem />
     </div>
   );
 }

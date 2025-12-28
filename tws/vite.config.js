@@ -1,8 +1,38 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default defineConfig({
   plugins: [react()],
+  
+  // 配置 resolve 以支持 Node.js polyfills
+  resolve: {
+    alias: {
+      buffer: resolve(__dirname, 'node_modules/buffer'),
+    },
+  },
+  
+  // 定义全局变量
+  define: {
+    'process.env': '{}',
+    'process.browser': 'true',
+    global: 'globalThis',
+  },
+  
+  // 优化依赖处理
+  optimizeDeps: {
+    include: ['buffer'],
+    exclude: ['readable-stream'], // 排除可能导致 process 问题的依赖
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',
+      },
+    },
+  },
   
   // 构建配置
   build: {

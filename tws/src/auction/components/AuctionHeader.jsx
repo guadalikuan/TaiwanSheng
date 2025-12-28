@@ -1,11 +1,9 @@
 import { useAuth } from '../../contexts/AuthContext';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { useWallet } from '@solana/wallet-adapter-react';
 import { useNavigate } from 'react-router-dom';
+import WalletConnectButton from '../../components/WalletConnectButton';
 
 export default function AuctionHeader() {
   const { user, isAuthenticated } = useAuth();
-  const { connected, publicKey } = useWallet();
   const navigate = useNavigate();
 
   const handleBackToTws = () => {
@@ -55,17 +53,8 @@ export default function AuctionHeader() {
               </div>
             )}
 
-            {/* Solana 钱包连接按钮 */}
-            <div className="flex items-center">
-              <WalletMultiButton 
-                className="!bg-tws-red hover:!bg-red-600 !text-white !font-bold !rounded-lg !px-4 !py-2"
-              />
-              {connected && publicKey && (
-                <div className="ml-2 text-xs text-gray-400 font-mono">
-                  {publicKey.toString().slice(0, 4)}...{publicKey.toString().slice(-4)}
-                </div>
-              )}
-            </div>
+            {/* Solana 钱包连接按钮 - 使用通用组件 */}
+            <WalletConnectButton />
           </div>
         </div>
       </div>

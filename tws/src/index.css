@@ -48,6 +48,10 @@ body::before {
   scrollbar-width: none;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* TWS 拍卖系统样式 */
 .btn-ripple {
   position: relative;
@@ -73,6 +77,70 @@ body::before {
   transform: scale(0, 0);
   opacity: .3;
   transition: 0s;
+}
+
+/* Solana 钱包选择弹窗自定义样式 */
+.wallet-adapter-modal-wrapper {
+  background: rgba(0, 0, 0, 0.9) !important;
+  backdrop-filter: blur(10px);
+}
+
+.wallet-adapter-modal {
+  background: #1a1a1a !important;
+  border: 2px solid #D32F2F !important;
+  border-radius: 12px !important;
+}
+
+.wallet-adapter-modal-title {
+  color: #FFD700 !important;
+  font-weight: bold !important;
+}
+
+.wallet-adapter-button {
+  background: #2a2a2a !important;
+  border: 1px solid #444 !important;
+  color: white !important;
+  transition: all 0.2s !important;
+}
+
+.wallet-adapter-button:hover {
+  background: #3a3a3a !important;
+  border-color: #D32F2F !important;
+  transform: translateY(-2px);
+}
+
+.wallet-adapter-button-trigger {
+  background: #D32F2F !important;
+  color: white !important;
+}
+
+.wallet-adapter-button-trigger:hover {
+  background: #b71c1c !important;
+}
+
+/* 隐藏 WalletMultiButton 的下拉菜单选项 */
+.wallet-connect-button-wrapper .wallet-adapter-dropdown-list {
+  display: none !important;
+}
+
+.wallet-connect-button-wrapper .wallet-adapter-dropdown-list-item {
+  display: none !important;
+}
+
+/* 确保按钮本身可见且可点击 */
+.wallet-connect-button-wrapper button {
+  background: #D32F2F !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 0.5rem !important;
+  padding: 0.5rem 1rem !important;
+  font-weight: bold !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s !important;
+}
+
+.wallet-connect-button-wrapper button:hover {
+  background: #b71c1c !important;
 }
 
 ::selection {

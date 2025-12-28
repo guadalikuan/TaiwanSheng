@@ -7,6 +7,11 @@ import { TonConnectUIProvider } from '@tonconnect/ui-react';
 import App from './App';
 import './index.css';
 
+// 导入 buffer polyfill（Solana SDK 需要）
+import { Buffer } from 'buffer';
+window.Buffer = Buffer;
+globalThis.Buffer = Buffer;
+
 // 2. 配置 TON Connect 清单地址（测试用，上线替换为自己的）
 // 测试清单地址（官方示例），上线需替换为你自己的 manifest.json 地址
 const tonManifestUrl = 'https://ton-connect.github.io/demo-dapp/tonconnect-manifest.json';

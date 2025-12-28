@@ -19,23 +19,51 @@ import {
   createTokenAccountIfNeeded
 } from '../utils/solana';
 
-// 模拟数据（如果智能合约尚未部署）
-const MOCK_AUCTION_STATE = {
-  currentPrice: 1000, // 起拍价 1000 TWS
-  highestBidder: '8V77...FpB',
-  owner: '8V77HPB5pWN5tRTPdVncCqYTQCaqyCpWyvHP7eCpdFpB',
-  tauntMessage: '此房产已被TWS接管',
+// API 基础 URL
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001').replace(/\/$/, '');
+
+// 获取拍卖状态
+const fetchAuctionState = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auction/state`);
+    const result = await response.json();
+    if (result.success && result.data) {
+      return result.data;
+    }
+    throw new Error(result.error || 'Failed to fetch auction state');
+  } catch (error) {
+    console.error('Error fetching auction state:', error);
+    // 返回默认值作为后备
+    return {
+      currentPrice: 1000,
+      highestBidder: null,
+      owner: null,
+      tauntMessage: '此房产等待第一个出价者',
+      startPrice: 1000,
+      startTime: Date.now(),
+      ownershipDuration: 0,
+      isLoading: false,
+    };
+  }
+};
+
+// 默认状态
+const DEFAULT_AUCTION_STATE = {
+  currentPrice: 1000,
+  highestBidder: null,
+  owner: null,
+  tauntMessage: '加载中...',
   startPrice: 1000,
-  startTime: Date.now() - 3600000, // 1小时前开始
-  ownershipDuration: 3600,
-  isLoading: false,
+  startTime: Date.now(),
+  ownershipDuration: 0,
+  isLoading: true,
 };
 
 export const useAuction = () => {
   const { connection } = useConnection();
   const { publicKey, sendTransaction, connected } = useWallet();
   
-  const [auctionState, setAuctionState] = useState(MOCK_AUCTION_STATE);
+  const [auctionState, setAuctionState] = useState(DEFAULT_AUCTION_STATE);
   const [isPlacingBid, setIsPlacingBid] = useState(false);
   const [userBalance, setUserBalance] = useState(0);
 
@@ -45,38 +73,113 @@ export const useAuction = () => {
       const fetchBalance = async () => {
         try {
           const mint = getTwsTokenMint();
-          const tokenAccount = getUserTokenAccountSync(publicKey, mint);
-          const accountInfo = await getAccount(connection, tokenAccount);
-          const decimals = getTwsTokenDecimals();
-          setUserBalance(Number(accountInfo.amount) / Math.pow(10, decimals));
+          console.log('🔍 查询余额 - Mint 地址:', mint.toString());
+          console.log('🔍 查询余额 - 用户地址:', publicKey.toString());
+          console.log('🔍 连接的网络:', connection.rpcEndpoint);
+          
+          // 方法1: 使用 getParsedTokenAccountsByOwner 查询用户所有的 token accounts
+          // 这个方法更可靠，可以找到所有 token accounts，即使 ATA 不存在
+          try {
+            const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+              publicKey,
+              {
+                mint: mint,
+              }
+            );
+            
+            console.log('📊 查询到的 Token Accounts:', tokenAccounts);
+            
+            if (tokenAccounts.value && tokenAccounts.value.length > 0) {
+              // 找到匹配的 token account
+              const twsAccount = tokenAccounts.value.find(
+                account => account.account.data.parsed.info.mint === mint.toString()
+              );
+              
+              if (twsAccount) {
+                const tokenAmount = twsAccount.account.data.parsed.info.tokenAmount;
+                const balance = tokenAmount.uiAmount || 
+                  (Number(tokenAmount.amount) / Math.pow(10, tokenAmount.decimals));
+                
+                console.log('✅ 使用 getParsedTokenAccountsByOwner 获取余额:', {
+                  amount: tokenAmount.amount,
+                  decimals: tokenAmount.decimals,
+                  uiAmount: tokenAmount.uiAmount,
+                  uiAmountString: tokenAmount.uiAmountString,
+                  balance: balance,
+                });
+                
+                console.log('💰 最终余额:', balance, 'TWSCoin');
+                setUserBalance(balance);
+                return;
+              }
+            }
+            
+            console.log('ℹ️ 未找到 TWSCoin Token Account，余额为 0');
+            setUserBalance(0);
+          } catch (parseError) {
+            console.warn('⚠️ getParsedTokenAccountsByOwner 失败，尝试备用方法:', parseError.message);
+            
+            // 方法2: 使用 ATA 地址查询（备用方法）
+            const tokenAccount = getUserTokenAccountSync(publicKey, mint);
+            console.log('🔍 Token Account 地址:', tokenAccount.toString());
+            
+            try {
+              const tokenAccountInfo = await getAccount(connection, tokenAccount);
+              const decimals = getTwsTokenDecimals();
+              const balance = Number(tokenAccountInfo.amount) / Math.pow(10, decimals);
+              
+              console.log('✅ 使用 getAccount 获取余额:', balance, 'TWSCoin');
+              setUserBalance(balance);
+            } catch (accountError) {
+              console.log('ℹ️ Token Account 不存在，余额为 0');
+              console.log('错误信息:', accountError.message);
+              setUserBalance(0);
+            }
+          }
         } catch (error) {
-          // Token Account 不存在，余额为 0
+          console.error('❌ 获取 TWSCoin 余额失败:', error);
+          
+          // 检查是否是 RPC 访问限制错误
+          if (error.message?.includes('403') || error.message?.includes('Access forbidden')) {
+            console.error('⚠️ RPC 端点访问被拒绝（403 Forbidden）');
+            console.error('💡 解决方案：请配置自定义 RPC 端点');
+            console.error('   在 .env.local 文件中添加：VITE_SOLANA_RPC_URL=你的RPC端点URL');
+            console.error('   推荐使用：Helius、QuickNode 或 Alchemy 等 RPC 提供商');
+          }
+          
+          console.error('错误详情:', {
+            message: error.message,
+            rpcEndpoint: connection.rpcEndpoint,
+            stack: error.stack,
+          });
           setUserBalance(0);
         }
       };
 
+      // 立即获取一次
       fetchBalance();
-      const interval = setInterval(fetchBalance, 5000); // 每5秒刷新余额
+      // 每5秒刷新余额
+      const interval = setInterval(fetchBalance, 5000);
       return () => clearInterval(interval);
     } else {
       setUserBalance(0);
     }
   }, [connected, publicKey, connection]);
 
-  // 模拟：定期刷新数据（制造一种"有人在抢"的假象）
+  // 从数据库加载拍卖状态
   useEffect(() => {
-    const interval = setInterval(() => {
-      // 这里可以接入真实的链上数据查询逻辑
-      // 现在我们用随机数模拟价格波动，保持刺激感
-      if (Math.random() > 0.7) {
-        setAuctionState(prev => ({
-          ...prev,
-          currentPrice: prev.currentPrice + Math.floor(Math.random() * 50),
-          ownershipDuration: prev.ownershipDuration + 1,
-        }));
-      }
-    }, 5000); // 每5秒刷新一次
-
+    const loadAuctionState = async () => {
+      const state = await fetchAuctionState();
+      setAuctionState({
+        ...state,
+        isLoading: false,
+      });
+    };
+    
+    loadAuctionState();
+    
+    // 每5秒刷新一次（从数据库获取真实数据）
+    const interval = setInterval(loadAuctionState, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -109,12 +212,17 @@ export const useAuction = () => {
       
       const mint = getTwsTokenMint();
       const treasuryPublicKey = new PublicKey(getTreasuryAddress());
-      const oldOwnerKey = new PublicKey(auctionState.owner);
+      
+      // 检查是否有上一任持有者
+      const hasOldOwner = auctionState.owner && 
+                          auctionState.owner !== 'null' && 
+                          auctionState.owner !== null &&
+                          auctionState.owner.trim() !== '';
+      const oldOwnerKey = hasOldOwner ? new PublicKey(auctionState.owner) : null;
 
       // 获取所有相关的 Token Account 地址
       const userTokenAccount = getUserTokenAccountSync(publicKey, mint);
       const treasuryTokenAccount = getTreasuryTokenAccountSync(treasuryPublicKey, mint);
-      const oldOwnerTokenAccount = getUserTokenAccountSync(oldOwnerKey, mint);
 
       // 构建交易
       const transaction = new Transaction();
@@ -138,12 +246,16 @@ export const useAuction = () => {
         }
       }
 
-      // 3. 检查上一任持有者的 Token Account
-      const oldOwnerTokenAccountInfo = await connection.getAccountInfo(oldOwnerTokenAccount);
-      if (!oldOwnerTokenAccountInfo) {
-        const createOldOwnerAccount = await createTokenAccountIfNeeded(connection, publicKey, oldOwnerKey, mint);
-        if (createOldOwnerAccount) {
-          transaction.add(createOldOwnerAccount);
+      // 3. 如果有上一任持有者，检查并创建其 Token Account
+      let oldOwnerTokenAccount = null;
+      if (hasOldOwner && oldOwnerKey) {
+        oldOwnerTokenAccount = getUserTokenAccountSync(oldOwnerKey, mint);
+        const oldOwnerTokenAccountInfo = await connection.getAccountInfo(oldOwnerTokenAccount);
+        if (!oldOwnerTokenAccountInfo) {
+          const createOldOwnerAccount = await createTokenAccountIfNeeded(connection, publicKey, oldOwnerKey, mint);
+          if (createOldOwnerAccount) {
+            transaction.add(createOldOwnerAccount);
+          }
         }
       }
 
@@ -159,17 +271,32 @@ export const useAuction = () => {
         )
       );
 
-      // 步骤 2: 买家 -> 上任房主 (赔付+利润 95%)
-      transaction.add(
-        createTransferInstruction(
-          userTokenAccount,      // 源账户（买家）
-          oldOwnerTokenAccount,  // 目标账户（上一任持有者）
-          publicKey,            // 授权账户（买家）
-          payout,               // 转账数量
-          [],                   // 多签账户（无）
-          TOKEN_PROGRAM_ID      // Token Program ID
-        )
-      );
+      // 步骤 2: 如果有上一任持有者，买家 -> 上任房主 (赔付+利润 95%)
+      // 如果没有上一任持有者，将剩余 95% 也转给财库（作为初始拍卖费用）
+      if (hasOldOwner && oldOwnerKey && oldOwnerTokenAccount) {
+        transaction.add(
+          createTransferInstruction(
+            userTokenAccount,      // 源账户（买家）
+            oldOwnerTokenAccount,  // 目标账户（上一任持有者）
+            publicKey,            // 授权账户（买家）
+            payout,               // 转账数量
+            [],                   // 多签账户（无）
+            TOKEN_PROGRAM_ID      // Token Program ID
+          )
+        );
+      } else {
+        // 第一个出价者：将剩余 95% 也转给财库
+        transaction.add(
+          createTransferInstruction(
+            userTokenAccount,      // 源账户（买家）
+            treasuryTokenAccount,  // 目标账户（财库）
+            publicKey,            // 授权账户（买家）
+            payout,               // 转账数量
+            [],                   // 多签账户（无）
+            TOKEN_PROGRAM_ID      // Token Program ID
+          )
+        );
+      }
 
       // 获取最新区块哈希
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
@@ -187,6 +314,25 @@ export const useAuction = () => {
       }, 'confirmed');
 
       console.log("Bid Placed! Signature:", signature);
+
+      // 在交易成功后，保存到数据库
+      try {
+        await fetch(`${API_BASE_URL}/api/auction/bid`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            bidder: publicKey.toString(),
+            amount: minBid,
+            taunt: tauntMessage || '',
+            transactionSignature: signature
+          }),
+        });
+      } catch (error) {
+        console.error('Failed to save bid to database:', error);
+        // 即使保存失败，也不影响交易成功
+      }
 
       // 更新前端状态
       setAuctionState(prev => ({
@@ -219,7 +365,7 @@ export const useAuction = () => {
       if (error.message?.includes('insufficient funds') || error.message?.includes('0x1')) {
         errorMessage = '余额不足，请确保有足够的 TWS！';
       } else if (error.message?.includes('TokenAccountNotFoundError') || error.message?.includes('0x5')) {
-        errorMessage = 'Token 账户不存在，请先获取一些 TWS！';
+        errorMessage = 'Token 账户不存在，请先获取一些 TWSCoin！';
       } else if (error.message?.includes('User rejected')) {
         errorMessage = '用户取消了交易';
       } else {

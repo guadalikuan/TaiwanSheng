@@ -38,8 +38,11 @@ export default function BarrageSystem() {
         timestamp: Date.now(),
       };
 
-      // 保持屏幕上只有最新的 5 条消息，避免遮挡
-      setMessages(prev => [newMsg, ...prev].slice(0, 5));
+      // 增加消息数量，让弹幕填满整个左侧区域（大约 20 条）
+      setMessages(prev => {
+        const maxMessages = 20; // 增加到 20 条，让弹幕填满整个高度
+        return [newMsg, ...prev].slice(0, maxMessages);
+      });
     }, 1500); // 每 1.5 秒刷新一条，节奏适中
 
     return () => clearInterval(interval);
@@ -54,7 +57,10 @@ export default function BarrageSystem() {
       color: 'text-tws-red',
       timestamp: Date.now(),
     };
-    setMessages(prev => [newMsg, ...prev].slice(0, 5));
+    setMessages(prev => {
+      const maxMessages = 20;
+      return [newMsg, ...prev].slice(0, maxMessages);
+    });
   };
 
   // 暴露给外部使用（通过 window）
@@ -65,32 +71,47 @@ export default function BarrageSystem() {
   }, []);
 
   return (
-    <div className="fixed bottom-20 left-4 z-10 pointer-events-none w-64 max-h-[300px] overflow-hidden">
-      {/* 渐变遮罩，让顶部消息淡出 */}
-      <div className="absolute top-0 left-0 w-full h-12 bg-gradient-to-b from-tws-black to-transparent z-20 pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-tws-black to-transparent z-20 pointer-events-none"></div>
+    <div className="h-full flex flex-col p-4 overflow-hidden">
+      {/* 标题 */}
+      <div className="mb-4 pb-3 border-b border-gray-800 flex-shrink-0">
+        <h3 className="text-sm font-bold text-tws-gold uppercase tracking-wider">
+          🎯 实时动态
+        </h3>
+      </div>
 
-      <div className="flex flex-col-reverse gap-2">
-        <AnimatePresence>
-          {messages.map((msg) => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, x: -20, height: 0 }}
-              animate={{ opacity: 1, x: 0, height: 'auto' }}
-              exit={{ opacity: 0, scale: 0.9, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="bg-black/80 backdrop-blur-sm border-l-2 border-tws-gold px-3 py-1 rounded-r-md shadow-lg"
-            >
-              <div className="flex items-center text-xs font-mono">
-                <span className="text-gray-500 mr-2">
-                  {new Date(msg.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
-                </span>
-                <span className="text-gray-300 font-bold mr-2">{msg.user}</span>
-                <span className={`${msg.color} font-bold`}>{msg.action}</span>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+      {/* 消息列表 - 从下往上滚动，占满剩余高度 */}
+      <div className="flex-1 overflow-y-auto no-scrollbar min-h-0">
+        <div className="flex flex-col-reverse gap-2 justify-end min-h-full">
+          <AnimatePresence>
+            {messages.map((msg) => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3 }}
+                className="bg-black/60 backdrop-blur-sm border-l-2 border-tws-gold px-3 py-2 rounded-r-md shadow-lg flex-shrink-0"
+              >
+                <div className="flex items-start gap-2 text-xs font-mono">
+                  <span className="text-gray-500 text-[10px] whitespace-nowrap flex-shrink-0">
+                    {new Date(msg.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-gray-300 font-bold mr-1">{msg.user}</span>
+                    <span className={`${msg.color} font-bold break-words`}>{msg.action}</span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          
+          {/* 如果消息不足，显示占位提示 */}
+          {messages.length === 0 && (
+            <div className="text-center text-gray-600 text-xs py-8">
+              <p>等待动态更新...</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

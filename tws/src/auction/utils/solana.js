@@ -12,11 +12,13 @@ import {
  * 获取 TWSCoin Mint 地址
  */
 export const getTwsTokenMint = () => {
-  const mintAddress = import.meta.env.VITE_TWS_TOKEN_MINT;
-  if (!mintAddress) {
-    throw new Error('VITE_TWS_TOKEN_MINT 环境变量未设置');
+  // 优先使用环境变量，如果没有则使用默认值
+  const mintAddress = import.meta.env.VITE_TWS_TOKEN_MINT || 'ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk';
+  try {
+    return new PublicKey(mintAddress);
+  } catch (error) {
+    throw new Error(`无效的 TWSCoin Mint 地址: ${mintAddress}`);
   }
-  return new PublicKey(mintAddress);
 };
 
 /**
