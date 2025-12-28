@@ -4,9 +4,11 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# 安装构建工具（用于编译原生模块如 usb）
-# 注意：前端项目在浏览器中运行，实际不需要原生 USB 模块（使用 WebUSB API）
-# 但为了通过构建，需要安装这些依赖
+# 添加缓存破坏层，确保使用最新的基础镜像
+ARG CACHE_BUST=1
+RUN echo "Build cache bust: $CACHE_BUST"
+
+# 安装构建工具（虽然我们会跳过脚本，但保留以防万一）
 RUN apk add --no-cache \
     python3 \
     make \
@@ -15,6 +17,9 @@ RUN apk add --no-cache \
     linux-headers \
     eudev-dev \
     libusb-dev
+
+# 设置 npm 配置，全局忽略脚本
+RUN npm config set ignore-scripts true
 
 # 复制依赖文件
 COPY package*.json ./
