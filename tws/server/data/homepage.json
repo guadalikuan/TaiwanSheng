@@ -1,982 +1,851 @@
 {
   "omega": {
-    "etuTargetTime": 1816524211671,
+    "etuTargetTime": 1818739833359,
     "riskPremium": 142.5,
     "events": [
       {
-        "id": "1766646498305-qv0y9x0",
-        "text": "[TRIGGER] Trade executed: 38.45 @ 5213118.70 by bot_user_e3qgny",
+        "id": "1766903014629-h2vv1j9",
+        "text": "[TRIGGER] Trade executed: 18.24 @ 29106974.73 by bot_user_xu5dm2",
         "impact": "NEUTRAL",
-        "timestamp": 1766646498305
+        "timestamp": 1766903014629
       },
       {
-        "id": "1766646492456-msly5g6",
-        "text": "[TRIGGER] Trade executed: 21.58 @ 5244292.18 by bot_user_0fjdf9",
+        "id": "1766903008760-uyiw5b8",
+        "text": "[TRIGGER] Trade executed: 43.58 @ 29109171.82 by bot_user_31hgie",
         "impact": "NEUTRAL",
-        "timestamp": 1766646492456
+        "timestamp": 1766903008760
       },
       {
-        "id": "1766646489913-q1uab94",
-        "text": "[TRIGGER] Trade executed: 2.07 @ 5345318.97 by bot_user_oaxxgs",
+        "id": "1766903005012-26rxd76",
+        "text": "[TRIGGER] Trade executed: 91.25 @ 29195975.91 by bot_user_k8mgvc",
         "impact": "NEUTRAL",
-        "timestamp": 1766646489913
+        "timestamp": 1766903005012
       },
       {
-        "id": "1766646482838-g6cvggp",
-        "text": "[TRIGGER] Trade executed: 84.61 @ 5345318.97 by bot_user_zpbynp",
+        "id": "1766902991076-twzz4w1",
+        "text": "[TRIGGER] Trade executed: 13.57 @ 28972096.61 by bot_user_pjovec",
         "impact": "NEUTRAL",
-        "timestamp": 1766646482838
+        "timestamp": 1766902991076
       },
       {
-        "id": "1766646481727-6o5hyx9",
-        "text": "[TRIGGER] Trade executed: 42.76 @ 5393931.04 by bot_user_3z2ccu",
+        "id": "1766902984027-isbburz",
+        "text": "[TRIGGER] Trade executed: 0.65 @ 28688425.01 by bot_user_4b38w3",
         "impact": "NEUTRAL",
-        "timestamp": 1766646481727
+        "timestamp": 1766902984027
       },
       {
-        "id": "1766646474301-re0fa37",
-        "text": "[TRIGGER] Trade executed: 61.50 @ 5421402.14 by bot_user_vb7n6x",
+        "id": "1766902981229-3ajdgds",
+        "text": "[TRIGGER] Trade executed: 55.84 @ 28694649.08 by bot_user_3zkmg1",
         "impact": "NEUTRAL",
-        "timestamp": 1766646474301
+        "timestamp": 1766902981229
       },
       {
-        "id": "1766646472943-frhtjpu",
-        "text": "[TRIGGER] Trade executed: 10.47 @ 5593232.88 by bot_user_3xt5tm",
+        "id": "1766902978586-nyiatjv",
+        "text": "[TRIGGER] Trade executed: 12.47 @ 28892433.25 by bot_user_bijus7",
         "impact": "NEUTRAL",
-        "timestamp": 1766646472943
+        "timestamp": 1766902978586
       },
       {
-        "id": "1766646467235-v48ljff",
-        "text": "[TRIGGER] Trade executed: 48.02 @ 5612756.82 by bot_user_jhvo5z",
+        "id": "1766902975288-cr3qif1",
+        "text": "[TRIGGER] Trade executed: 37.48 @ 29626813.65 by bot_user_3z2ccu",
         "impact": "NEUTRAL",
-        "timestamp": 1766646467235
+        "timestamp": 1766902975288
       }
     ],
     "alertMessage": "⚠ SYSTEM ALERT: GEOPOLITICAL TENSION RISING"
   },
   "market": {
-    "currentPrice": 5182125.19,
+    "currentPrice": 28792318.69,
     "priceChange24h": 0,
-    "volume24h": 28059553953.2763,
+    "volume24h": 1276126712008.6584,
     "marketIndex": "STRONG BUY",
     "klineData": [
       {
         "id": 60,
-        "timestamp": 1766646408923,
-        "open": 5423350.91,
-        "high": 5423350.91,
-        "low": 5423350.91,
-        "close": 5423350.91,
+        "timestamp": 1766902927605,
+        "open": 29361017.51,
+        "high": 29786651.27,
+        "low": 29037911.21,
+        "close": 29037911.21,
+        "volume": 46.0927
+      },
+      {
+        "id": 60,
+        "timestamp": 1766902929126,
+        "open": 29786651.27,
+        "high": 29786651.27,
+        "low": 29786651.27,
+        "close": 29786651.27,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646410434,
-        "open": 5423350.91,
-        "high": 5378938.12,
-        "low": 5378938.12,
-        "close": 5378938.12,
-        "volume": 66.2827
+        "timestamp": 1766902930632,
+        "open": 29786651.27,
+        "high": 28875862.43,
+        "low": 28809051.8,
+        "close": 28875862.43,
+        "volume": 100.0692
       },
       {
         "id": 60,
-        "timestamp": 1766646412029,
-        "open": 5378938.12,
-        "high": 5378938.12,
-        "low": 5378938.12,
-        "close": 5378938.12,
+        "timestamp": 1766902932147,
+        "open": 28809051.8,
+        "high": 28809051.8,
+        "low": 28809051.8,
+        "close": 28809051.8,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646413539,
-        "open": 5378938.12,
-        "high": 5378938.12,
-        "low": 5378938.12,
-        "close": 5378938.12,
+        "timestamp": 1766902933723,
+        "open": 28809051.8,
+        "high": 28929055.59,
+        "low": 28809051.8,
+        "close": 28929055.59,
+        "volume": 92.6114
+      },
+      {
+        "id": 60,
+        "timestamp": 1766902935225,
+        "open": 28809051.8,
+        "high": 28809051.8,
+        "low": 28809051.8,
+        "close": 28809051.8,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646415039,
-        "open": 5378938.12,
-        "high": 5450574.79,
-        "low": 5423350.91,
-        "close": 5423350.91,
-        "volume": 97.9991
+        "timestamp": 1766902936738,
+        "open": 28809051.8,
+        "high": 28809051.8,
+        "low": 28694649.08,
+        "close": 28809051.8,
+        "volume": 66.7038
       },
       {
         "id": 60,
-        "timestamp": 1766646416549,
-        "open": 5450574.79,
-        "high": 5450574.79,
-        "low": 5450574.79,
-        "close": 5450574.79,
+        "timestamp": 1766902938251,
+        "open": 28694649.08,
+        "high": 28694649.08,
+        "low": 28694649.08,
+        "close": 28694649.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646418053,
-        "open": 5450574.79,
-        "high": 5450574.79,
-        "low": 5450574.79,
-        "close": 5450574.79,
+        "timestamp": 1766902939836,
+        "open": 28694649.08,
+        "high": 28694649.08,
+        "low": 28694649.08,
+        "close": 28694649.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646419554,
-        "open": 5450574.79,
-        "high": 5470426.23,
-        "low": 5450574.79,
-        "close": 5450574.79,
-        "volume": 49.0195
-      },
-      {
-        "id": 60,
-        "timestamp": 1766646421252,
-        "open": 5450574.79,
-        "high": 5580774.9,
-        "low": 5470426.23,
-        "close": 5470426.23,
-        "volume": 107.3965
-      },
-      {
-        "id": 60,
-        "timestamp": 1766646422765,
-        "open": 5580774.9,
-        "high": 5580774.9,
-        "low": 5580774.9,
-        "close": 5580774.9,
+        "timestamp": 1766902941343,
+        "open": 28694649.08,
+        "high": 28694649.08,
+        "low": 28694649.08,
+        "close": 28694649.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646424346,
-        "open": 5580774.9,
-        "high": 5580774.9,
-        "low": 5580774.9,
-        "close": 5580774.9,
+        "timestamp": 1766902942867,
+        "open": 28694649.08,
+        "high": 28694649.08,
+        "low": 28694649.08,
+        "close": 28694649.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646425869,
-        "open": 5580774.9,
-        "high": 5580774.9,
-        "low": 5580774.9,
-        "close": 5580774.9,
+        "timestamp": 1766902944363,
+        "open": 28694649.08,
+        "high": 29820641.93,
+        "low": 29786651.27,
+        "close": 29786651.27,
+        "volume": 33.4201
+      },
+      {
+        "id": 60,
+        "timestamp": 1766902945865,
+        "open": 29820641.93,
+        "high": 29820641.93,
+        "low": 29820641.93,
+        "close": 29820641.93,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646427369,
-        "open": 5580774.9,
-        "high": 5580774.9,
-        "low": 5580774.9,
-        "close": 5580774.9,
+        "timestamp": 1766902947408,
+        "open": 29820641.93,
+        "high": 29820641.93,
+        "low": 29820641.93,
+        "close": 29820641.93,
+        "volume": 59.9827
+      },
+      {
+        "id": 60,
+        "timestamp": 1766902948928,
+        "open": 29820641.93,
+        "high": 29820641.93,
+        "low": 29820641.93,
+        "close": 29820641.93,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646428869,
-        "open": 5580774.9,
-        "high": 5674411.89,
-        "low": 5580774.9,
-        "close": 5580774.9,
-        "volume": 109.5832
+        "timestamp": 1766902950438,
+        "open": 29820641.93,
+        "high": 29821207.24,
+        "low": 29820641.93,
+        "close": 29820641.93,
+        "volume": 65.219
       },
       {
         "id": 60,
-        "timestamp": 1766646430374,
-        "open": 5674411.89,
-        "high": 5674411.89,
-        "low": 5674411.89,
-        "close": 5674411.89,
+        "timestamp": 1766902951945,
+        "open": 29821207.24,
+        "high": 29821207.24,
+        "low": 29821207.24,
+        "close": 29821207.24,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646431875,
-        "open": 5674411.89,
-        "high": 5674411.89,
-        "low": 5674411.89,
-        "close": 5674411.89,
-        "volume": 35.7479
-      },
-      {
-        "id": 60,
-        "timestamp": 1766646433385,
-        "open": 5674411.89,
-        "high": 5674411.89,
-        "low": 5674411.89,
-        "close": 5674411.89,
+        "timestamp": 1766902953489,
+        "open": 29821207.24,
+        "high": 29821207.24,
+        "low": 29821207.24,
+        "close": 29821207.24,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646434886,
-        "open": 5674411.89,
-        "high": 5674411.89,
-        "low": 5674411.89,
-        "close": 5674411.89,
+        "timestamp": 1766902955006,
+        "open": 29821207.24,
+        "high": 29821207.24,
+        "low": 29821207.24,
+        "close": 29821207.24,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646436396,
-        "open": 5674411.89,
-        "high": 5674411.89,
-        "low": 5674411.89,
-        "close": 5674411.89,
+        "timestamp": 1766902956509,
+        "open": 29821207.24,
+        "high": 29626813.65,
+        "low": 29626813.65,
+        "close": 29626813.65,
+        "volume": 13.999
+      },
+      {
+        "id": 60,
+        "timestamp": 1766902958026,
+        "open": 29626813.65,
+        "high": 29626813.65,
+        "low": 29626813.65,
+        "close": 29626813.65,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646437903,
-        "open": 5674411.89,
-        "high": 5674411.89,
-        "low": 5674411.89,
-        "close": 5674411.89,
+        "timestamp": 1766902959619,
+        "open": 29626813.65,
+        "high": 29873737.5,
+        "low": 29821207.24,
+        "close": 29821207.24,
+        "volume": 94.1128
+      },
+      {
+        "id": 60,
+        "timestamp": 1766902961105,
+        "open": 29873737.5,
+        "high": 29873737.5,
+        "low": 29873737.5,
+        "close": 29873737.5,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646439418,
-        "open": 5674411.89,
-        "high": 5674411.89,
-        "low": 5674411.89,
-        "close": 5674411.89,
+        "timestamp": 1766902962609,
+        "open": 29873737.5,
+        "high": 29626813.65,
+        "low": 29626813.65,
+        "close": 29626813.65,
+        "volume": 49.5201
+      },
+      {
+        "id": 60,
+        "timestamp": 1766902964161,
+        "open": 29626813.65,
+        "high": 29626813.65,
+        "low": 29626813.65,
+        "close": 29626813.65,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646440923,
-        "open": 5674411.89,
-        "high": 5397598.25,
-        "low": 5397598.25,
-        "close": 5397598.25,
-        "volume": 13.2474
-      },
-      {
-        "id": 60,
-        "timestamp": 1766646442418,
-        "open": 5397598.25,
-        "high": 5397598.25,
-        "low": 5397598.25,
-        "close": 5397598.25,
+        "timestamp": 1766902965679,
+        "open": 29626813.65,
+        "high": 29626813.65,
+        "low": 29626813.65,
+        "close": 29626813.65,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646443917,
-        "open": 5397598.25,
-        "high": 5397598.25,
-        "low": 5397598.25,
-        "close": 5397598.25,
+        "timestamp": 1766902967183,
+        "open": 29626813.65,
+        "high": 29626813.65,
+        "low": 29626813.65,
+        "close": 29626813.65,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646445419,
-        "open": 5397598.25,
-        "high": 5397598.25,
-        "low": 5397598.25,
-        "close": 5397598.25,
-        "volume": 59.7767
+        "timestamp": 1766902968688,
+        "open": 29626813.65,
+        "high": 29873737.5,
+        "low": 29873737.5,
+        "close": 29873737.5,
+        "volume": 53.3952
       },
       {
         "id": 60,
-        "timestamp": 1766646446919,
-        "open": 5397598.25,
-        "high": 5378938.12,
-        "low": 5345318.97,
-        "close": 5378938.12,
-        "volume": 55.3022
-      },
-      {
-        "id": 60,
-        "timestamp": 1766646448426,
-        "open": 5345318.97,
-        "high": 5345318.97,
-        "low": 5345318.97,
-        "close": 5345318.97,
+        "timestamp": 1766902970190,
+        "open": 29873737.5,
+        "high": 29873737.5,
+        "low": 29873737.5,
+        "close": 29873737.5,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646450015,
-        "open": 5345318.97,
-        "high": 5397598.25,
-        "low": 5397598.25,
-        "close": 5397598.25,
-        "volume": 7.6606999999999985
-      },
-      {
-        "id": 60,
-        "timestamp": 1766646451535,
-        "open": 5397598.25,
-        "high": 5397598.25,
-        "low": 5397598.25,
-        "close": 5397598.25,
+        "timestamp": 1766902971802,
+        "open": 29873737.5,
+        "high": 29873737.5,
+        "low": 29873737.5,
+        "close": 29873737.5,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646453048,
-        "open": 5397598.25,
-        "high": 5397598.25,
-        "low": 5397598.25,
-        "close": 5397598.25,
+        "timestamp": 1766902973382,
+        "open": 29873737.5,
+        "high": 29873737.5,
+        "low": 29873737.5,
+        "close": 29873737.5,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646454552,
-        "open": 5397598.25,
-        "high": 5397598.25,
-        "low": 5397598.25,
-        "close": 5397598.25,
+        "timestamp": 1766902974889,
+        "open": 29873737.5,
+        "high": 29873737.5,
+        "low": 29873737.5,
+        "close": 29873737.5,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646456074,
-        "open": 5397598.25,
-        "high": 5609569.43,
-        "low": 5550257.66,
-        "close": 5609569.43,
-        "volume": 85.8388
+        "timestamp": 1766902976417,
+        "open": 29873737.5,
+        "high": 29626813.65,
+        "low": 28892433.25,
+        "close": 29626813.65,
+        "volume": 105.3538
       },
       {
         "id": 60,
-        "timestamp": 1766646457586,
-        "open": 5550257.66,
-        "high": 5550257.66,
-        "low": 5550257.66,
-        "close": 5550257.66,
+        "timestamp": 1766902978033,
+        "open": 28892433.25,
+        "high": 28892433.25,
+        "low": 28892433.25,
+        "close": 28892433.25,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646459099,
-        "open": 5550257.66,
-        "high": 5550257.66,
-        "low": 5550257.66,
-        "close": 5550257.66,
+        "timestamp": 1766902979536,
+        "open": 28892433.25,
+        "high": 28892433.25,
+        "low": 28694649.08,
+        "close": 28892433.25,
+        "volume": 15.394
+      },
+      {
+        "id": 60,
+        "timestamp": 1766902981261,
+        "open": 28892433.25,
+        "high": 28694649.08,
+        "low": 28688425.01,
+        "close": 28694649.08,
+        "volume": 58.7276
+      },
+      {
+        "id": 60,
+        "timestamp": 1766902982771,
+        "open": 28688425.01,
+        "high": 28688425.01,
+        "low": 28688425.01,
+        "close": 28688425.01,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646460620,
-        "open": 5550257.66,
-        "high": 5612756.82,
-        "low": 5512204.86,
-        "close": 5512204.86,
-        "volume": 33.8944
+        "timestamp": 1766902984275,
+        "open": 28688425.01,
+        "high": 28688425.01,
+        "low": 28597270.08,
+        "close": 28688425.01,
+        "volume": 52.6667
       },
       {
         "id": 60,
-        "timestamp": 1766646462185,
-        "open": 5612756.82,
-        "high": 5612756.82,
-        "low": 5612756.82,
-        "close": 5612756.82,
+        "timestamp": 1766902985795,
+        "open": 28597270.08,
+        "high": 28597270.08,
+        "low": 28597270.08,
+        "close": 28597270.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646463701,
-        "open": 5612756.82,
-        "high": 5612756.82,
-        "low": 5612756.82,
-        "close": 5612756.82,
+        "timestamp": 1766902987302,
+        "open": 28597270.08,
+        "high": 28597270.08,
+        "low": 28597270.08,
+        "close": 28597270.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646465203,
-        "open": 5612756.82,
-        "high": 5612756.82,
-        "low": 5612756.82,
-        "close": 5612756.82,
+        "timestamp": 1766902988815,
+        "open": 28597270.08,
+        "high": 28597270.08,
+        "low": 28597270.08,
+        "close": 28597270.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646466718,
-        "open": 5612756.82,
-        "high": 5612756.82,
-        "low": 5612756.82,
-        "close": 5612756.82,
+        "timestamp": 1766902990317,
+        "open": 28597270.08,
+        "high": 28597270.08,
+        "low": 28597270.08,
+        "close": 28597270.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646468219,
-        "open": 5612756.82,
-        "high": 5637934.94,
-        "low": 5612756.82,
-        "close": 5612756.82,
-        "volume": 72.1748
+        "timestamp": 1766902991823,
+        "open": 28597270.08,
+        "high": 28972096.61,
+        "low": 28597270.08,
+        "close": 28972096.61,
+        "volume": 23.5259
       },
       {
         "id": 60,
-        "timestamp": 1766646469721,
-        "open": 5637934.94,
-        "high": 5637934.94,
-        "low": 5637934.94,
-        "close": 5637934.94,
+        "timestamp": 1766902993328,
+        "open": 28597270.08,
+        "high": 28597270.08,
+        "low": 28597270.08,
+        "close": 28597270.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646471229,
-        "open": 5637934.94,
-        "high": 5637934.94,
-        "low": 5637934.94,
-        "close": 5637934.94,
+        "timestamp": 1766902994838,
+        "open": 28597270.08,
+        "high": 28597270.08,
+        "low": 28597270.08,
+        "close": 28597270.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646472739,
-        "open": 5637934.94,
-        "high": 5637934.94,
-        "low": 5637934.94,
-        "close": 5637934.94,
+        "timestamp": 1766902996369,
+        "open": 28597270.08,
+        "high": 28597270.08,
+        "low": 28597270.08,
+        "close": 28597270.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646474317,
-        "open": 5637934.94,
-        "high": 5593232.88,
-        "low": 5421402.14,
-        "close": 5421402.14,
-        "volume": 71.9675
-      },
-      {
-        "id": 60,
-        "timestamp": 1766646475831,
-        "open": 5421402.14,
-        "high": 5421402.14,
-        "low": 5421402.14,
-        "close": 5421402.14,
+        "timestamp": 1766902997882,
+        "open": 28597270.08,
+        "high": 28597270.08,
+        "low": 28597270.08,
+        "close": 28597270.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646477319,
-        "open": 5421402.14,
-        "high": 5421402.14,
-        "low": 5421402.14,
-        "close": 5421402.14,
+        "timestamp": 1766902999461,
+        "open": 28597270.08,
+        "high": 28597270.08,
+        "low": 28597270.08,
+        "close": 28597270.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646478819,
-        "open": 5421402.14,
-        "high": 5421402.14,
-        "low": 5421402.14,
-        "close": 5421402.14,
+        "timestamp": 1766903001008,
+        "open": 28597270.08,
+        "high": 28597270.08,
+        "low": 28597270.08,
+        "close": 28597270.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646480342,
-        "open": 5421402.14,
-        "high": 5421402.14,
-        "low": 5421402.14,
-        "close": 5421402.14,
+        "timestamp": 1766903002520,
+        "open": 28597270.08,
+        "high": 28597270.08,
+        "low": 28597270.08,
+        "close": 28597270.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646481836,
-        "open": 5421402.14,
-        "high": 5393931.04,
-        "low": 5345318.97,
-        "close": 5393931.04,
-        "volume": 43.0385
-      },
-      {
-        "id": 60,
-        "timestamp": 1766646483334,
-        "open": 5393931.04,
-        "high": 5345318.97,
-        "low": 5345318.97,
-        "close": 5345318.97,
-        "volume": 84.6085
-      },
-      {
-        "id": 60,
-        "timestamp": 1766646484892,
-        "open": 5345318.97,
-        "high": 5345318.97,
-        "low": 5345318.97,
-        "close": 5345318.97,
+        "timestamp": 1766903004025,
+        "open": 28597270.08,
+        "high": 28597270.08,
+        "low": 28597270.08,
+        "close": 28597270.08,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646486403,
-        "open": 5345318.97,
-        "high": 5345318.97,
-        "low": 5345318.97,
-        "close": 5345318.97,
+        "timestamp": 1766903005534,
+        "open": 28597270.08,
+        "high": 29195975.91,
+        "low": 29109171.82,
+        "close": 29195975.91,
+        "volume": 99.775
+      },
+      {
+        "id": 60,
+        "timestamp": 1766903007039,
+        "open": 29109171.82,
+        "high": 29109171.82,
+        "low": 29109171.82,
+        "close": 29109171.82,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646487967,
-        "open": 5345318.97,
-        "high": 5345318.97,
-        "low": 5345318.97,
-        "close": 5345318.97,
+        "timestamp": 1766903008540,
+        "open": 29109171.82,
+        "high": 29109171.82,
+        "low": 29109171.82,
+        "close": 29109171.82,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646489470,
-        "open": 5345318.97,
-        "high": 5345318.97,
-        "low": 5345318.97,
-        "close": 5345318.97,
+        "timestamp": 1766903010048,
+        "open": 29109171.82,
+        "high": 29109171.82,
+        "low": 29106974.73,
+        "close": 29109171.82,
+        "volume": 109.6346
+      },
+      {
+        "id": 60,
+        "timestamp": 1766903011562,
+        "open": 29106974.73,
+        "high": 29106974.73,
+        "low": 29106974.73,
+        "close": 29106974.73,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646490987,
-        "open": 5345318.97,
-        "high": 5345318.97,
-        "low": 5345318.97,
-        "close": 5345318.97,
-        "volume": 2.0705999999999705
-      },
-      {
-        "id": 60,
-        "timestamp": 1766646492517,
-        "open": 5345318.97,
-        "high": 5244292.18,
-        "low": 5213118.7,
-        "close": 5244292.18,
-        "volume": 81.6815
-      },
-      {
-        "id": 60,
-        "timestamp": 1766646494032,
-        "open": 5213118.7,
-        "high": 5213118.7,
-        "low": 5213118.7,
-        "close": 5213118.7,
+        "timestamp": 1766903013074,
+        "open": 29106974.73,
+        "high": 29106974.73,
+        "low": 29106974.73,
+        "close": 29106974.73,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646495544,
-        "open": 5213118.7,
-        "high": 5213118.7,
-        "low": 5213118.7,
-        "close": 5213118.7,
+        "timestamp": 1766903014649,
+        "open": 29106974.73,
+        "high": 29106974.73,
+        "low": 28792318.69,
+        "close": 29106974.73,
+        "volume": 20.9023
+      },
+      {
+        "id": 60,
+        "timestamp": 1766903016159,
+        "open": 28792318.69,
+        "high": 28792318.69,
+        "low": 28792318.69,
+        "close": 28792318.69,
         "volume": 0
       },
       {
         "id": 60,
-        "timestamp": 1766646497058,
-        "open": 5213118.7,
-        "high": 5213118.7,
-        "low": 5213118.7,
-        "close": 5213118.7,
+        "timestamp": 1766903017664,
+        "open": 28792318.69,
+        "high": 28792318.69,
+        "low": 28792318.69,
+        "close": 28792318.69,
         "volume": 0
-      },
-      {
-        "id": 60,
-        "timestamp": 1766646498565,
-        "open": 5213118.7,
-        "high": 5213118.7,
-        "low": 5182125.19,
-        "close": 5213118.7,
-        "volume": 71.2101
       }
     ],
     "orderBook": {
       "asks": [
         {
-          "price": 5325181.29,
-          "amount": 68.90370000000003
+          "price": 29769561.51,
+          "amount": 26.6811
         },
         {
-          "price": 5421402.14,
-          "amount": 30.6169
+          "price": 29873737.5,
+          "amount": 5.36220000000003
         },
         {
-          "price": 5425683.66,
-          "amount": 83.6829
+          "price": 29893766.16,
+          "amount": 30.3045
         },
         {
-          "price": 5462609.5,
-          "amount": 85.3047
+          "price": 29937230.44,
+          "amount": 102.6375
         },
         {
-          "price": 5470205.26,
-          "amount": 28.8129
+          "price": 29946676.47,
+          "amount": 82.4942
         },
         {
-          "price": 5637934.94,
-          "amount": 34.80739999999998
+          "price": 30001118.6,
+          "amount": 81.4101
         },
         {
-          "price": 5674411.89,
-          "amount": 39.44259999999994
+          "price": 30017554.18,
+          "amount": 26.3178
         },
         {
-          "price": 5698418.98,
-          "amount": 22.8758
+          "price": 30049721.04,
+          "amount": 84.8869
         },
         {
-          "price": 5790984.22,
-          "amount": 103.6813
+          "price": 30059885.02,
+          "amount": 15.2063
         },
         {
-          "price": 5826170.11,
-          "amount": 45.5504
+          "price": 30196994.76,
+          "amount": 94.7523
         }
       ],
       "bids": [
         {
-          "price": 5182125.19,
-          "amount": 3.2331999999999965
+          "price": 28792318.69,
+          "amount": 15.966599999999993
         },
         {
-          "price": 5180599.82,
-          "amount": 95.6802
+          "price": 28597270.08,
+          "amount": 7.930100000000035
         },
         {
-          "price": 5177855.75,
-          "amount": 27.3078
+          "price": 28584000.08,
+          "amount": 33.9624
         },
         {
-          "price": 5159437.87,
-          "amount": 75.6763
+          "price": 28567302.71,
+          "amount": 45.4059
         },
         {
-          "price": 5156028.42,
-          "amount": 58.1948
+          "price": 28534450.08,
+          "amount": 83.4957
         },
         {
-          "price": 5070970.73,
-          "amount": 32.16860000000002
+          "price": 28526021.79,
+          "amount": 69.0444
         },
         {
-          "price": 5070537.05,
-          "amount": 87.5138
+          "price": 28500742.09,
+          "amount": 103.9464
         },
         {
-          "price": 5069159.66,
-          "amount": 73.2783
+          "price": 28438643.29,
+          "amount": 11.5235
         },
         {
-          "price": 5069059.07,
-          "amount": 88.7341
+          "price": 28411691.89,
+          "amount": 36.2468
         },
         {
-          "price": 5068750.45,
-          "amount": 93.866
+          "price": 28358902.58,
+          "amount": 70.1218
         }
       ]
     },
-    "recentTrades": [
-      {
-        "id": "1764691432743-e8mabh8",
-        "price": "0.08",
-        "amount": "209.47",
-        "type": "sell",
-        "time": "00:03:52",
-        "timestamp": 1764691432743,
-        "pair": "TWS/CNY",
-        "volume": "29.32",
-        "userId": "bot_1764684209467_lkd7v2n",
-        "username": "bot_user_e3qgny",
-        "userAddress": "0x17f84178FD864A32fa569dc8388F2fCB49a724B1"
-      },
-      {
-        "id": "1764691432384-ttggjs1",
-        "price": "-0.39",
-        "amount": "274.93",
-        "type": "sell",
-        "time": "00:03:52",
-        "timestamp": 1764691432384,
-        "pair": "TWS/CNY",
-        "volume": "-160.53",
-        "userId": "bot_1764690945516_lnary27",
-        "username": "bot_user_0k9m38",
-        "userAddress": "0x27Bc4097ED5C98d9360613CE22C213BaC526AE16"
-      },
-      {
-        "id": "1764691432028-vsxd23b",
-        "price": "0.87",
-        "amount": "341.01",
-        "type": "buy",
-        "time": "00:03:52",
-        "timestamp": 1764691432029,
-        "pair": "TWS/CNY",
-        "volume": "344.21",
-        "userId": "bot_1764684210026_7z9oeee",
-        "username": "bot_user_46r1tn",
-        "userAddress": "0x30d9348A99e8809c9A08c42C48889DdA130D343b"
-      },
-      {
-        "id": "1764691431674-7wpy6mg",
-        "price": "0.18",
-        "amount": "107.19",
-        "type": "buy",
-        "time": "00:03:51",
-        "timestamp": 1764691431674,
-        "pair": "TWS/CNY",
-        "volume": "53.55",
-        "userId": "bot_1764684209376_qo6at5k",
-        "username": "bot_user_4b38w3",
-        "userAddress": "0xba90189B8a6DB086FAF2218DF8e17e0003E15135"
-      },
-      {
-        "id": "1764691431318-vewvk02",
-        "price": "0.63",
-        "amount": "503.93",
-        "type": "sell",
-        "time": "00:03:51",
-        "timestamp": 1764691431318,
-        "pair": "TWS/CNY",
-        "volume": "68.29",
-        "userId": "bot_1764689318784_xu72u2r",
-        "username": "bot_user_6c2gx8",
-        "userAddress": "0xCaAABDe613B220C2d9C74643105A46Cc8a2d6276"
-      },
-      {
-        "id": "1764691430968-8r30ur9",
-        "price": "0.57",
-        "amount": "309.66",
-        "type": "sell",
-        "time": "00:03:50",
-        "timestamp": 1764691430968,
-        "pair": "TWS/CNY",
-        "volume": "236.80",
-        "userId": "bot_1764684209270_m4nkn17",
-        "username": "bot_user_2vldam",
-        "userAddress": "0x2F06aA2416eFabCCa1d22749C58F61f2b8791cfB"
-      },
-      {
-        "id": "1764691430613-r5c1c2p",
-        "price": "0.73",
-        "amount": "255.75",
-        "type": "buy",
-        "time": "00:03:50",
-        "timestamp": 1764691430613,
-        "pair": "TWS/CNY",
-        "volume": "61.39",
-        "userId": "bot_1764685559786_u3x2nml",
-        "username": "bot_user_0fjdf9",
-        "userAddress": "0x1b5DBc4FA92c171ea03518bCDD76C8718028d20F"
-      },
-      {
-        "id": "1764691430256-2qqayfn",
-        "price": "0.55",
-        "amount": "435.63",
-        "type": "buy",
-        "time": "00:03:50",
-        "timestamp": 1764691430257,
-        "pair": "TWS/CNY",
-        "volume": "121.02",
-        "userId": "bot_1764684210585_nui0qku",
-        "username": "bot_user_ua2fbu",
-        "userAddress": "0x4E61286694b0A042988a0Fee42364E52f03BAAC8"
-      },
-      {
-        "id": "1764691429901-7y28c96",
-        "price": "0.44",
-        "amount": "494.51",
-        "type": "buy",
-        "time": "00:03:49",
-        "timestamp": 1764691429901,
-        "pair": "TWS/CNY",
-        "volume": "223.39",
-        "userId": "bot_1764684210865_fqprvvi",
-        "username": "bot_user_ql1ou7",
-        "userAddress": "0x791bA9165db78a41Fc9F5a0E611a218a8c03EcCA"
-      },
-      {
-        "id": "1764691429546-ksf23nr",
-        "price": "0.05",
-        "amount": "451.69",
-        "type": "buy",
-        "time": "00:03:49",
-        "timestamp": 1764691429546,
-        "pair": "TWS/CNY",
-        "volume": "23.61",
-        "userId": "bot_1764691335505_zggjcbo",
-        "username": "bot_user_06midl",
-        "userAddress": "0x884fF4C30DA0fdb7563e29dCeaF8CF4a5702Cd37"
-      }
-    ],
-    "updatedAt": 1766646499064
+    "recentTrades": [],
+    "updatedAt": 1766903018312
   },
   "map": {
     "taiwan": {
-      "nodeCount": 35332,
+      "nodeCount": 13266,
       "logs": [
         {
-          "id": "1766646493516-p6zm81u",
-          "message": "[CONNECT] Taichung :: bot_user_bijus7 (0xdA2147...)",
-          "timestamp": 1766646493516,
-          "nodeId": "NODE-3REO9D",
+          "id": "1766903017319-ophz4we",
+          "message": "[CONNECT] Taipei (Xinyi) :: bot_user_6mqgv0 (0x846854...)",
+          "timestamp": 1766903017319,
+          "nodeId": "NODE-9B7J4A",
+          "city": "Taipei (Xinyi)",
+          "location": {
+            "lat": 25.01983124923046,
+            "lng": 121.5490522082114
+          },
+          "status": "active",
+          "connectionType": "relay"
+        },
+        {
+          "id": "1766903016515-fjinbgu",
+          "message": "[CONNECT] Taichung :: bot_user_fh87h0 (0xa9B811...)",
+          "timestamp": 1766903016515,
+          "nodeId": "NODE-G79DJA",
           "city": "Taichung",
           "location": {
-            "lat": 24.14308158523364,
-            "lng": 120.68260573926008
+            "lat": 24.16465477890027,
+            "lng": 120.66410796391962
           },
           "status": "active",
           "connectionType": "direct"
         },
         {
-          "id": "1766646491101-bedy35n",
-          "message": "[CONNECT] Hsinchu (Science Park) :: bot_user_zpbynp (0x37C6B2...)",
-          "timestamp": 1766646491101,
-          "nodeId": "NODE-5561HG",
+          "id": "1766903014821-234g5ly",
+          "message": "[CONNECT] New Taipei :: bot_user_3k3jqv (0x3e8dDb...)",
+          "timestamp": 1766903014822,
+          "nodeId": "NODE-GLLB3K",
+          "city": "New Taipei",
+          "location": {
+            "lat": 25.019788364841148,
+            "lng": 121.4773728205294
+          },
+          "status": "active",
+          "connectionType": "relay"
+        },
+        {
+          "id": "1766903009089-gbstqhj",
+          "message": "[CONNECT] Tainan :: bot_user_vb7n6x (0x3E903b...)",
+          "timestamp": 1766903009089,
+          "nodeId": "NODE-8KTXHE",
+          "city": "Tainan",
+          "location": {
+            "lat": 22.98806271613571,
+            "lng": 120.22285506984778
+          },
+          "status": "active",
+          "connectionType": "relay"
+        },
+        {
+          "id": "1766903004147-b4xtlsm",
+          "message": "[CONNECT] Hsinchu (Science Park) :: bot_user_9o3hv1 (0xdC4819...)",
+          "timestamp": 1766903004147,
+          "nodeId": "NODE-29XQTS",
           "city": "Hsinchu (Science Park)",
           "location": {
-            "lat": 24.820212189561584,
-            "lng": 120.96798667183182
+            "lat": 24.807101567754703,
+            "lng": 120.98509835203548
           },
           "status": "active",
           "connectionType": "direct"
         },
         {
-          "id": "1766646486734-p27aetf",
-          "message": "[CONNECT] Kaohsiung :: bot_user_q19ljz (0x5251Cc...)",
-          "timestamp": 1766646486734,
-          "nodeId": "NODE-ANWXJ5",
-          "city": "Kaohsiung",
+          "id": "1766903002532-s9yxxyi",
+          "message": "[CONNECT] Tainan :: bot_user_351u3a (0x77Cf60...)",
+          "timestamp": 1766903002533,
+          "nodeId": "NODE-IP2RKK",
+          "city": "Tainan",
           "location": {
-            "lat": 22.6388813621708,
-            "lng": 120.28772807404438
+            "lat": 22.997875841782882,
+            "lng": 120.22902022644999
           },
           "status": "active",
-          "connectionType": "relay"
-        },
-        {
-          "id": "1766646483337-fqpl20u",
-          "message": "[CONNECT] Taichung :: bot_user_4vbg75 (0x144ae3...)",
-          "timestamp": 1766646483337,
-          "nodeId": "NODE-9M331G",
-          "city": "Taichung",
-          "location": {
-            "lat": 24.13664524142842,
-            "lng": 120.69268243978266
-          },
-          "status": "active",
-          "connectionType": "relay"
-        },
-        {
-          "id": "1766646480881-l9z78kk",
-          "message": "[CONNECT] Taoyuan (Airport) :: bot_user_f1t5f6 (0x123BBE...)",
-          "timestamp": 1766646480881,
-          "nodeId": "NODE-CEBI1S",
-          "city": "Taoyuan (Airport)",
-          "location": {
-            "lat": 25.058316331171085,
-            "lng": 121.21695137973147
-          },
-          "status": "active",
-          "connectionType": "relay"
-        },
-        {
-          "id": "1766646476815-gb9bft1",
-          "message": "[CONNECT] Taichung :: bot_user_4b38w3 (0xba9018...)",
-          "timestamp": 1766646476815,
-          "nodeId": "NODE-B9NLJH",
-          "city": "Taichung",
-          "location": {
-            "lat": 24.149877085807603,
-            "lng": 120.66664244836024
-          },
-          "status": "active",
-          "connectionType": "relay"
+          "connectionType": "direct"
         }
       ]
     },
     "mainland": {
-      "assetPoolValue": 2460653446,
-      "unitCount": 80761,
+      "assetPoolValue": 1425391014,
+      "unitCount": 43529,
       "logs": [
         {
-          "id": "1766646498989-oikatks",
-          "lot": "CN-INT-CMD-2551",
-          "location": "榆林",
-          "timestamp": 1766646498989,
-          "assetId": "bot_asset_1764823737188_5gmajy8",
-          "nodeName": "SHAANXI (Qinling Base)",
+          "id": "1766903016138-qkc0drb",
+          "lot": "CN-NW-BKR-1787",
+          "location": "西安",
+          "timestamp": 1766903016138,
+          "assetId": "bot_asset_1764815086034_e3zax4p",
+          "nodeName": "XI'AN (Urban Reserve)",
           "nodeLocation": {
-            "lat": 33.877728058275345,
-            "lng": 110.19929590073833
+            "lat": 34.30677307704516,
+            "lng": 108.98476437795821
           },
-          "value": 391,
+          "value": 275,
           "status": "pending"
         },
         {
-          "id": "1766646495244-y6fstv7",
-          "lot": "CN-QINLING-CMD-4294",
+          "id": "1766903014882-ddxht6u",
+          "lot": "CN-INT-BKR-4562",
+          "location": "延安",
+          "timestamp": 1766903014882,
+          "assetId": "bot_asset_1764692014768_haxnips",
+          "nodeName": "SHAANXI (Qinling Base)",
+          "nodeLocation": {
+            "lat": 33.86668277069271,
+            "lng": 110.18932899651826
+          },
+          "value": 254,
+          "status": "pending"
+        },
+        {
+          "id": "1766903014284-4h05ogn",
+          "lot": "CN-QINLING-CMD-7221",
           "location": "商洛",
-          "timestamp": 1766646495244,
-          "assetId": "bot_asset_1764819133707_v7dzlxe",
+          "timestamp": 1766903014284,
+          "assetId": "bot_asset_1764772565406_f5v5jbf",
           "nodeName": "SHAANXI (Qinling Base)",
           "nodeLocation": {
-            "lat": 33.89535121277371,
-            "lng": 110.14858449896468
+            "lat": 33.867258295264094,
+            "lng": 110.17954512432533
           },
-          "value": 368,
+          "value": 72,
           "status": "pending"
         },
         {
-          "id": "1766646494603-hq20uqn",
-          "lot": "CN-INT-CMD-1379",
+          "id": "1766903013671-q1gmgg4",
+          "lot": "CN-INT-CMD-1205",
           "location": "安康",
-          "timestamp": 1766646494603,
-          "assetId": "bot_asset_1764769953760_48i8irj",
+          "timestamp": 1766903013671,
+          "assetId": "bot_asset_1764827773035_vzuthj8",
           "nodeName": "SHAANXI (Qinling Base)",
           "nodeLocation": {
-            "lat": 33.868908966100655,
-            "lng": 110.19485261079323
+            "lat": 33.833039272525696,
+            "lng": 110.11798422283609
           },
-          "value": 241,
+          "value": 141,
           "status": "pending"
         },
         {
-          "id": "1766646492779-2ok0b7z",
-          "lot": "CN-INT-CMD-1379",
+          "id": "1766903013063-hsrkybw",
+          "lot": "CN-INT-CMD-1205",
           "location": "安康",
-          "timestamp": 1766646492779,
-          "assetId": "bot_asset_1764769953760_48i8irj",
+          "timestamp": 1766903013063,
+          "assetId": "bot_asset_1764827773035_vzuthj8",
           "nodeName": "SHAANXI (Qinling Base)",
           "nodeLocation": {
-            "lat": 33.86110617107977,
-            "lng": 110.16553592819395
+            "lat": 33.830162763013156,
+            "lng": 110.17799895035861
           },
-          "value": 241,
-          "status": "pending"
-        },
-        {
-          "id": "1766646492166-e05wdg7",
-          "lot": "CN-QINLING-CMD-7277",
-          "location": "商洛",
-          "timestamp": 1766646492166,
-          "assetId": "bot_asset_1764822713804_dd55f03",
-          "nodeName": "SHAANXI (Qinling Base)",
-          "nodeLocation": {
-            "lat": 33.8782294549057,
-            "lng": 110.19216251079395
-          },
-          "value": 460,
+          "value": 141,
           "status": "pending"
         }
       ]

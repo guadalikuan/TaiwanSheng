@@ -6200,5 +6200,476 @@
     "reviewNotes": "Purchased by bot user bot_user_rilkf0",
     "purchasedBy": "0xf90e99dfB6CEc3Dfb1B22beE69a4598380F3B215",
     "purchasedAt": 1764906850274
+  },
+  {
+    "id": "bot_asset_1766820434196_gj91wdn",
+    "codeName": "CN-IND-CMD-6761",
+    "displayId": "CN-IND-HUB-639",
+    "title": "Heavy Industry Reserve Zone (重工业储备区) - COMMAND_POST (前线指挥所)",
+    "locationTag": "CN-IND-HUB",
+    "region": "Heavy Industry Reserve Zone (重工业储备区)",
+    "zoneClass": "COMMAND_POST (前线指挥所)",
+    "securityLevel": 4,
+    "specs": {
+      "area": "200 m²",
+      "capacity": "10 Personnel",
+      "type": "COMMAND_POST (前线指挥所)"
+    },
+    "financials": {
+      "totalTokens": 426388,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Heavy Industry Reserve Zone (重工业储备区). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 426388,
+    "imageUrl": "/assets/blueprints/command_post.png",
+    "internalRef": "bot_asset_1766820434196_gj91wdn",
+    "reviewedAt": 1766820551238,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1766820440700
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_9o3hv1",
+        "reviewedAt": 1766820551242
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_9o3hv1",
+    "purchasedBy": "0xdC4819801e40BF354413540559f6FF22CA1865B4",
+    "purchasedAt": 1766820551238
+  },
+  {
+    "id": "bot_asset_1766821045603_tqrc8mf",
+    "codeName": "CN-QINLING-BKR-9440",
+    "displayId": "CN-QINLING-MTN-987",
+    "title": "Deep Mountain Nuclear Bunker (秦岭深山核掩体) - BUNKER (加固地堡)",
+    "locationTag": "CN-QINLING-MTN",
+    "region": "Deep Mountain Nuclear Bunker (秦岭深山核掩体)",
+    "zoneClass": "BUNKER (加固地堡)",
+    "securityLevel": 5,
+    "specs": {
+      "area": "94 m²",
+      "capacity": "4 Personnel",
+      "type": "BUNKER (加固地堡)"
+    },
+    "financials": {
+      "totalTokens": 193055,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Deep Mountain Nuclear Bunker (秦岭深山核掩体). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 193055,
+    "imageUrl": "/assets/blueprints/bunker.png",
+    "internalRef": "bot_asset_1766821045603_tqrc8mf",
+    "reviewedAt": 1766821093426,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1766821051955
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_6mqgv0",
+        "reviewedAt": 1766821093431
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_6mqgv0",
+    "purchasedBy": "0x846854396E95a9d1b76ae46959201Cdde2d00878",
+    "purchasedAt": 1766821093426
+  },
+  {
+    "id": "bot_asset_1766821664875_abtqw6r",
+    "codeName": "CN-NW-CMD-7702",
+    "displayId": "CN-NW-CAPITAL-385",
+    "title": "Strategic Rear Capital (大后方核心指挥部) - BUNKER (加固地堡)",
+    "locationTag": "CN-NW-CAPITAL",
+    "region": "Strategic Rear Capital (大后方核心指挥部)",
+    "zoneClass": "BUNKER (加固地堡)",
+    "securityLevel": 3,
+    "specs": {
+      "area": "126 m²",
+      "capacity": "6 Personnel",
+      "type": "BUNKER (加固地堡)"
+    },
+    "financials": {
+      "totalTokens": 616666,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Strategic Rear Capital (大后方核心指挥部). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "MINTING",
+    "tokenPrice": 616666,
+    "imageUrl": "/assets/blueprints/bunker.png",
+    "internalRef": "bot_asset_1766821664875_abtqw6r"
+  },
+  {
+    "id": "bot_asset_1766822448184_fprjh82",
+    "codeName": "CN-INT-CMD-8695",
+    "displayId": "CN-INT-RES-871",
+    "title": "Inland Strategic Reserve (内陆战略储备) - COMMAND_POST (前线指挥所)",
+    "locationTag": "CN-INT-RES",
+    "region": "Inland Strategic Reserve (内陆战略储备)",
+    "zoneClass": "COMMAND_POST (前线指挥所)",
+    "securityLevel": 4,
+    "specs": {
+      "area": "200 m²",
+      "capacity": "10 Personnel",
+      "type": "COMMAND_POST (前线指挥所)"
+    },
+    "financials": {
+      "totalTokens": 598611,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Inland Strategic Reserve (内陆战略储备). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 598611,
+    "imageUrl": "/assets/blueprints/command_post.png",
+    "internalRef": "bot_asset_1766822448184_fprjh82",
+    "reviewedAt": 1766822731688,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1766822454375
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_9o3hv1",
+        "reviewedAt": 1766822731692
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_9o3hv1",
+    "purchasedBy": "0xdC4819801e40BF354413540559f6FF22CA1865B4",
+    "purchasedAt": 1766822731688
+  },
+  {
+    "id": "bot_asset_1766823171876_e8edjj2",
+    "codeName": "CN-NW-CMD-4726",
+    "displayId": "CN-NW-SUB-798",
+    "title": "Suburban Reserve Zone (近郊储备区) - BUNKER (加固地堡)",
+    "locationTag": "CN-NW-SUB",
+    "region": "Suburban Reserve Zone (近郊储备区)",
+    "zoneClass": "BUNKER (加固地堡)",
+    "securityLevel": 4,
+    "specs": {
+      "area": "129 m²",
+      "capacity": "6 Personnel",
+      "type": "BUNKER (加固地堡)"
+    },
+    "financials": {
+      "totalTokens": 620833,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Suburban Reserve Zone (近郊储备区). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "MINTING",
+    "tokenPrice": 620833,
+    "imageUrl": "/assets/blueprints/bunker.png",
+    "internalRef": "bot_asset_1766823171876_e8edjj2"
+  },
+  {
+    "id": "bot_asset_1766823559191_08ff60h",
+    "codeName": "CN-NW-BKR-8114",
+    "displayId": "CN-NW-CAPITAL-664",
+    "title": "Strategic Rear Capital (大后方核心指挥部) - BUNKER (加固地堡)",
+    "locationTag": "CN-NW-CAPITAL",
+    "region": "Strategic Rear Capital (大后方核心指挥部)",
+    "zoneClass": "BUNKER (加固地堡)",
+    "securityLevel": 3,
+    "specs": {
+      "area": "105 m²",
+      "capacity": "5 Personnel",
+      "type": "BUNKER (加固地堡)"
+    },
+    "financials": {
+      "totalTokens": 366666,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Strategic Rear Capital (大后方核心指挥部). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 366666,
+    "imageUrl": "/assets/blueprints/bunker.png",
+    "internalRef": "bot_asset_1766823559191_08ff60h",
+    "reviewedAt": 1766823601402,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1766823563358
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_wf1rft",
+        "reviewedAt": 1766823601407
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_wf1rft",
+    "purchasedBy": "0xaC7861462F43188363400d4D1b8CD2dbE8eF8b26",
+    "purchasedAt": 1766823601402
+  },
+  {
+    "id": "bot_asset_1766823855379_jijrwrw",
+    "codeName": "CN-QINLING-BKR-9326",
+    "displayId": "CN-QINLING-MTN-892",
+    "title": "Deep Mountain Nuclear Bunker (秦岭深山核掩体) - BUNKER (加固地堡)",
+    "locationTag": "CN-QINLING-MTN",
+    "region": "Deep Mountain Nuclear Bunker (秦岭深山核掩体)",
+    "zoneClass": "BUNKER (加固地堡)",
+    "securityLevel": 5,
+    "specs": {
+      "area": "102 m²",
+      "capacity": "5 Personnel",
+      "type": "BUNKER (加固地堡)"
+    },
+    "financials": {
+      "totalTokens": 187500,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Deep Mountain Nuclear Bunker (秦岭深山核掩体). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "MINTING",
+    "tokenPrice": 187500,
+    "imageUrl": "/assets/blueprints/bunker.png",
+    "internalRef": "bot_asset_1766823855379_jijrwrw"
+  },
+  {
+    "id": "bot_asset_1766824288868_51u17og",
+    "codeName": "CN-INT-CMD-6680",
+    "displayId": "CN-INT-RES-12",
+    "title": "Inland Strategic Reserve (内陆战略储备) - COMMAND_POST (前线指挥所)",
+    "locationTag": "CN-INT-RES",
+    "region": "Inland Strategic Reserve (内陆战略储备)",
+    "zoneClass": "COMMAND_POST (前线指挥所)",
+    "securityLevel": 4,
+    "specs": {
+      "area": "155 m²",
+      "capacity": "7 Personnel",
+      "type": "COMMAND_POST (前线指挥所)"
+    },
+    "financials": {
+      "totalTokens": 643055,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Inland Strategic Reserve (内陆战略储备). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 643055,
+    "imageUrl": "/assets/blueprints/command_post.png",
+    "internalRef": "bot_asset_1766824288868_51u17og",
+    "reviewedAt": 1766824342074,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1766824293852
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_gfzu73",
+        "reviewedAt": 1766824342081
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_gfzu73",
+    "purchasedBy": "0x0EfC649F3CFB050CCBf52E5A0d94501b5E8F1281",
+    "purchasedAt": 1766824342074
+  },
+  {
+    "id": "bot_asset_1766825740390_ax359g6",
+    "codeName": "CN-IND-BKR-7563",
+    "displayId": "CN-IND-HUB-586",
+    "title": "Heavy Industry Reserve Zone (重工业储备区) - BUNKER (加固地堡)",
+    "locationTag": "CN-IND-HUB",
+    "region": "Heavy Industry Reserve Zone (重工业储备区)",
+    "zoneClass": "BUNKER (加固地堡)",
+    "securityLevel": 4,
+    "specs": {
+      "area": "105 m²",
+      "capacity": "5 Personnel",
+      "type": "BUNKER (加固地堡)"
+    },
+    "financials": {
+      "totalTokens": 451388,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Heavy Industry Reserve Zone (重工业储备区). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 451388,
+    "imageUrl": "/assets/blueprints/bunker.png",
+    "internalRef": "bot_asset_1766825740390_ax359g6",
+    "reviewedAt": 1766858324980,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1766825743973
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_xc8zvx",
+        "reviewedAt": 1766858324985
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_xc8zvx",
+    "purchasedBy": "0x04190FFC4A0E6EF4f16922a5036DA2A339863AFB",
+    "purchasedAt": 1766858324980
+  },
+  {
+    "id": "bot_asset_1766858380527_iv4cd1y",
+    "codeName": "CN-INT-CMD-5083",
+    "displayId": "CN-INT-RES-242",
+    "title": "Inland Strategic Reserve (内陆战略储备) - BUNKER (加固地堡)",
+    "locationTag": "CN-INT-RES",
+    "region": "Inland Strategic Reserve (内陆战略储备)",
+    "zoneClass": "BUNKER (加固地堡)",
+    "securityLevel": 4,
+    "specs": {
+      "area": "127 m²",
+      "capacity": "6 Personnel",
+      "type": "BUNKER (加固地堡)"
+    },
+    "financials": {
+      "totalTokens": 451388,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Inland Strategic Reserve (内陆战略储备). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 451388,
+    "imageUrl": "/assets/blueprints/bunker.png",
+    "internalRef": "bot_asset_1766858380527_iv4cd1y",
+    "reviewedAt": 1766858450912,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1766858386372
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_3z2ccu",
+        "reviewedAt": 1766858450917
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_3z2ccu",
+    "purchasedBy": "0xE3F42429c090ce7bE5dab9dE4AA1530f2eb6bE49",
+    "purchasedAt": 1766858450912
+  },
+  {
+    "id": "bot_asset_1766858491384_g73xxth",
+    "codeName": "CN-IND-CMD-3022",
+    "displayId": "CN-IND-HUB-670",
+    "title": "Heavy Industry Reserve Zone (重工业储备区) - COMMAND_POST (前线指挥所)",
+    "locationTag": "CN-IND-HUB",
+    "region": "Heavy Industry Reserve Zone (重工业储备区)",
+    "zoneClass": "COMMAND_POST (前线指挥所)",
+    "securityLevel": 4,
+    "specs": {
+      "area": "147 m²",
+      "capacity": "7 Personnel",
+      "type": "COMMAND_POST (前线指挥所)"
+    },
+    "financials": {
+      "totalTokens": 197222,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Heavy Industry Reserve Zone (重工业储备区). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 197222,
+    "imageUrl": "/assets/blueprints/command_post.png",
+    "internalRef": "bot_asset_1766858491384_g73xxth",
+    "reviewedAt": 1766858532118,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1766858496782
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_3xt5tm",
+        "reviewedAt": 1766858532123
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_3xt5tm",
+    "purchasedBy": "0x750138fB0E1141ffB32A4922cA3eB065f98c5D6C",
+    "purchasedAt": 1766858532118
+  },
+  {
+    "id": "bot_asset_1766901472971_ex4qyyb",
+    "codeName": "CN-INT-BKR-3638",
+    "displayId": "CN-INT-RES-942",
+    "title": "Inland Strategic Reserve (内陆战略储备) - SHELTER (标准避难所)",
+    "locationTag": "CN-INT-RES",
+    "region": "Inland Strategic Reserve (内陆战略储备)",
+    "zoneClass": "SHELTER (标准避难所)",
+    "securityLevel": 4,
+    "specs": {
+      "area": "80 m²",
+      "capacity": "4 Personnel",
+      "type": "SHELTER (标准避难所)"
+    },
+    "financials": {
+      "totalTokens": 234722,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Inland Strategic Reserve (内陆战略储备). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 234722,
+    "imageUrl": "/assets/blueprints/shelter.png",
+    "internalRef": "bot_asset_1766901472971_ex4qyyb",
+    "reviewedAt": 1766901596129,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1766901478851
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_fh87h0",
+        "reviewedAt": 1766901596131
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_fh87h0",
+    "purchasedBy": "0xa9B811488b7df30A3F651557f733aB3bbE1bad46",
+    "purchasedAt": 1766901596129
   }
 ]

@@ -256,50 +256,19 @@ const startBotTasks = () => {
   console.log('✅ Bot tasks started');
 };
 
-/**
- * 启动所有后台任务
- */
+// 启动后台任务
 export const startBackgroundTasks = () => {
-  console.log('🚀 Starting background tasks...\n');
+  console.log('🚀 Starting background tasks...');
   
-  startMarketTask();
-  startOrderBookTask();
-  startKlineTask();
-  startTaiwanNodeTask();
-  startAssetTask();
-  startBotTasks();
+  // 仅保留真实数据相关的任务（如需）
+  // 目前没有真实数据后台任务，所有模拟任务均已禁用
   
-  console.log('\n✨ All background tasks started successfully!');
+  console.log('✅ Background tasks initialized (REAL DATA MODE)');
 };
 
-/**
- * 停止所有后台任务
- */
+// 停止后台任务
 export const stopBackgroundTasks = () => {
-  if (marketTaskInterval) {
-    clearInterval(marketTaskInterval);
-    marketTaskInterval = null;
-  }
-  if (orderBookTaskInterval) {
-    clearInterval(orderBookTaskInterval);
-    orderBookTaskInterval = null;
-  }
-  if (klineTaskInterval) {
-    clearInterval(klineTaskInterval);
-    klineTaskInterval = null;
-  }
-  if (taiwanNodeTaskInterval) {
-    clearInterval(taiwanNodeTaskInterval);
-    taiwanNodeTaskInterval = null;
-  }
-  if (assetTaskInterval) {
-    clearInterval(assetTaskInterval);
-    assetTaskInterval = null;
-  }
-  
-  // 停止机器人任务
-  stopBotScheduler();
-  
-  console.log('🛑 All background tasks stopped');
+  console.log('🛑 Stopping background tasks...');
+  // 清理逻辑（如果需要）
 };
 
