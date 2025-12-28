@@ -383,8 +383,8 @@ const DespairBunker = () => {
       });
 
       setTimeout(() => {
-        // 跳转到市场页面或TWS购买页面
-        navigate('/market');
+        // 跳转到首页第二屏（market section）
+        navigate('/#market');
       }, 2000);
     }, 1500);
   };
