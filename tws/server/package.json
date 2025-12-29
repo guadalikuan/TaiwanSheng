@@ -14,9 +14,13 @@
     "generate-seed": "node scripts/generateSeedData.js"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@coral-xyz/anchor": "^0.29.0",
     "@solana/spl-token": "^0.4.8",
     "@solana/web3.js": "^1.87.6",
+=======
+    "@coral-xyz/anchor": "^0.32.1",
+>>>>>>> af5aa61513c26bfdb39df73a75ec2142fdb58d43
     "axios": "^1.13.2",
     "bcryptjs": "^2.4.3",
     "bloom-filters": "^3.0.4",

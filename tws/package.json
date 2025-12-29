@@ -29,18 +29,27 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
+    "@project-serum/anchor": "^0.26.0",
     "@solana/spl-token": "^0.4.8",
-    "@solana/web3.js": "^1.87.6",
+    "@solana/wallet-adapter-base": "^0.9.23",
+    "@solana/wallet-adapter-react": "^0.15.35",
+    "@solana/wallet-adapter-react-ui": "^0.9.35",
+    "@solana/wallet-adapter-wallets": "^0.19.32",
+    "@solana/web3.js": "^1.98.4",
     "@tonconnect/ui-react": "^2.3.1",
     "@twa-dev/sdk": "^8.0.2",
     "bip39": "^3.1.0",
+    "buffer": "^6.0.3",
+    "clsx": "^2.1.1",
     "ethers": "^6.13.0",
-    "framer-motion": "^12.23.25",
+    "framer-motion": "^12.23.26",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.447.0",
+    "process": "^0.11.10",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.9.6"
+    "react-router-dom": "^7.9.6",
+    "util": "^0.12.5"
   },
   "devDependencies": {
     "@types/react": "^18.3.7",
@@ -51,6 +60,7 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
     "terser": "^5.44.1",
-    "vite": "^5.4.2"
+    "vite": "^5.4.2",
+    "vite-plugin-node-polyfills": "^0.24.0"
   }
 }

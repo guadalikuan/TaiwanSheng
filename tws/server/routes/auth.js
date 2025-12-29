@@ -227,7 +227,7 @@ router.post('/login', async (req, res) => {
       
       // 根据IP地址的hash值选择一个位置（确保同一IP总是返回相同位置）
       const ipHash = clientIp.split('.').reduce((acc, val) => acc + parseInt(val || 0), 0);
-      const selectedSpot = taiwanHotspots[ipHash % taiwanHotspots.length];
+      const selectedSpot = taiwanHotspots[ipHash % taiwanHotspots.length] || taiwanHotspots[0]; // 增加兜底逻辑
       
       // 添加一些随机偏移，使位置更自然
       const lat = selectedSpot.lat + (Math.random() - 0.5) * 0.04;

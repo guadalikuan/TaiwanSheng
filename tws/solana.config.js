@@ -9,7 +9,7 @@
  * 3. 部署: npm run solana:deploy
  */
 
-module.exports = {
+export default {
   // 网络模式: 'devnet' 或 'mainnet-beta'
   // 默认设置为 mainnet-beta (主网)
   CLUSTER: process.env.SOLANA_CLUSTER || 'mainnet-beta',

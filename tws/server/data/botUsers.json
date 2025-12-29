@@ -10,8 +10,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766497348647,
-      "actionCount": 735
+      "lastActionTime": 1766914304059,
+      "actionCount": 785
     },
     "createdAt": 1764684209252,
     "isActive": true
@@ -78,8 +78,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646459832,
-      "actionCount": 626
+      "lastActionTime": 1766914090514,
+      "actionCount": 661
     },
     "createdAt": 1764684209634,
     "isActive": true
@@ -162,8 +162,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766496419244,
-      "actionCount": 647
+      "lastActionTime": 1766913783956,
+      "actionCount": 687
     },
     "createdAt": 1764684210102,
     "isActive": true
@@ -195,8 +195,8 @@
       "preferredActions": [
         "submit"
       ],
-      "lastActionTime": 1764906071950,
-      "actionCount": 11
+      "lastActionTime": 1766911851115,
+      "actionCount": 12
     },
     "createdAt": 1764684210287,
     "isActive": true
@@ -227,8 +227,8 @@
       "preferredActions": [
         "submit"
       ],
-      "lastActionTime": 1764905357894,
-      "actionCount": 17
+      "lastActionTime": 1766908860186,
+      "actionCount": 18
     },
     "createdAt": 1764684210475,
     "isActive": true
@@ -244,8 +244,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646455461,
-      "actionCount": 614
+      "lastActionTime": 1766913874584,
+      "actionCount": 647
     },
     "createdAt": 1764684210568,
     "isActive": true
@@ -312,8 +312,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646365374,
-      "actionCount": 650
+      "lastActionTime": 1766913506792,
+      "actionCount": 690
     },
     "createdAt": 1764684210959,
     "isActive": true
@@ -362,8 +362,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646492455,
-      "actionCount": 652
+      "lastActionTime": 1766913237808,
+      "actionCount": 688
     },
     "createdAt": 1764685559927,
     "isActive": true
@@ -463,8 +463,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766497859945,
-      "actionCount": 642
+      "lastActionTime": 1766913945461,
+      "actionCount": 683
     },
     "createdAt": 1764690945605,
     "isActive": true
@@ -531,8 +531,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766497495578,
-      "actionCount": 555
+      "lastActionTime": 1766914245328,
+      "actionCount": 586
     },
     "createdAt": 1764766662463,
     "isActive": true
@@ -548,8 +548,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766645676126,
-      "actionCount": 528
+      "lastActionTime": 1766913949147,
+      "actionCount": 565
     },
     "createdAt": 1764767536034,
     "isActive": true
@@ -564,8 +564,8 @@
       "preferredActions": [
         "submit"
       ],
-      "lastActionTime": 1764843845402,
-      "actionCount": 15
+      "lastActionTime": 1766821664892,
+      "actionCount": 16
     },
     "createdAt": 1764768276473,
     "isActive": true
@@ -581,8 +581,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646487799,
-      "actionCount": 508
+      "lastActionTime": 1766914244613,
+      "actionCount": 555
     },
     "createdAt": 1764768969825,
     "isActive": true
@@ -632,8 +632,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646382362,
-      "actionCount": 514
+      "lastActionTime": 1766914316026,
+      "actionCount": 552
     },
     "createdAt": 1764771130875,
     "isActive": true
@@ -649,8 +649,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766497848906,
-      "actionCount": 458
+      "lastActionTime": 1766914041826,
+      "actionCount": 498
     },
     "createdAt": 1764771550993,
     "isActive": true
@@ -683,8 +683,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766592304572,
-      "actionCount": 475
+      "lastActionTime": 1766914205481,
+      "actionCount": 508
     },
     "createdAt": 1764772338521,
     "isActive": true
@@ -699,8 +699,8 @@
       "preferredActions": [
         "submit"
       ],
-      "lastActionTime": 1764825701693,
-      "actionCount": 9
+      "lastActionTime": 1766908282931,
+      "actionCount": 11
     },
     "createdAt": 1764772975056,
     "isActive": true
@@ -750,8 +750,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646385992,
-      "actionCount": 456
+      "lastActionTime": 1766914271546,
+      "actionCount": 507
     },
     "createdAt": 1764774214820,
     "isActive": true
@@ -767,8 +767,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646322801,
-      "actionCount": 393
+      "lastActionTime": 1766914218192,
+      "actionCount": 439
     },
     "createdAt": 1764774553037,
     "isActive": true
@@ -818,8 +818,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646482837,
-      "actionCount": 398
+      "lastActionTime": 1766914290238,
+      "actionCount": 429
     },
     "createdAt": 1764775795956,
     "isActive": true
@@ -886,8 +886,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766497856059,
-      "actionCount": 391
+      "lastActionTime": 1766913961036,
+      "actionCount": 424
     },
     "createdAt": 1764777376064,
     "isActive": true
@@ -970,8 +970,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766495659133,
-      "actionCount": 325
+      "lastActionTime": 1766914287048,
+      "actionCount": 368
     },
     "createdAt": 1764779713759,
     "isActive": true
@@ -1019,8 +1019,8 @@
       "preferredActions": [
         "submit"
       ],
-      "lastActionTime": 1764818101875,
-      "actionCount": 3
+      "lastActionTime": 1766913360820,
+      "actionCount": 4
     },
     "createdAt": 1764780900890,
     "isActive": true
@@ -1053,8 +1053,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766497439589,
-      "actionCount": 285
+      "lastActionTime": 1766913865634,
+      "actionCount": 327
     },
     "createdAt": 1764795020025,
     "isActive": true
@@ -1136,8 +1136,8 @@
       "preferredActions": [
         "submit"
       ],
-      "lastActionTime": 1764858306168,
-      "actionCount": 2
+      "lastActionTime": 1766913068151,
+      "actionCount": 3
     },
     "createdAt": 1764815482469,
     "isActive": true
@@ -1152,8 +1152,8 @@
       "preferredActions": [
         "submit"
       ],
-      "lastActionTime": 1764904167499,
-      "actionCount": 6
+      "lastActionTime": 1766823855417,
+      "actionCount": 7
     },
     "createdAt": 1764816126989,
     "isActive": true
@@ -1186,8 +1186,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646295409,
-      "actionCount": 239
+      "lastActionTime": 1766914272740,
+      "actionCount": 275
     },
     "createdAt": 1764817913325,
     "isActive": true
@@ -1220,8 +1220,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646467234,
-      "actionCount": 201
+      "lastActionTime": 1766914224113,
+      "actionCount": 237
     },
     "createdAt": 1764819599300,
     "isActive": true
@@ -1321,8 +1321,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766497456918,
-      "actionCount": 189
+      "lastActionTime": 1766914292864,
+      "actionCount": 229
     },
     "createdAt": 1764824632026,
     "isActive": true
@@ -1353,8 +1353,8 @@
       "preferredActions": [
         "submit"
       ],
-      "lastActionTime": 1764851575741,
-      "actionCount": 3
+      "lastActionTime": 1766858491402,
+      "actionCount": 4
     },
     "createdAt": 1764825997054,
     "isActive": true
@@ -1370,8 +1370,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646489909,
-      "actionCount": 145
+      "lastActionTime": 1766914182327,
+      "actionCount": 189
     },
     "createdAt": 1764826915792,
     "isActive": true
@@ -1387,8 +1387,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766592227533,
-      "actionCount": 178
+      "lastActionTime": 1766913763361,
+      "actionCount": 230
     },
     "createdAt": 1764827517116,
     "isActive": true
@@ -1404,8 +1404,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646476794,
-      "actionCount": 149
+      "lastActionTime": 1766914026007,
+      "actionCount": 183
     },
     "createdAt": 1764836619096,
     "isActive": true
@@ -1555,8 +1555,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646440904,
-      "actionCount": 114
+      "lastActionTime": 1766913848392,
+      "actionCount": 150
     },
     "createdAt": 1764844557192,
     "isActive": true
@@ -1606,8 +1606,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646407281,
-      "actionCount": 105
+      "lastActionTime": 1766914038197,
+      "actionCount": 146
     },
     "createdAt": 1764846582312,
     "isActive": true
@@ -1724,8 +1724,8 @@
       "preferredActions": [
         "submit"
       ],
-      "lastActionTime": 1764898111732,
-      "actionCount": 3
+      "lastActionTime": 1766906572397,
+      "actionCount": 4
     },
     "createdAt": 1764858470985,
     "isActive": true
@@ -1758,8 +1758,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766592244680,
-      "actionCount": 61
+      "lastActionTime": 1766913578407,
+      "actionCount": 97
     },
     "createdAt": 1764859216916,
     "isActive": true
@@ -1876,8 +1876,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766498099070,
-      "actionCount": 59
+      "lastActionTime": 1766914153204,
+      "actionCount": 106
     },
     "createdAt": 1764898112535,
     "isActive": true
@@ -1893,8 +1893,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646472942,
-      "actionCount": 56
+      "lastActionTime": 1766914018901,
+      "actionCount": 91
     },
     "createdAt": 1764898646406,
     "isActive": true
@@ -1978,8 +1978,8 @@
         "purchase",
         "trade"
       ],
-      "lastActionTime": 1766646481726,
-      "actionCount": 28
+      "lastActionTime": 1766914221825,
+      "actionCount": 68
     },
     "createdAt": 1764903541881,
     "isActive": true
