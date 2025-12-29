@@ -5,6 +5,7 @@ import { generateUniqueId } from '../utils/uniqueId';
 import { getOmegaData } from '../utils/api';
 import { useSSE } from '../contexts/SSEContext';
 import { useServerStatus } from '../contexts/ServerStatusContext';
+import { PREDICTION_MARKETS } from './PredictionMarket/PredictionHome';
 
 const crisisEvents = [
   'DETECTED: 12 PLA Aircraft crossed median line. (-6 Hours)',
@@ -25,10 +26,31 @@ const OmegaSection = () => {
   const [isGlitching, setIsGlitching] = useState(false);
   const [alertMessage, setAlertMessage] = useState('⚠ SYSTEM ALERT: GEOPOLITICAL TENSION RISING');
   const [loading, setLoading] = useState(true);
+  const [currentPredictionIndex, setCurrentPredictionIndex] = useState(0); // 新增预测轮播索引
+  
+  // 获取最新的预测市场数据（优先从 localStorage 读取，以同步管理员的修改）
+  const [activeMarkets, setActiveMarkets] = useState(() => {
+    try {
+      const saved = localStorage.getItem('prediction_markets');
+      return saved ? JSON.parse(saved) : PREDICTION_MARKETS;
+    } catch (e) {
+      return PREDICTION_MARKETS;
+    }
+  });
+
   // Default to 2027-12-31 to match server-side TimeManager default
   // This prevents the "600 days" flicker on initial load
   const targetRef = useRef(new Date('2027-12-31T00:00:00.000Z').getTime());
   const glitchTimeoutRef = useRef(null);
+
+  // 预测市场轮播
+  useEffect(() => {
+    if (activeMarkets.length === 0) return;
+    const interval = setInterval(() => {
+      setCurrentPredictionIndex(prev => (prev + 1) % activeMarkets.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [activeMarkets]);
 
   // 加载初始数据
   useEffect(() => {
@@ -210,30 +232,54 @@ const OmegaSection = () => {
               <span>SECS</span>
             </div>
 
-            <div className="mt-4 md:mt-5 h-14 md:h-16 overflow-hidden text-left border-t border-red-900/40 pt-2 md:pt-3 relative">
-              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black pointer-events-none z-20" />
-              <div className="space-y-0.5 text-[10px] md:text-xs text-red-400/80 font-mono pr-2 leading-relaxed">
-                {logs.length === 0 ? (
-                  <div className="text-red-600/70">[STANDBY] Awaiting anomaly...</div>
-                ) : (
-                  logs.map((log) => (
-                    <div key={log.id} className="flex justify-between items-center gap-2">
-                      <div className="truncate flex-1" title={log.text}>
-                        <span className="text-red-500 mr-2">[TRIGGER]</span>
-                        {log.text}
+            <div className="mt-4 md:mt-5 h-14 md:h-16 flex gap-4 border-t border-red-900/40 pt-2 md:pt-3 relative">
+              {/* 左侧：重大事件 (60%) */}
+              <div className="flex-[3] overflow-hidden text-left relative border-r border-red-900/20 pr-2">
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black pointer-events-none z-20" />
+                <div className="space-y-0.5 text-[10px] md:text-xs text-red-400/80 font-mono pr-2 leading-relaxed">
+                  {logs.length === 0 ? (
+                    <div className="text-red-600/70">[STANDBY] Awaiting anomaly...</div>
+                  ) : (
+                    logs.map((log) => (
+                      <div key={log.id} className="flex justify-between items-center gap-2">
+                        <div className="truncate flex-1" title={log.text}>
+                          <span className="text-red-500 mr-2">[TRIGGER]</span>
+                          {log.text}
+                        </div>
+                        <div className={`whitespace-nowrap text-[9px] font-bold ${
+                          (!log.impact || log.impact === 'NEUTRAL') 
+                            ? 'text-gray-500' 
+                            : log.impact.startsWith('-') 
+                              ? 'text-green-500' 
+                              : 'text-red-500'
+                        }`}>
+                          {log.impact || 'NEUTRAL'}
+                        </div>
                       </div>
-                      <div className={`whitespace-nowrap text-[9px] font-bold ${
-                        (!log.impact || log.impact === 'NEUTRAL') 
-                          ? 'text-gray-500' 
-                          : log.impact.startsWith('-') 
-                            ? 'text-green-500' 
-                            : 'text-red-500'
-                      }`}>
-                        {log.impact || 'NEUTRAL'}
-                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* 右侧：预测市场轮播 (40%) */}
+              <div 
+                className="flex-[2] overflow-hidden relative cursor-pointer group hover:bg-white/5 transition-colors rounded px-2 -mx-2"
+                onClick={() => navigate('/predict', { state: { startMarketId: activeMarkets[currentPredictionIndex]?.id } })}
+              >
+                <div className="absolute top-0 right-0 px-1.5 py-0.5 bg-red-900/30 text-[8px] text-red-300/70 uppercase font-bold tracking-wider rounded-bl border-b border-l border-red-900/20">Prediction</div>
+                <div className="h-full flex flex-col justify-center">
+                    <p className="text-[10px] md:text-xs text-gray-400 font-mono line-clamp-2 group-hover:text-red-100 transition-colors leading-tight">
+                        <span className="text-red-500 mr-1 opacity-70">●</span>
+                        {activeMarkets[currentPredictionIndex]?.question}
+                    </p>
+                    <div className="flex justify-between items-center mt-1.5 text-[9px] text-gray-500 font-mono w-full">
+                        <div className="flex gap-2">
+                            <span className="text-green-500/60 group-hover:text-green-400">Y: ${(activeMarkets[currentPredictionIndex]?.poolYes/1000).toFixed(1)}k</span>
+                            <span className="text-red-500/60 group-hover:text-red-400">N: ${(activeMarkets[currentPredictionIndex]?.poolNo/1000).toFixed(1)}k</span>
+                        </div>
+                        <span className="text-red-500/40 group-hover:text-red-400/80 tracking-wider">TAP TO BET &rarr;</span>
                     </div>
-                  ))
-                )}
+                </div>
               </div>
             </div>
           </div>

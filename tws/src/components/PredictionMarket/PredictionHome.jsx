@@ -3,11 +3,14 @@ import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
 import { Program, AnchorProvider, web3 } from '@project-serum/anchor';
 import { Buffer } from 'buffer';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { useSSE } from '../../contexts/SSEContext';
 
 // 如果没有安装 Buffer polyfill
 window.Buffer = window.Buffer || Buffer;
 
-const PREDICTION_MARKETS = [
+export const PREDICTION_MARKETS = [
   // 第一梯队：民生痛点
   { id: 1, category: "Livelihood", question: "明日 12:00-14:00，桃园/新竹地区是否会发生突发性跳电？", poolYes: 150000, poolNo: 300000, endTime: "2025-05-21", image: "https://www.taipower.com.tw/upload/244/2021051714242666542.jpg" },
   { id: 2, category: "Livelihood", question: "台北全联超市明日 18:00 前，普通白蛋是否会售罄？", poolYes: 80000, poolNo: 120000, endTime: "2025-05-21", image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Chicken_egg_2009-06-04.jpg/1200px-Chicken_egg_2009-06-04.jpg" },
@@ -70,40 +73,76 @@ const PREDICTION_MARKETS = [
 ];
 
 const PredictionHome = () => {
+  const { isAuthenticated, user } = useAuth();
+  const { subscribe } = useSSE();
   const [walletAddress, setWalletAddress] = useState(null);
   const [balance, setBalance] = useState(0); // TWSCoin Balance
-  const [markets, setMarkets] = useState([]);
+  
+  // Initialize markets from localStorage or default
+  const [markets, setMarkets] = useState(() => {
+    try {
+      const saved = localStorage.getItem('prediction_markets');
+      return saved ? JSON.parse(saved) : PREDICTION_MARKETS;
+    } catch (e) {
+      return PREDICTION_MARKETS;
+    }
+  });
+
+  // Save markets to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('prediction_markets', JSON.stringify(markets));
+  }, [markets]);
+
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [dragX, setDragX] = useState(0);
   const [adminMode, setAdminMode] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newMarketForm, setNewMarketForm] = useState({
+    question: '',
+    image: '',
+    category: 'General',
+    poolYes: 10000,
+    poolNo: 10000
+  });
+
   const controls = useAnimation();
+  const location = useLocation();
+  const navigate = useNavigate();
   
-  // 模拟弹幕数据
+  // 弹幕数据
   const [barrage, setBarrage] = useState([]);
 
+  // 检查管理员权限
+  const isAdmin = useMemo(() => {
+    return user?.username === 'admin' && user?.role === 'ADMIN';
+  }, [user]);
+
+  // 真实下注数据监听 (SSE)
+  useEffect(() => {
+    // 订阅 prediction 频道的 bet 事件
+    const unsubscribe = subscribe('prediction', (message) => {
+      if (message.data && message.data.type === 'bet') {
+        setBarrage(prev => {
+          const newBarrage = [...prev, message.data.bet];
+          // 保持最近 5 条
+          if (newBarrage.length > 5) newBarrage.shift();
+          return newBarrage;
+        });
+      }
+    });
+    return unsubscribe;
+  }, [subscribe]);
+
+  // 监听路由参数，定位到指定卡片
   useEffect(() => {
     checkWallet();
-    setMarkets(PREDICTION_MARKETS);
     
-    // 启动模拟弹幕
-    const interval = setInterval(() => {
-      const randomMarket = PREDICTION_MARKETS[Math.floor(Math.random() * PREDICTION_MARKETS.length)];
-      const randomAction = Math.random() > 0.5 ? "YES" : "NO";
-      const randomAmount = Math.floor(Math.random() * 10000) + 100;
-      const cities = ["台北", "桃园", "台中", "台南", "高雄", "花莲", "新竹"];
-      const randomCity = cities[Math.floor(Math.random() * cities.length)];
-      
-      const newMsg = {
-        id: Date.now(),
-        text: `用户 ${randomCity}*** 下注 ${randomAmount} TWS 押 ${randomAction}`,
-        marketId: randomMarket.id
-      };
-      
-      setBarrage(prev => [...prev.slice(-4), newMsg]);
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
+    // 如果有传入的起始ID，跳转到对应卡片
+    if (location.state?.startMarketId) {
+      const idx = PREDICTION_MARKETS.findIndex(m => m.id === location.state.startMarketId);
+      if (idx !== -1) setCurrentCardIndex(idx);
+    }
+  }, [location.state]);
 
   const checkWallet = async () => {
     try {
@@ -148,6 +187,17 @@ const PredictionHome = () => {
 
   const handleSwipe = async (direction) => {
     if (currentCardIndex >= markets.length) return;
+
+    // 1. 检查是否登录
+    if (!isAuthenticated) {
+      // 复位卡片位置（防止拖拽后卡住）
+      controls.start({ x: 0, opacity: 1 });
+      
+      if (window.confirm("您需要登录才能参与预测下注。\n\n是否立即前往登录？")) {
+        navigate('/login', { state: { from: location } });
+      }
+      return;
+    }
     
     // 动画飞出
     await controls.start({ 
@@ -180,6 +230,49 @@ const PredictionHome = () => {
     
     // 模拟下注成功
     // alert(`下注成功！\n盘口: ${marketId}\n方向: ${direction}\n金额: 100 TWSCoin`);
+  };
+
+  const handleDeleteMarket = (id) => {
+    if (!isAdmin) return;
+    if (window.confirm(`[GOD MODE] Delete market #${id}?`)) {
+      setMarkets(prev => prev.filter(m => m.id !== id));
+      // Adjust index if needed to avoid out of bounds
+      if (currentCardIndex >= markets.length - 1) {
+         setCurrentCardIndex(Math.max(0, markets.length - 2));
+      }
+    }
+  };
+
+  const handleAddMarket = (e) => {
+    e.preventDefault();
+    if (!isAdmin) return;
+    
+    const newMarket = {
+      id: Date.now(),
+      ...newMarketForm,
+      endTime: "2025-12-31" // Default end time
+    };
+    
+    setMarkets(prev => [...prev, newMarket]);
+    setShowAddModal(false);
+    setNewMarketForm({
+        question: '',
+        image: '',
+        category: 'General',
+        poolYes: 10000,
+        poolNo: 10000
+    });
+    alert("New market added!");
+  };
+
+  const handleForceResolve = (marketId, outcome) => {
+    if (!isAdmin) return;
+    const confirm = window.confirm(`[GOD MODE] Are you sure you want to FORCE RESOLVE market #${marketId} to ${outcome}? This action is irreversible.`);
+    if (confirm) {
+        alert(`[GOD MODE] Market #${marketId} has been resolved to ${outcome}. \nSettlement distributed to winning pool.`);
+        // 这里未来可以对接实际合约调用
+        // await program.methods.resolveMarket(outcome).accounts({...}).rpc();
+    }
   };
 
   const currentMarket = markets[currentCardIndex];
@@ -344,14 +437,14 @@ const PredictionHome = () => {
         </AnimatePresence>
       </div>
 
-      {/* 上帝模式入口 (隐蔽) */}
-      <div 
-        className="absolute top-0 right-0 w-10 h-10 z-50 cursor-default"
-        onClick={() => {
-             // 连续点击 5 次开启上帝模式逻辑可在此实现
-             setAdminMode(!adminMode);
-        }}
-      ></div>
+      {/* 上帝模式入口 (仅管理员可见) */}
+      {isAdmin && (
+        <div 
+          className="absolute top-0 right-0 w-10 h-10 z-50 cursor-default"
+          onClick={() => setAdminMode(!adminMode)}
+          title="God Mode"
+        ></div>
+      )}
 
       {/* 底部状态栏 */}
       <div className="w-full max-w-md p-3 flex justify-between border-t border-gray-800 bg-black text-xs font-mono text-gray-600 z-10">
@@ -359,27 +452,112 @@ const PredictionHome = () => {
         <span>BURNED: 1,204,500 TWS</span>
       </div>
       
-      {/* 上帝模式面板 (Mock) */}
-      {adminMode && (
+      {/* 上帝模式面板 */}
+      {adminMode && isAdmin && (
         <div className="absolute inset-0 bg-black/95 z-50 p-6 flex flex-col overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-black text-yellow-500">GOD MODE</h2>
-                <button onClick={() => setAdminMode(false)} className="text-gray-500">CLOSE</button>
+                <div className="flex gap-2">
+                    <button 
+                        onClick={() => setShowAddModal(true)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700"
+                    >
+                        + ADD MARKET
+                    </button>
+                    <button onClick={() => setAdminMode(false)} className="text-gray-500 hover:text-white">CLOSE</button>
+                </div>
             </div>
             
-            {PREDICTION_MARKETS.map(m => (
+            {markets.map(m => (
                 <div key={m.id} className="border border-gray-800 p-4 mb-4 rounded bg-gray-900">
+                    <div className="flex justify-between mb-2">
+                        <span className="text-xs text-gray-500">ID: {m.id}</span>
+                        <button 
+                            onClick={() => handleDeleteMarket(m.id)}
+                            className="text-red-500 text-xs hover:underline"
+                        >
+                            DELETE
+                        </button>
+                    </div>
                     <p className="text-sm text-gray-300 mb-2 truncate">{m.question}</p>
                     <div className="flex gap-2">
-                        <button className="flex-1 bg-green-900 text-green-500 py-2 text-xs font-bold border border-green-700 hover:bg-green-700 hover:text-white">
+                        <button 
+                            onClick={() => handleForceResolve(m.id, 'YES')}
+                            className="flex-1 bg-green-900 text-green-500 py-2 text-xs font-bold border border-green-700 hover:bg-green-700 hover:text-white transition-colors"
+                        >
                             FORCE YES
                         </button>
-                        <button className="flex-1 bg-red-900 text-red-500 py-2 text-xs font-bold border border-red-700 hover:bg-red-700 hover:text-white">
+                        <button 
+                            onClick={() => handleForceResolve(m.id, 'NO')}
+                            className="flex-1 bg-red-900 text-red-500 py-2 text-xs font-bold border border-red-700 hover:bg-red-700 hover:text-white transition-colors"
+                        >
                             FORCE NO
                         </button>
                     </div>
                 </div>
             ))}
+        </div>
+      )}
+
+      {/* Add Market Modal */}
+      {showAddModal && isAdmin && (
+        <div className="absolute inset-0 bg-black/95 z-[60] p-6 flex items-center justify-center">
+            <form onSubmit={handleAddMarket} className="bg-gray-900 p-6 rounded-lg border border-gray-700 w-full max-w-md">
+                <h3 className="text-xl font-bold text-white mb-4">Add New Market</h3>
+                
+                <div className="mb-4">
+                    <label className="block text-gray-400 text-sm mb-1">Question</label>
+                    <input 
+                        type="text" 
+                        required
+                        className="w-full bg-black border border-gray-700 p-2 text-white rounded focus:border-blue-500 outline-none"
+                        value={newMarketForm.question}
+                        onChange={e => setNewMarketForm({...newMarketForm, question: e.target.value})}
+                    />
+                </div>
+
+                <div className="mb-4">
+                    <label className="block text-gray-400 text-sm mb-1">Image URL</label>
+                    <input 
+                        type="text" 
+                        required
+                        className="w-full bg-black border border-gray-700 p-2 text-white rounded focus:border-blue-500 outline-none"
+                        value={newMarketForm.image}
+                        onChange={e => setNewMarketForm({...newMarketForm, image: e.target.value})}
+                    />
+                </div>
+
+                <div className="mb-4">
+                    <label className="block text-gray-400 text-sm mb-1">Category</label>
+                    <select 
+                        className="w-full bg-black border border-gray-700 p-2 text-white rounded focus:border-blue-500 outline-none"
+                        value={newMarketForm.category}
+                        onChange={e => setNewMarketForm({...newMarketForm, category: e.target.value})}
+                    >
+                        <option value="Livelihood">Livelihood</option>
+                        <option value="Politics">Politics</option>
+                        <option value="Military">Military</option>
+                        <option value="International">International</option>
+                        <option value="Humor">Humor</option>
+                    </select>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                    <button 
+                        type="button"
+                        onClick={() => setShowAddModal(false)}
+                        className="px-4 py-2 text-gray-400 hover:text-white"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="submit"
+                        className="px-6 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700"
+                    >
+                        Create Market
+                    </button>
+                </div>
+            </form>
         </div>
       )}
     </div>

@@ -938,6 +938,30 @@
       ],
       "walletLogs": [
         {
+          "id": "1767016772084-3bqgm5b",
+          "address": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
+          "userId": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
+          "username": "admin",
+          "location": {
+            "lat": 25.052376138791278,
+            "lng": 121.5482291855229
+          },
+          "city": "Taipei (Xinyi)",
+          "timestamp": 1767016772082
+        },
+        {
+          "id": "1767016689045-jwk7syi",
+          "address": "0x5Ea39E296eC63e57Ab73a15a8aB6d160F4A5Da3e",
+          "userId": "0x5Ea39E296eC63e57Ab73a15a8aB6d160F4A5Da3e",
+          "username": "testuser",
+          "location": {
+            "lat": 25.050291784037846,
+            "lng": 121.56746317513492
+          },
+          "city": "Taipei (Xinyi)",
+          "timestamp": 1767016689042
+        },
+        {
           "id": "1767011423557-f8iy577",
           "address": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
           "userId": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
