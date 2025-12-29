@@ -17,9 +17,20 @@
     "docker:build": "docker build -t tws-app .",
     "docker:run": "docker run -p 80:80 tws-app",
     "docker:compose": "docker-compose up -d",
-    "docker:compose:down": "docker-compose down"
+    "docker:compose:down": "docker-compose down",
+    "solana:config": "node scripts/setup-solana-network.js",
+    "solana:build": "anchor build",
+    "solana:deploy": "node scripts/setup-solana-network.js && anchor deploy",
+    "solana:deploy:devnet": "node scripts/switch-network.js devnet && anchor deploy --provider.cluster devnet",
+    "solana:deploy:mainnet": "node scripts/switch-network.js mainnet-beta && anchor deploy --provider.cluster mainnet-beta",
+    "solana:switch:mainnet": "node scripts/switch-network.js mainnet-beta",
+    "solana:switch:devnet": "node scripts/switch-network.js devnet",
+    "solana:test": "anchor test"
   },
   "dependencies": {
+    "@coral-xyz/anchor": "^0.29.0",
+    "@solana/spl-token": "^0.4.8",
+    "@solana/web3.js": "^1.87.6",
     "@project-serum/anchor": "^0.26.0",
     "@solana/spl-token": "^0.4.8",
     "@solana/wallet-adapter-base": "^0.9.23",
