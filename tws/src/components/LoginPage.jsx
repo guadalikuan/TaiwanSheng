@@ -31,10 +31,7 @@ const LoginPage = () => {
   // 如果已登录，重定向
   useEffect(() => {
     if (isAuthenticated) {
-      // 优先使用 URL 参数中的 redirect
-      const urlParams = new URLSearchParams(location.search);
-      const redirect = urlParams.get('redirect');
-      const from = redirect || location.state?.from?.pathname || '/bunker';
+      const from = location.state?.from?.pathname || '/bunker';
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, location]);
@@ -101,10 +98,7 @@ const LoginPage = () => {
 
       if (result.success) {
         // 登录成功，跳转到目标页面或默认页面
-        // 优先使用 URL 参数中的 redirect
-        const urlParams = new URLSearchParams(location.search);
-        const redirect = urlParams.get('redirect');
-        const from = redirect || location.state?.from?.pathname || '/bunker';
+        const from = location.state?.from?.pathname || '/bunker';
         navigate(from, { replace: true });
       } else {
         setErrors({ submit: result.message || '登录失败，请检查您的凭据' });

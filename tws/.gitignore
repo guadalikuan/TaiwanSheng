@@ -44,3 +44,11 @@ Thumbs.db
 *.tmp
 *.temp
 
+# Solana / Anchor
+target/
+.anchor/
+**/target/deploy/*.json
+!**/target/deploy/tws_asset-keypair.json
+deployments/*.json
+*.so
+

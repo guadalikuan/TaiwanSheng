@@ -770,3 +770,80 @@ export const generateNewMnemonic = async () => {
   }
 };
 
+// ==================== 拍卖相关 API ====================
+
+/**
+ * 获取拍卖信息
+ * @param {number} assetId - 资产ID
+ * @returns {Promise<Object>}
+ */
+export const getAuctionInfo = async (assetId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auction/${assetId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API getAuctionInfo error:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 夺取资产（10%溢价机制）
+ * @param {number} assetId - 资产ID
+ * @param {string} bidMessage - 出价留言
+ * @param {string} userAddress - 用户钱包地址
+ * @param {string} treasuryAddress - TWS财库地址（可选，默认使用TWSCoin铸造地址）
+ * @returns {Promise<Object>}
+ */
+export const seizeAuctionAsset = async (assetId, bidMessage, userAddress, treasuryAddress = null) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const body = {
+      bidMessage,
+      userAddress,
+    };
+    // 只有当提供了 treasuryAddress 时才添加到请求体
+    if (treasuryAddress) {
+      body.treasuryAddress = treasuryAddress;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/auction/${assetId}/seize`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : '',
+      },
+      body: JSON.stringify(body),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API seizeAuctionAsset error:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 获取用户 TWSCoin 余额
+ * @param {string} userAddress - 用户钱包地址
+ * @returns {Promise<Object>}
+ */
+export const getTWSCoinBalanceAPI = async (userAddress) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auction/balance/${userAddress}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API getTWSCoinBalance error:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
