@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "TWS",
+  "name": "TWS天眼助手",
   "version": "1.0.0",
-  "description": "TWS浏览器插件 - 实时币价、倒计时、社区导航和电商价格锚定功能",
+  "description": "TWS天眼助手 - 实时币价、倒计时、社区导航、价格锚定和今日运势",
   "permissions": [
     "activeTab",
     "storage",
@@ -12,11 +12,17 @@
     "https://*.pchome.com.tw/*",
     "https://*.momoshop.com.tw/*", 
     "https://*.shopee.tw/*",
-    "https://api.coingecko.com/*"
+    "https://*.yahoo.com.tw/*",
+    "https://*.books.com.tw/*",
+    "https://*.ruten.com.tw/*",
+    "https://*.udn.com/*",
+    "https://*.rakuten.com.tw/*",
+    "https://api.coingecko.com/*",
+    "https://tws-fronted.zeabur.app/*"
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "TWS 助手",
+    "default_title": "TWS天眼助手",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -28,7 +34,12 @@
       "matches": [
         "https://*.pchome.com.tw/*",
         "https://*.momoshop.com.tw/*",
-        "https://*.shopee.tw/*"
+        "https://*.shopee.tw/*",
+        "https://*.yahoo.com.tw/*",
+        "https://*.books.com.tw/*",
+        "https://*.ruten.com.tw/*",
+        "https://*.udn.com/*",
+        "https://*.rakuten.com.tw/*"
       ],
       "js": ["content.js"],
       "css": ["content.css"]

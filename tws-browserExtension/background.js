@@ -103,7 +103,7 @@ function showWelcomeNotification() {
     chrome.notifications.create('welcome', {
         type: 'basic',
         iconUrl: 'icons/icon128.png',
-        title: 'TWS 助手',
+        title: 'TWS天眼助手',
         message: '插件安装成功！点击图标开始使用各种功能。',
         priority: 2
     });
@@ -190,7 +190,7 @@ function showStatusNotification(message) {
     chrome.notifications.create({
         type: 'basic',
         iconUrl: 'icons/icon128.png',
-        title: 'TWS 助手',
+        title: 'TWS天眼助手',
         message: message,
         priority: 1
     });
@@ -277,6 +277,14 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         handleFortuneUpdate(request.data);
         sendResponse({success: true});
     }
+    
+    if (request.action === 'updateIconColor') {
+        // 更新图标颜色
+        updateIconColor(request.color);
+        sendResponse({success: true});
+    }
+    
+    return true;
 });
 
 // 处理运势更新
@@ -284,15 +292,99 @@ function handleFortuneUpdate(fortuneData) {
     chrome.storage.local.set({
         dailyFortune: fortuneData
     });
+    // 同时更新图标颜色
+    if (fortuneData.color) {
+        updateIconColor(fortuneData.color);
+    }
 }
+
+// 更新图标颜色（根据运势）
+function updateIconColor(color) {
+    const colorMap = {
+        '红': { badge: '🔴', badgeColor: '#e74c3c' },
+        '绿': { badge: '🟢', badgeColor: '#27ae60' },
+        '黑': { badge: '⚫', badgeColor: '#2d3436' }
+    };
+    
+    const colorInfo = colorMap[color] || colorMap['绿'];
+    
+    // 使用badge显示运势颜色
+    chrome.action.setBadgeText({ text: colorInfo.badge });
+    chrome.action.setBadgeBackgroundColor({ color: colorInfo.badgeColor });
+    
+    // 保存当前图标颜色
+    chrome.storage.local.set({ currentIconColor: color });
+    
+    console.log(`图标颜色已更新为: ${color}`);
+}
+
+// 每日更新图标颜色
+function updateDailyIconColor() {
+    const today = new Date().toDateString();
+    const fortuneKey = today + '_fortune';
+    
+    chrome.storage.local.get([fortuneKey], (result) => {
+        if (result[fortuneKey]) {
+            try {
+                const fortune = JSON.parse(result[fortuneKey]);
+                if (fortune.color) {
+                    updateIconColor(fortune.color);
+                }
+            } catch (e) {
+                console.error('解析运势数据失败:', e);
+            }
+        } else {
+            // 如果没有运势数据，生成一个
+            generateAndUpdateFortune();
+        }
+    });
+}
+
+// 生成并更新运势
+function generateAndUpdateFortune() {
+    // 这里可以调用popup.js中的运势生成逻辑
+    // 为了简化，我们使用一个简单的哈希算法
+    const today = new Date();
+    const dateStr = today.toDateString();
+    const hash = dateStr.split('').reduce((acc, char) => {
+        return ((acc << 5) - acc) + char.charCodeAt(0);
+    }, 0);
+    
+    const colors = ['红', '绿', '黑'];
+    const color = colors[Math.abs(hash) % colors.length];
+    
+    updateIconColor(color);
+}
+
+// 启动时更新图标颜色
+chrome.runtime.onStartup.addListener(function() {
+    console.log('TWS插件服务工作者启动');
+    updateDailyIconColor();
+});
+
+// 插件安装时更新图标颜色
+chrome.runtime.onInstalled.addListener(function(details) {
+    if (details.reason === 'install' || details.reason === 'update') {
+        updateDailyIconColor();
+    }
+});
+
+// 定期检查并更新图标颜色（每天更新一次）
+function scheduleIconUpdate() {
+    // 立即执行一次
+    updateDailyIconColor();
+    
+    // 每24小时检查一次
+    setInterval(() => {
+        updateDailyIconColor();
+    }, 24 * 60 * 60 * 1000);
+}
+
+// 启动定时更新
+scheduleIconUpdate();
 
 // 启动定时任务
 schedulePriceUpdates();
-
-// 处理服务工作者生命周期
-chrome.runtime.onStartup.addListener(function() {
-    console.log('TWS插件服务工作者启动');
-});
 
 chrome.runtime.onSuspend.addListener(function() {
     console.log('TWS插件服务工作者暂停');
