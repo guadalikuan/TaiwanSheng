@@ -120,3 +120,4 @@ initializeAuction()
     process.exit(1);
   });
 
+

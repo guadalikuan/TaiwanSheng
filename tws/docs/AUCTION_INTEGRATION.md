@@ -165,3 +165,4 @@ const balance = await getTWSCoinBalanceAPI(walletAddress);
 2. 或者修改 AuctionPage 以适配您现有的钱包连接方式
 3. 测试完整的流程：连接钱包 → 查看余额 → 出价 → 夺取资产
 
+

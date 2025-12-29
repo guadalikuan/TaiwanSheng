@@ -1,0 +1,32 @@
+{
+  "name": "tws-browser-extension",
+  "version": "1.0.0",
+  "description": "TWS浏览器插件 - 实时币价、倒计时、社区导航和电商价格锚定功能",
+  "main": "popup.html",
+  "scripts": {
+    "build": "node build.js",
+    "test": "echo \"测试功能请打开test.html\" && exit 0",
+    "pack": "npm run build && echo \"插件已打包完成，请检查dist目录\""
+  },
+  "keywords": [
+    "browser-extension",
+    "tws",
+    "crypto",
+    "price-anchor",
+    "fortune"
+  ],
+  "author": "TWS Team",
+  "license": "MIT",
+  "devDependencies": {},
+  "files": [
+    "manifest.json",
+    "popup.html",
+    "popup.css",
+    "popup.js",
+    "content.js",
+    "content.css",
+    "background.js",
+    "icons/",
+    "test.html"
+  ]
+}

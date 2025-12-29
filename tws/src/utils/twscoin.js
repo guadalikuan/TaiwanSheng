@@ -52,3 +52,4 @@ export const calculateMinBidRaw = (currentPrice) => {
   return minRequired.toString();
 };
 
+
