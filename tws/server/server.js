@@ -1,4 +1,10 @@
+// #region agent log
+fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'server.js:1',message:'开始导入模块',data:{nodeVersion:process.version,modulePaths:process.env.NODE_PATH||'default',cwd:process.cwd()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,E'})}).catch(()=>{});
+// #endregion
 import express from 'express';
+// #region agent log
+fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'server.js:2',message:'express导入成功',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+// #endregion
 import cors from 'cors';
 import arsenalRoutes from './routes/arsenal.js';
 import authRoutes from './routes/auth.js';
@@ -6,6 +12,9 @@ import homepageRoutes from './routes/homepage.js';
 import oracleRoutes from './routes/oracle.js';
 import paymentRoutes from './routes/payment.js';
 import referralRoutes from './routes/referral.js';
+// #region agent log
+fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'server.js:9',message:'准备导入auctionRoutes',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+// #endregion
 import auctionRoutes from './routes/auction.js';
 import sseRoutes, { startSSEKeepalive } from './routes/sse.js';
 import { startBackgroundTasks } from './utils/backgroundTasks.js';

@@ -1,6 +1,18 @@
+// #region agent log
+fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'utils/solanaBlockchain.js:1',message:'开始导入Solana依赖',data:{moduleResolvePaths:process.env.NODE_PATH||'default',__dirname:import.meta.url},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C'})}).catch(()=>{});
+// #endregion
 import { Connection, PublicKey, Keypair, Transaction } from '@solana/web3.js';
+// #region agent log
+fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'utils/solanaBlockchain.js:2',message:'@solana/web3.js导入成功',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+// #endregion
 import { getAssociatedTokenAddress, createTransferInstruction, getAccount } from '@solana/spl-token';
+// #region agent log
+fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'utils/solanaBlockchain.js:3',message:'@solana/spl-token导入成功',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
+// #endregion
 import anchor from '@coral-xyz/anchor';
+// #region agent log
+fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'utils/solanaBlockchain.js:4',message:'@coral-xyz/anchor导入成功',data:{anchorVersion:anchor?.Program?.version||'loaded'},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
+// #endregion
 import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
