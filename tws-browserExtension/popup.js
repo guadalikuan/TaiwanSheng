@@ -144,23 +144,27 @@ function initializeTabs() {
             if (targetContent) {
                 targetContent.classList.add('active');
                 
+                // 价格走势图功能已禁用
                 // 如果切换到币价选项卡，尝试重新绘制图表
-                if (targetTab === 'price') {
-                    // #region agent log
-                    debugLog('popup.js:tab-switch', '切换到币价选项卡', {});
-                    // #endregion
-                    setTimeout(() => {
-                        // 尝试从缓存获取数据并绘制
-                        chrome.storage.local.get(['priceData'], (result) => {
-                            if (result.priceData && result.priceData.klineData) {
-                                drawPriceChart(result.priceData.klineData);
-                            } else {
-                                // 重新加载数据
-                                loadPriceData();
-                            }
-                        });
-                    }, 100);
-                }
+                // if (targetTab === 'price') {
+                //     // #region agent log
+                //     debugLog('popup.js:tab-switch', '切换到币价选项卡', {});
+                //     // #endregion
+                //     // 延迟确保DOM完全渲染
+                //     setTimeout(() => {
+                //         // 尝试从缓存获取数据并绘制
+                //         chrome.storage.local.get(['priceData'], (result) => {
+                //             if (result.priceData && result.priceData.klineData && result.priceData.klineData.length > 0) {
+                //                 console.log('[TWS图表] 从缓存绘制图表，数据点数量:', result.priceData.klineData.length);
+                //                 drawPriceChart(result.priceData.klineData);
+                //             } else {
+                //                 // 重新加载数据
+                //                 console.log('[TWS图表] 缓存无数据，重新加载');
+                //                 loadPriceData();
+                //             }
+                //         });
+                //     }, 200);
+                // }
             }
         });
     });
@@ -356,18 +360,19 @@ async function loadPriceData() {
             // 如果缓存少于30秒，使用缓存
             if (result.priceData && cacheAge < 30000) {
                 updatePriceDisplay(result.priceData);
+                // 价格走势图功能已禁用
                 // 如果有K线数据，绘制图表（延迟绘制）
-                if (result.priceData.klineData && result.priceData.klineData.length > 0) {
-                    // #region agent log
-                    debugLog('popup.js:301', '从缓存加载图表数据', {
-                        klineDataLength: result.priceData.klineData.length,
-                        tabActive: document.getElementById('tab-price')?.classList.contains('active')
-                    });
-                    // #endregion
-                    setTimeout(() => {
-                        drawPriceChart(result.priceData.klineData);
-                    }, 200);
-                }
+                // if (result.priceData.klineData && result.priceData.klineData.length > 0) {
+                //     // #region agent log
+                //     debugLog('popup.js:301', '从缓存加载图表数据', {
+                //         klineDataLength: result.priceData.klineData.length,
+                //         tabActive: document.getElementById('tab-price')?.classList.contains('active')
+                //     });
+                //     // #endregion
+                //     setTimeout(() => {
+                //         drawPriceChart(result.priceData.klineData);
+                //     }, 200);
+                // }
                 return;
             }
             
@@ -395,8 +400,9 @@ async function fetchPriceData() {
                 currentPrice: `$${result.data.currentPrice?.toFixed(2) || '0.00'}`,
                 priceChange: `${result.data.priceChange24h >= 0 ? '+' : ''}${result.data.priceChange24h?.toFixed(2) || '0.00'}%`,
                 volume24h: formatNumber(result.data.volume24h || 0),
-                holderCount: formatNumber(result.data.holderCount || 0),
-                klineData: result.data.klineData || [] // 添加K线数据
+                holderCount: formatNumber(result.data.holderCount || 0)
+                // 价格走势图功能已禁用
+                // klineData: result.data.klineData || [] // 添加K线数据
             };
             
             // 缓存数据
@@ -406,25 +412,34 @@ async function fetchPriceData() {
             });
             
             updatePriceDisplay(priceData);
+            // 价格走势图功能已禁用
             // 绘制图表（延迟绘制，确保DOM已渲染）
-            if (priceData.klineData && priceData.klineData.length > 0) {
-                // #region agent log
-                debugLog('popup.js:343', '准备绘制图表', {
-                    klineDataLength: priceData.klineData.length,
-                    tabActive: document.getElementById('tab-price')?.classList.contains('active')
-                });
-                // #endregion
-                setTimeout(() => {
-                    drawPriceChart(priceData.klineData);
-                }, 200);
-            } else {
-                // #region agent log
-                debugLog('popup.js:343', 'K线数据为空，无法绘制', {
-                    hasKlineData: !!priceData.klineData,
-                    klineDataLength: priceData.klineData ? priceData.klineData.length : 0
-                });
-                // #endregion
-            }
+            // if (priceData.klineData && priceData.klineData.length > 0) {
+            //     // #region agent log
+            //     debugLog('popup.js:343', '准备绘制图表', {
+            //         klineDataLength: priceData.klineData.length,
+            //         tabActive: document.getElementById('tab-price')?.classList.contains('active')
+            //     });
+            //     // #endregion
+            //     // 检查是否在价格tab，如果是则立即绘制，否则等待切换时绘制
+            //     const priceTab = document.getElementById('tab-price');
+            //     if (priceTab && priceTab.classList.contains('active')) {
+            //         setTimeout(() => {
+            //             console.log('[TWS图表] 价格tab已激活，绘制图表');
+            //             drawPriceChart(priceData.klineData);
+            //         }, 200);
+            //     } else {
+            //         console.log('[TWS图表] 价格tab未激活，数据已缓存，等待切换时绘制');
+            //     }
+            // } else {
+            //     // #region agent log
+            //     debugLog('popup.js:343', 'K线数据为空，无法绘制', {
+            //         hasKlineData: !!priceData.klineData,
+            //         klineDataLength: priceData.klineData ? priceData.klineData.length : 0
+            //     });
+            //     // #endregion
+            //     console.warn('[TWS图表] K线数据为空');
+            // }
         } else {
             throw new Error('数据格式错误');
         }
@@ -434,20 +449,22 @@ async function fetchPriceData() {
         chrome.storage.local.get(['priceData'], (result) => {
             if (result.priceData) {
                 updatePriceDisplay(result.priceData);
+                // 价格走势图功能已禁用
                 // 如果有K线数据，尝试绘制图表
-                if (result.priceData.klineData && result.priceData.klineData.length > 0) {
-                    setTimeout(() => {
-                        drawPriceChart(result.priceData.klineData);
-                    }, 200);
-                }
+                // if (result.priceData.klineData && result.priceData.klineData.length > 0) {
+                //     setTimeout(() => {
+                //         drawPriceChart(result.priceData.klineData);
+                //     }, 200);
+                // }
             } else {
                 // 使用模拟数据作为最后的后备
                 const mockData = {
                     currentPrice: '$0.15',
                     priceChange: '+2.5%',
                     volume24h: '4,291,002,911',
-                    holderCount: '12,458',
-                    klineData: [] // 模拟数据没有K线
+                    holderCount: '12,458'
+                    // 价格走势图功能已禁用
+                    // klineData: [] // 模拟数据没有K线
                 };
                 updatePriceDisplay(mockData);
             }
@@ -475,10 +492,11 @@ function updatePriceDisplay(data) {
         }
     }
     
+    // 价格走势图功能已禁用
     // 如果有K线数据，绘制图表
-    if (data.klineData && data.klineData.length > 0) {
-        drawPriceChart(data.klineData);
-    }
+    // if (data.klineData && data.klineData.length > 0) {
+    //     drawPriceChart(data.klineData);
+    // }
 }
 
 function formatNumber(num) {
@@ -497,7 +515,9 @@ function formatPrice(price) {
     return price.toFixed(2);
 }
 
+// 价格走势图功能已禁用
 // 绘制价格走势图（增强版，带调试和错误处理）
+/*
 function drawPriceChart(klineData) {
     // #region agent log
     debugLog('popup.js:411', 'drawPriceChart开始', {
@@ -759,6 +779,7 @@ function drawPriceChart(klineData) {
     
     console.log('[TWS图表] 价格走势图绘制完成');
 }
+*/
 
 // ==================== 社区选项卡 ====================
 function initializeCommunityTab() {
@@ -773,9 +794,10 @@ function initializeCommunityTab() {
     const communityLinks = {
         'facebook-btn': { url: 'https://www.facebook.com/groups/1365839505037775/', name: 'Facebook' },
         'discord-btn': { url: 'https://discord.gg/mrF59Qxu', name: 'Discord' },
-        'twitter-btn': { url: 'https://x.com/TWSDAO', name: 'X' },
-        'telegram-btn': { url: 'https://t.me/twstaiwan', name: 'Telegram' },
-        'line-btn': { url: 'https://line.me/R/ti/g/twstaiwan', name: 'Line' }
+        'twitter-btn': { url: 'https://x.com/TWSDAO', name: 'X' }
+        // 微信/Line功能已禁用
+        // 'telegram-btn': { url: 'https://t.me/twstaiwan', name: 'Telegram' },
+        // 'line-btn': { url: 'https://line.me/R/ti/g/twstaiwan', name: 'Line' }
     };
 
     Object.keys(communityLinks).forEach(btnId => {
@@ -789,16 +811,18 @@ function initializeCommunityTab() {
         }
     });
 
-    const wechatBtn = document.getElementById('wechat-btn');
-    if (wechatBtn) {
-        wechatBtn.addEventListener('click', () => {
-            showWechatQRCode();
-        });
-    }
+    // 微信/Line功能已禁用
+    // const wechatBtn = document.getElementById('wechat-btn');
+    // if (wechatBtn) {
+    //     wechatBtn.addEventListener('click', () => {
+    //         showWechatQRCode();
+    //     });
+    // }
 
     updateCommunityStats();
 }
 
+// 微信/Line功能已禁用
 function showWechatQRCode() {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';

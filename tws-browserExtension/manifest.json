@@ -2,21 +2,13 @@
   "manifest_version": 3,
   "name": "TWS天眼助手",
   "version": "1.0.0",
-  "description": "TWS天眼助手 - 实时币价、倒计时、社区导航、价格锚定和今日运势",
+  "description": "TWS天眼助手 - 实时币价、倒计时、社区导航和今日运势",
   "permissions": [
     "activeTab",
     "storage",
     "scripting"
   ],
   "host_permissions": [
-    "https://*.pchome.com.tw/*",
-    "https://*.momoshop.com.tw/*", 
-    "https://*.shopee.tw/*",
-    "https://*.yahoo.com.tw/*",
-    "https://*.books.com.tw/*",
-    "https://*.ruten.com.tw/*",
-    "https://*.udn.com/*",
-    "https://*.rakuten.com.tw/*",
     "https://api.coingecko.com/*",
     "https://tws-fronted.zeabur.app/*"
   ],
@@ -29,22 +21,6 @@
       "128": "icons/icon128.png"
     }
   },
-  "content_scripts": [
-    {
-      "matches": [
-        "https://*.pchome.com.tw/*",
-        "https://*.momoshop.com.tw/*",
-        "https://*.shopee.tw/*",
-        "https://*.yahoo.com.tw/*",
-        "https://*.books.com.tw/*",
-        "https://*.ruten.com.tw/*",
-        "https://*.udn.com/*",
-        "https://*.rakuten.com.tw/*"
-      ],
-      "js": ["content.js"],
-      "css": ["content.css"]
-    }
-  ],
   "background": {
     "service_worker": "background.js"
   },

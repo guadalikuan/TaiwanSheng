@@ -17,7 +17,8 @@ function initializeExtension() {
     
     // 设置默认配置
     chrome.storage.local.set({
-        priceAnchorEnabled: true,
+        // 价格锚定功能已禁用
+        // priceAnchorEnabled: true,
         lastPriceUpdate: 0,
         dailyFortune: {},
         userPreferences: {
@@ -46,12 +47,13 @@ function handleExtensionUpdate() {
 function createContextMenus() {
     // 移除所有现有菜单
     chrome.contextMenus.removeAll(function() {
+        // 价格锚定功能已禁用
         // 创建价格锚定开关菜单
-        chrome.contextMenus.create({
-            id: 'togglePriceAnchor',
-            title: '切换TWS价格锚定',
-            contexts: ['page']
-        });
+        // chrome.contextMenus.create({
+        //     id: 'togglePriceAnchor',
+        //     title: '切换TWS价格锚定',
+        //     contexts: ['page']
+        // });
         
         // 创建查看TWS信息菜单
         chrome.contextMenus.create({
@@ -133,41 +135,43 @@ function migrateUserData() {
 // 监听右键菜单点击
 chrome.contextMenus.onClicked.addListener(function(info, tab) {
     switch(info.menuItemId) {
-        case 'togglePriceAnchor':
-            togglePriceAnchor(tab);
-            break;
+        // 价格锚定功能已禁用
+        // case 'togglePriceAnchor':
+        //     togglePriceAnchor(tab);
+        //     break;
         case 'viewTWSInfo':
             openTWSInfo(tab);
             break;
         case 'openFacebook':
-            openCommunityLink('https://facebook.com/groups/twstaiwan');
+            openCommunityLink('https://www.facebook.com/groups/1365839505037775/');
             break;
         case 'openDiscord':
-            openCommunityLink('https://discord.gg/twstaiwan');
+            openCommunityLink('https://discord.gg/mrF59Qxu');
             break;
         case 'openTwitter':
-            openCommunityLink('https://twitter.com/twstaiwan');
+            openCommunityLink('https://x.com/TWSDAO');
             break;
     }
 });
 
+// 价格锚定功能已禁用
 // 切换价格锚定功能
-function togglePriceAnchor(tab) {
-    chrome.storage.local.get(['priceAnchorEnabled'], function(result) {
-        const enabled = !result.priceAnchorEnabled;
-        
-        chrome.storage.local.set({priceAnchorEnabled: enabled}, function() {
-            // 发送消息给content script
-            chrome.tabs.sendMessage(tab.id, {
-                action: 'togglePriceAnchor',
-                enabled: enabled
-            });
-            
-            // 显示状态通知
-            showStatusNotification(enabled ? '价格锚定已启用' : '价格锚定已禁用');
-        });
-    });
-}
+// function togglePriceAnchor(tab) {
+//     chrome.storage.local.get(['priceAnchorEnabled'], function(result) {
+//         const enabled = !result.priceAnchorEnabled;
+//         
+//         chrome.storage.local.set({priceAnchorEnabled: enabled}, function() {
+//             // 发送消息给content script
+//             chrome.tabs.sendMessage(tab.id, {
+//                 action: 'togglePriceAnchor',
+//                 enabled: enabled
+//             });
+//             
+//             // 显示状态通知
+//             showStatusNotification(enabled ? '价格锚定已启用' : '价格锚定已禁用');
+//         });
+//     });
+// }
 
 // 打开TWS信息页面
 function openTWSInfo(tab) {
@@ -199,28 +203,30 @@ function showStatusNotification(message) {
 // 监听标签页更新
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
     if (changeInfo.status === 'complete') {
+        // 价格锚定功能已禁用
         // 页面加载完成后检查是否需要启用价格锚定
-        checkAndEnablePriceAnchor(tab);
+        // checkAndEnablePriceAnchor(tab);
     }
 });
 
+// 价格锚定功能已禁用
 // 检查并启用价格锚定
-function checkAndEnablePriceAnchor(tab) {
-    const supportedSites = ['pchome.com.tw', 'momoshop.com.tw', 'shopee.tw'];
-    const currentHost = new URL(tab.url).hostname;
-    
-    if (supportedSites.some(site => currentHost.includes(site))) {
-        chrome.storage.local.get(['priceAnchorEnabled'], function(result) {
-            if (result.priceAnchorEnabled) {
-                // 发送消息启用价格锚定
-                chrome.tabs.sendMessage(tab.id, {
-                    action: 'togglePriceAnchor',
-                    enabled: true
-                });
-            }
-        });
-    }
-}
+// function checkAndEnablePriceAnchor(tab) {
+//     const supportedSites = ['pchome.com.tw', 'momoshop.com.tw', 'shopee.tw'];
+//     const currentHost = new URL(tab.url).hostname;
+//     
+//     if (supportedSites.some(site => currentHost.includes(site))) {
+//         chrome.storage.local.get(['priceAnchorEnabled'], function(result) {
+//             if (result.priceAnchorEnabled) {
+//                 // 发送消息启用价格锚定
+//                 chrome.tabs.sendMessage(tab.id, {
+//                     action: 'togglePriceAnchor',
+//                     enabled: true
+//                 });
+//             }
+//         });
+//     }
+// }
 
 // 定期更新价格数据
 function schedulePriceUpdates() {
