@@ -4,6 +4,30 @@
     "riskPremium": 142.5,
     "events": [
       {
+        "id": "00e6c1d4-f229-4e89-8569-8c1e27a6124b",
+        "text": "“兩重”建設高質量推進 民生福祉持續增強",
+        "impact": "+40h",
+        "score": 0,
+        "reason": "此新闻标题主要描述的是‘兩重’建设高质量推进和民生福祉持续增强，这是一个积极的经济发展和社会进步的消息，与台海局势无直接关联。因此，无法根据该新闻标题对台海局势的影响进行打分。",
+        "timestamp": 1767010624229
+      },
+      {
+        "id": "56adc28f-4693-4acf-babb-e10775284f57",
+        "text": "如何實施更加積極的財政政策？2026年將這樣做",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767010621051
+      },
+      {
+        "id": "bb6fce20-91c0-4938-9252-d80c74495611",
+        "text": "焦點訪談｜“智慧大腦”結合“靈活身體” 我國重點布局具身智能產業",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767010618712
+      },
+      {
         "id": "1766903014629-h2vv1j9",
         "text": "[TRIGGER] Trade executed: 18.24 @ 29106974.73 by bot_user_xu5dm2",
         "impact": "NEUTRAL",
@@ -912,7 +936,32 @@
           "connectionType": "direct"
         }
       ],
-      "walletLogs": []
+      "walletLogs": [
+        {
+          "id": "1767011423557-f8iy577",
+          "address": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
+          "userId": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
+          "username": "admin",
+          "location": {
+            "lat": 25.02815443915901,
+            "lng": 121.5732104629434
+          },
+          "city": "Taipei (Xinyi)",
+          "timestamp": 1767011423556
+        },
+        {
+          "id": "1767011377495-44lte6f",
+          "address": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
+          "userId": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
+          "username": "admin",
+          "location": {
+            "lat": 25.033268735582908,
+            "lng": 121.5554887421336
+          },
+          "city": "Taipei (Xinyi)",
+          "timestamp": 1767011377493
+        }
+      ]
     },
     "mainland": {
       "assetPoolValue": 2460653446,

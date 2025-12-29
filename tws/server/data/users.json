@@ -9,9 +9,9 @@
       "displayName": "testuser",
       "avatar": ""
     },
-    "lastLogin": null,
+    "lastLogin": 1767010702501,
     "createdAt": 1764437116349,
-    "updatedAt": 1764437116349
+    "updatedAt": 1767010702503
   },
   {
     "address": "0xa3b96081698E099818BAD18c6a73240E3D27735b",
@@ -51,9 +51,9 @@
       "displayName": "admin",
       "avatar": ""
     },
-    "lastLogin": null,
+    "lastLogin": 1767011423550,
     "createdAt": 1764437116698,
-    "updatedAt": 1764437116698
+    "updatedAt": 1767011423552
   },
   {
     "address": "0x9B3E6dc5bfdD13a7041CDC78A1d72BCeD908d3C8",
