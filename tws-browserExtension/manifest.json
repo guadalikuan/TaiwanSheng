@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "TWS天眼助手",
+  "version": "1.0.0",
+  "description": "TWS天眼助手 - 实时币价、倒计时、社区导航和今日运势",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://api.coingecko.com/*",
+    "https://tws-fronted.zeabur.app/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "TWS天眼助手",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png", 
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
