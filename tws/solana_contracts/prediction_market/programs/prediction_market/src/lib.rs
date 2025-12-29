@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer, Burn};
 
-declare_id!("TWSxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"); // 部署时替换
+declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod prediction_market {
