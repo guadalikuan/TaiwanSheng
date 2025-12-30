@@ -627,6 +627,27 @@ export const getHomepageAssets = async () => {
 };
 
 /**
+ * 获取倒计时信息（开放API）
+ * @returns {Promise<Object>}
+ */
+export const getCountdown = async () => {
+  try {
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/open/countdown`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      },
+      3, // 最多重试3次
+      1000 // 基础延迟1秒
+    );
+  } catch (error) {
+    console.error('API getCountdown error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
  * 根据ID获取单个资产详情
  * @param {string|number} id - 资产ID
  * @returns {Promise<Object>}
