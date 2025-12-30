@@ -1,5 +1,113 @@
 [
   {
+    "url": "https://my-h5news.app.xinhuanet.com/h5activity/yunzhibo-pc/#/?roomId=69537287e4b087530b5c9044&isFull=0&isTest=no&isXR=0",
+    "title": "新华网独家直播：军事专家谈 “正义使命-2025”演习",
+    "timestamp": 1767098302845,
+    "analysis": {
+      "score": 60,
+      "reason": "包含关键词\"演习\"，判定为局势紧张"
+    }
+  },
+  {
+    "url": "https://china.chinadaily.com.cn/a/202512/30/WS6953bed0a310942cc49997b0.html",
+    "title": "从纪念到消费，票根经济激活文旅升级新动能",
+    "timestamp": 1767097208229,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://china.chinadaily.com.cn/a/202512/30/WS6953bf4ba310942cc49997b2.html",
+    "title": "回眸2025四个“在中国” 回答“何以中国”惠全球",
+    "timestamp": 1767097206381,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://china.chinadaily.com.cn/a/202512/30/WS6953c138a310942cc49997b6.html",
+    "title": "漫评 | 民生答卷暖人心，幸福生活谱新篇",
+    "timestamp": 1767097204628,
+    "analysis": {
+      "score": 0,
+      "reason": "该问题涉及对新闻标题的情感倾向和紧张程度的分析，以及对台海局势的影响评估。然而，由于缺乏具体的新闻内容和上下文信息，无法准确判断此消息对台海局势的具体影响。因此，无法给出合理的打分和解释理由。请注意，以上回答仅供参考，实际情况可能因各种因素而有所不同。"
+    }
+  },
+  {
+    "url": "https://www.news.cn/tw/20251230/7f60cfeac3cd4ce399e5e6b2bcd57676/c.html",
+    "title": "东部战区发布演习实景实弹现场视频《拔点 断线 封港》",
+    "timestamp": 1767097090810,
+    "analysis": {
+      "score": 41,
+      "reason": "该消息发布东部战区演习实景实弹现场视频，显示军事力量展示，可能引起关注和紧张，但具体影响需结合更多信息分析。"
+    }
+  },
+  {
+    "url": "https://www.news.cn/tw/20251230/6a1449b77b5e4a2aa9bc349f1e256c18/c.html",
+    "title": "开火！开火！全部命中！",
+    "timestamp": 1767097088144,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.news.cn/tw/20251230/d6df7cbcc1e64e8c8b40fd8e3d8b2e7e/c.html",
+    "title": "东部战区发布演习现场视频《破袭 夺港 割裂》",
+    "timestamp": 1767097086667,
+    "analysis": {
+      "score": 60,
+      "reason": "包含关键词\"演习\"，判定为局势紧张"
+    }
+  },
+  {
+    "url": "http://www.gwytb.gov.cn/xwdt/zwyw/202511/t20251120_12736252.htm",
+    "title": "第五届“携手圆梦——两岸同胞交流研讨活动”在四川举行",
+    "timestamp": 1767094622067,
+    "analysis": {
+      "score": 0,
+      "reason": "该新闻标题描述的是两岸同胞的交流研讨活动，体现了两岸关系的积极互动和和平发展。"
+    }
+  },
+  {
+    "url": "http://www.gwytb.gov.cn/xwdt/zwyw/202512/t20251230_12743603.htm",
+    "title": "2025年全国台协会长座谈会在北京举行",
+    "timestamp": 1767094619695,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://www.gwytb.gov.cn/",
+    "title": "中共中央台湾工作办公室、国务院台湾事务办公室",
+    "timestamp": 1767094615589,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://news.cctv.com/2025/12/30/ARTI7B7dRwcgKkcMKOGCSmmk251230.shtml",
+    "title": "部分商品关税将调整 专家：为国际社会注入稳定预期",
+    "timestamp": 1767084291423,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://news.cctv.com/2025/12/30/ARTIxiVa0K5GavWrpkxmyQH2251230.shtml",
+    "title": "假日氛围拉满 多领域掀热潮释放经济“热”活力",
+    "timestamp": 1767084289500,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
     "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251230_12743464.htm",
     "title": "財米油鹽堶盤點2025你參與的那些“大項目”",
     "timestamp": 1767080092596,

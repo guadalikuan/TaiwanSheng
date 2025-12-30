@@ -7,7 +7,7 @@
 ### 接口信息
 
 - **URL**: `/api/open/countdown`
-- **完整 URL (示例)**: `https://tws-fronted.zeabur.app/api/open/countdown` (请替换为实际部署域名，本地测试为 `http://localhost:3001/api/open/countdown`)
+- **完整 URL (示例)**: `https://tws-dao.zeabur.app/api/open/countdown` (请替换为实际部署域名，本地测试为 `http://localhost:3001/api/open/countdown`)
 - **方法**: `GET`
 - **鉴权**: 无需鉴权 (Public)
 
@@ -48,7 +48,7 @@
   },
   "meta": {
     "api_version": "1.0.0",
-    "documentation_url": "https://tws-fronted.zeabur.app/docs"
+    "documentation_url": "https://tws-dao.zeabur.app/docs"
   }
 }
 ```
@@ -58,13 +58,13 @@
 #### curl
 
 ```bash
-curl -X GET https://tws-fronted.zeabur.app/api/open/countdown
+curl -X GET https://tws-dao.zeabur.app/api/open/countdown
 ```
 
 #### JavaScript (Fetch API)
 
 ```javascript
-fetch('https://tws-fronted.zeabur.app/api/open/countdown')
+fetch('https://tws-dao.zeabur.app/api/open/countdown')
   .then(response => response.json())
   .then(data => {
     if (data.success) {
@@ -80,7 +80,7 @@ fetch('https://tws-fronted.zeabur.app/api/open/countdown')
 ```python
 import requests
 
-response = requests.get('https://tws-fronted.zeabur.app/api/open/countdown')
+response = requests.get('https://tws-dao.zeabur.app/api/open/countdown')
 data = response.json()
 
 if data['success']:

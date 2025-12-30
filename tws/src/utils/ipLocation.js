@@ -21,24 +21,27 @@ export const getIpLocation = async () => {
 
     if (data.status === '1' && data.info === 'OK') {
       // 优先使用 rectangle（范围）取中心点
-      if (data.rectangle) {
+      if (data.rectangle && typeof data.rectangle === 'string') {
         try {
           // rectangle 格式: "min_lng,min_lat;max_lng,max_lat"
-          const [rect1, rect2] = data.rectangle.split(';');
-          const [minLng, minLat] = rect1.split(',').map(Number);
-          const [maxLng, maxLat] = rect2.split(',').map(Number);
+          const parts = data.rectangle.split(';');
+          if (parts.length === 2) {
+            const [rect1, rect2] = parts;
+            const [minLng, minLat] = rect1.split(',').map(Number);
+            const [maxLng, maxLat] = rect2.split(',').map(Number);
 
-          const centerLat = (minLat + maxLat) / 2;
-          const centerLng = (minLng + maxLng) / 2;
+            const centerLat = (minLat + maxLat) / 2;
+            const centerLng = (minLng + maxLng) / 2;
 
-          return {
-            lat: centerLat,
-            lng: centerLng,
-            city: data.city || '未知城市',
-            province: data.province || '',
-            country: data.country || '中国',
-            accuracy: data.accuracy || '',
-          };
+            return {
+              lat: centerLat,
+              lng: centerLng,
+              city: data.city || '未知城市',
+              province: data.province || '',
+              country: data.country || '中国',
+              accuracy: data.accuracy || '',
+            };
+          }
         } catch (e) {
           console.warn('Rectangle 解析失败，尝试直接坐标:', e);
         }

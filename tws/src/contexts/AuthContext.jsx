@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { 
   registerUser, 
   loginUser, 
@@ -23,14 +24,39 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(null);
+  const { disconnect, connected } = useWallet();
+  const prevConnected = useRef(connected);
 
-  // 从 localStorage 恢复 token
+  // Sync logout when wallet disconnects externally
+  useEffect(() => {
+    // Only trigger if we were connected and now we are not (explicit disconnect)
+    if (prevConnected.current && !connected) {
+        const isWalletLogin = localStorage.getItem('tws_wallet_login');
+        if (isWalletLogin) {
+            console.log("Wallet disconnected externally, logging out...");
+            localStorage.removeItem('tws_token');
+            localStorage.removeItem('tws_wallet_login');
+            setToken(null);
+            setUser(null);
+            setIsAuthenticated(false);
+        }
+    }
+    prevConnected.current = connected;
+  }, [connected]);
+
+  // 从 localStorage 恢复 token 或钱包登录
   useEffect(() => {
     const storedToken = localStorage.getItem('tws_token');
+    const walletLogin = localStorage.getItem('tws_wallet_login');
+    
     if (storedToken) {
       setToken(storedToken);
       // 验证 token 并获取用户信息
       loadUser(storedToken);
+    } else if (walletLogin) {
+      // 恢复钱包登录状态
+      loginWithWallet(walletLogin);
+      setLoading(false);
     } else {
       setLoading(false);
     }
@@ -99,6 +125,41 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 钱包登录
+  const loginWithWallet = async (walletAddress) => {
+    try {
+      // 模拟一个用户对象，或者调用后端API验证钱包签名并创建/获取用户
+      // 这里为了简化，直接在前端模拟登录状态
+      const walletUser = {
+        id: `wallet_${walletAddress.slice(0, 8)}`,
+        username: `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`,
+        walletAddress: walletAddress,
+        role: 'USER', // 默认角色
+        isWalletUser: true
+      };
+      
+      setUser(walletUser);
+      setIsAuthenticated(true);
+      // 注意：这里没有JWT token，所以依赖后端的API可能需要修改以支持无token或钱包签名
+      // 暂时存一个标记
+      localStorage.setItem('tws_wallet_login', walletAddress);
+      
+      return { success: true, user: walletUser };
+    } catch (error) {
+      console.error('Wallet login error:', error);
+      return { success: false, message: error.message };
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('tws_token');
+    localStorage.removeItem('tws_wallet_login');
+    setToken(null);
+    setUser(null);
+    setIsAuthenticated(false);
+    disconnect().catch(err => console.error("Wallet disconnect failed:", err));
+  };
+
   // 使用助记符登录
   const loginWithMnemonicAuth = async (mnemonic, password) => {
     try {
@@ -118,13 +179,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // 登出
-  const logout = () => {
-    localStorage.removeItem('tws_token');
-    setToken(null);
-    setUser(null);
-    setIsAuthenticated(false);
-  };
+
 
   // 更新用户资料
   const updateProfile = async (profileData) => {
@@ -164,6 +219,7 @@ export const AuthProvider = ({ children }) => {
     token,
     register,
     login,
+    loginWithWallet,
     loginWithMnemonic: loginWithMnemonicAuth,
     logout,
     updateProfile,

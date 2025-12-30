@@ -5,6 +5,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { SSEProvider } from './contexts/SSEContext';
 import { ServerStatusProvider } from './contexts/ServerStatusContext';
 import { TonConnectUIProvider } from '@tonconnect/ui-react';
+import { SolanaWalletProvider } from './components/SolanaWalletProvider';
 import App from './App';
 import './index.css';
 
@@ -17,13 +18,15 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
     {/* 添加 TonConnectUIProvider 包裹 AuthProvider + App */}
       <TonConnectUIProvider manifestUrl={tonManifestUrl}>
-        <ServerStatusProvider>
-          <SSEProvider>
-            <AuthProvider>
-              <App />
-            </AuthProvider>
-          </SSEProvider>
-        </ServerStatusProvider>
+        <SolanaWalletProvider>
+          <ServerStatusProvider>
+            <SSEProvider>
+              <AuthProvider>
+                <App />
+              </AuthProvider>
+            </SSEProvider>
+          </ServerStatusProvider>
+        </SolanaWalletProvider>
       </TonConnectUIProvider>
     </BrowserRouter>
   </React.StrictMode>,
