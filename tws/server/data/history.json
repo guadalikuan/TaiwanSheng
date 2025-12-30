@@ -1,5 +1,32 @@
 [
   {
+    "url": "https://www.mod.go.jp/202512/20251212.pdf",
+    "title": "日米共同訓練について",
+    "timestamp": 1767099566345,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.mod.go.jp/202512/20251215.pdf",
+    "title": "令和５年度計画護衛艦の命名式・進水式について",
+    "timestamp": 1767099564866,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.mod.go.jp/202512/20251216.pdf",
+    "title": "令和４年度計画掃海艦の命名式・進水式の一部変更について",
+    "timestamp": 1767099563461,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
     "url": "https://my-h5news.app.xinhuanet.com/h5activity/yunzhibo-pc/#/?roomId=69537287e4b087530b5c9044&isFull=0&isTest=no&isXR=0",
     "title": "新华网独家直播：军事专家谈 “正义使命-2025”演习",
     "timestamp": 1767098302845,
