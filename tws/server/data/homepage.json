@@ -4,6 +4,46 @@
     "riskPremium": 142.5,
     "events": [
       {
+        "id": "5d3e6440-d8f5-480c-9b5b-1b5b0612a836",
+        "text": "Redistricting Tracker",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767104821788
+      },
+      {
+        "id": "469650a9-e9a2-403f-9c08-dbaba5c0d30a",
+        "text": "2025 Elections",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767104820620
+      },
+      {
+        "id": "0e32a654-f62e-4563-8cc8-a3bea4696896",
+        "text": "Facts First",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767104819256
+      },
+      {
+        "id": "ed54f844-d0dc-4b81-9be5-11b6b1042f07",
+        "text": "2026年農業強國建設，“施工圖”來了！",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767104817534
+      },
+      {
+        "id": "e56b2e61-ce3c-4ced-a5e6-867fa1353848",
+        "text": "促進就業增收為消費添動力",
+        "impact": "+40h",
+        "score": 0,
+        "reason": "该新闻标题与台海局势无直接关联，无法分析其对台海局势的影响。",
+        "timestamp": 1767104816020
+      },
+      {
         "id": "3d6f7b04-30b9-4f2d-aa27-b980d6a6a86b",
         "text": "日米共同訓練について",
         "impact": "NEUTRAL",
@@ -122,46 +162,6 @@
         "score": 50,
         "reason": "常规报道",
         "timestamp": 1767084289609
-      },
-      {
-        "id": "e8ba3662-3461-4267-864f-9c58869baf71",
-        "text": "財米油鹽堶盤點2025你參與的那些“大項目”",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767080092623
-      },
-      {
-        "id": "faf11252-1c46-40dc-9ab2-4023a0db7b28",
-        "text": "2025年終經濟觀察|開放合作互利共贏，中國為世界帶來新機遇",
-        "impact": "NEUTRAL",
-        "score": 40,
-        "reason": "包含关键词\"合作\"，判定为局势缓和",
-        "timestamp": 1767080090346
-      },
-      {
-        "id": "f85ec2c8-af27-4f83-ace9-0de3f6d8339c",
-        "text": "Press Products",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767073856006
-      },
-      {
-        "id": "8594418e-ebb4-4a0a-819e-73e13da8ac57",
-        "text": "Place Holder",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767073854500
-      },
-      {
-        "id": "cd34fd25-c56b-48d2-923f-85e9b71b0546",
-        "text": "U.S. DepartmentofWar",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767073852025
       }
     ],
     "alertMessage": "⚠ SYSTEM ALERT: GEOPOLITICAL TENSION RISING"

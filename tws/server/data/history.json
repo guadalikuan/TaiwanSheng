@@ -1,5 +1,50 @@
 [
   {
+    "url": "https://edition.cnn.com/politics/state-redistricting-maps-vis/index.html",
+    "title": "Redistricting Tracker",
+    "timestamp": 1767104821787,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.cnn.com/election/2025",
+    "title": "2025 Elections",
+    "timestamp": 1767104820619,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.cnn.com/politics/fact-check",
+    "title": "Facts First",
+    "timestamp": 1767104819256,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251230_12743634.htm",
+    "title": "2026年農業強國建設，“施工圖”來了！",
+    "timestamp": 1767104817532,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251230_12743640.htm",
+    "title": "促進就業增收為消費添動力",
+    "timestamp": 1767104816017,
+    "analysis": {
+      "score": 0,
+      "reason": "该新闻标题与台海局势无直接关联，无法分析其对台海局势的影响。"
+    }
+  },
+  {
     "url": "https://www.mod.go.jp/202512/20251212.pdf",
     "title": "日米共同訓練について",
     "timestamp": 1767099566345,

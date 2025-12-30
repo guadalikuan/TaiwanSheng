@@ -8,6 +8,8 @@ import { useServerStatus } from '../contexts/ServerStatusContext';
 import { getIpLocation } from '../utils/ipLocation';
 import MapNewTagsBox from './MapNewTagsBox';
 import MapNewWalletsBox from './MapNewWalletsBox';
+import MapLanternOverlay from './MapLanternOverlay';
+import { WISHES } from './LanternCanvas';
 
 const taiwanHotspots = [
   { name: 'Taipei (Xinyi)', lat: 25.033, lng: 121.5654 },
@@ -66,6 +68,7 @@ const MapSection = () => {
   const taiwanMarkersRef = useRef([]);
   const mainlandMarkersRef = useRef([]);
   const walletMarkersRef = useRef([]);
+  const taiwanLanternOverlayRef = useRef(null);
 
   // 加载初始数据
   useEffect(() => {
@@ -450,6 +453,12 @@ const MapSection = () => {
     
     // 添加钱包标记到地图
     addWalletMarker(lat, lng, log.address || log.id);
+    
+    // 释放孔明灯（从IP地理位置）
+    if (taiwanLanternOverlayRef.current) {
+      const wish = WISHES[Math.floor(Math.random() * WISHES.length)];
+      taiwanLanternOverlayRef.current.releaseLanternFromGeo(lng, lat, wish);
+    }
   };
 
   // 添加钱包标记到台湾地图（带水波动画效果）
@@ -604,7 +613,15 @@ const MapSection = () => {
             <div className="absolute bottom-4 right-4 z-10 pointer-events-auto">
               <MapNewWalletsBox walletLogs={walletLogs} />
             </div>
-            <div ref={taiwanMapContainerRef} className="amap-container w-full h-full rounded-lg overflow-hidden" />
+            <div ref={taiwanMapContainerRef} className="amap-container w-full h-full rounded-lg overflow-hidden relative">
+              {taiwanMapRef.current && (
+                <MapLanternOverlay
+                  ref={taiwanLanternOverlayRef}
+                  mapRef={taiwanMapRef}
+                  mapContainerRef={taiwanMapContainerRef}
+                />
+              )}
+            </div>
           </div>
         </article>
       </div>
