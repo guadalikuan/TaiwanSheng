@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AMAP_CONFIG, loadAMapScript } from '../config/amap';
 import { generateUniqueId } from '../utils/uniqueId';
-import { getMapData } from '../utils/api';
+import { getMapData, getHomepageAssets } from '../utils/api';
 import { useSSE } from '../contexts/SSEContext';
 import { useServerStatus } from '../contexts/ServerStatusContext';
 import { getIpLocation } from '../utils/ipLocation';
@@ -128,6 +128,69 @@ const MapSection = () => {
     loadData();
   }, [isOnline]);
 
+  // 加载安全屋列表并在地图上显示标记
+  const loadSafehouses = async () => {
+    if (!mainlandMapRef.current || !window.AMap) {
+      // 如果地图还没初始化，延迟重试
+      setTimeout(loadSafehouses, 1000);
+      return;
+    }
+
+    try {
+      const response = await getHomepageAssets();
+      if (response?.success && response.data && Array.isArray(response.data)) {
+        // 清除旧标记
+        mainlandMarkersRef.current.forEach(marker => {
+          try {
+            marker.setMap(null);
+          } catch (e) {
+            console.warn('Failed to remove old marker:', e);
+          }
+        });
+        mainlandMarkersRef.current = [];
+
+        // 为每个安全屋添加地图标记
+        response.data.forEach((asset, index) => {
+          // 尝试从 asset 中提取位置信息
+          let lat, lng, assetId, assetName;
+          
+          // 检查不同的数据结构
+          if (asset.location && asset.location.lat && asset.location.lng) {
+            lat = asset.location.lat;
+            lng = asset.location.lng;
+          } else if (asset.lat && asset.lng) {
+            lat = asset.lat;
+            lng = asset.lng;
+          } else if (asset.nodeLocation && asset.nodeLocation.lat && asset.nodeLocation.lng) {
+            lat = asset.nodeLocation.lat;
+            lng = asset.nodeLocation.lng;
+          } else {
+            // 如果没有位置信息，使用预定义的节点位置
+            const nodeIndex = index % mainlandNodes.length;
+            const node = mainlandNodes[nodeIndex];
+            lat = node.lat + (Math.random() - 0.5) * 0.1;
+            lng = node.lng + (Math.random() - 0.5) * 0.1;
+          }
+
+          // 验证并修正坐标
+          const validated = validateAndFixCoordinates(lat, lng, 'mainland');
+          lat = validated.lat;
+          lng = validated.lng;
+
+          assetId = asset.id || asset.assetId || `asset-${index}`;
+          assetName = asset.name || asset.lot || asset.title || `Safehouse ${index + 1}`;
+
+          // 添加标记
+          addMainlandMarker(lat, lng, assetId, assetName);
+        });
+
+        console.log(`已加载 ${response.data.length} 个安全屋标记`);
+      }
+    } catch (error) {
+      console.error('Failed to load safehouses:', error);
+    }
+  };
+
   // 确保按顺序执行
   useEffect(() => {
     let mounted = true;
@@ -172,6 +235,10 @@ const MapSection = () => {
           mainlandMap.on('complete', () => {
             console.log('mainland map complete event fired');
             try { addUserLocationMarker(); } catch (e) { console.warn('addUserLocationMarker error on complete:', e); }
+            // 加载安全屋列表
+            setTimeout(() => {
+              loadSafehouses();
+            }, 1000);
           });
         }
         // 备用：短延迟后再次尝试（防止 complete 事件未触发）
@@ -179,7 +246,9 @@ const MapSection = () => {
           if (mainlandMapRef.current && !userMarkerRef.current) {
             try { addUserLocationMarker(); } catch (e) { console.warn('delayed addUserLocationMarker failed:', e); }
           }
-        }, 1200);
+          // 备用：延迟加载安全屋
+          loadSafehouses();
+        }, 2000);
       } catch (e) {
         console.error('Failed to initialize mainland map:', e);
       }
@@ -232,7 +301,7 @@ const MapSection = () => {
   };
 
   // 添加大陆地图标记 - v1.4.15 版本
-  const addMainlandMarker = (lat, lng, assetId) => {
+  const addMainlandMarker = (lat, lng, assetId, assetName = null) => {
     if (!mainlandMapRef.current || !window.AMap) return;
 
     const marker = new window.AMap.Marker({
@@ -240,6 +309,7 @@ const MapSection = () => {
       map: mainlandMapRef.current,
       content: '<div style="width: 16px; height: 16px; background: rgba(251, 191, 36, 0.95); border-radius: 50%; box-shadow: 0 0 12px rgba(251, 191, 36, 0.9); border: 2px solid rgba(217, 119, 6, 0.5);"></div>',
       zIndex: 100,
+      title: assetName || `Asset ${assetId}`,
     });
 
     marker.on('click', () => {
