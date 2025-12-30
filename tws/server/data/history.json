@@ -1,5 +1,293 @@
 [
   {
+    "url": "https://www.war.gov/News/Press-Products/",
+    "title": "Press Products",
+    "timestamp": 1767073856003,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.defense.gov/#",
+    "title": "Place Holder",
+    "timestamp": 1767073854498,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.war.gov/",
+    "title": "U.S. DepartmentofWar",
+    "timestamp": 1767073852021,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://my-h5news.app.xinhuanet.com/h5activity/yunzhibo-pc/#/?roomId=69526ac7e4b087530b5c903d&isFull=0&isTest=no&isXR=0",
+    "title": "新华网独家直播回放：军事专家谈 “正义使命-2025”演习",
+    "timestamp": 1767073850587,
+    "analysis": {
+      "score": 45,
+      "reason": "该新闻标题主要涉及军事演习，但并未直接提及台海局势，因此对台海局势的影响较为中性。同时，新闻标题也未表现出明显的紧张或冲突情绪，因此打分在40-59分之间较为合理。"
+    }
+  },
+  {
+    "url": "https://www.news.cn/tw/20251229/95e90df7a0db4d60a34ec697fe60d61d/c.html",
+    "title": "立体驱歼，联合精打，尽远出击，招招制敌！东部战区发布军事演习现场视频《驱歼 破击 远袭》",
+    "timestamp": 1767073847889,
+    "analysis": {
+      "score": 60,
+      "reason": "包含关键词\"演习\"，判定为局势紧张"
+    }
+  },
+  {
+    "url": "https://www.news.cn/tw/20251230/5e0ad7e41c0d409c8f0fb7a660facb17/c.html",
+    "title": "中国海警局发布台岛及其附属岛屿执法巡查现场视频《巡控·除妄念》",
+    "timestamp": 1767073844809,
+    "analysis": {
+      "score": 41,
+      "reason": "该消息展示了中国海警局在台岛及其附属岛屿的执法巡查行动，表明了对该地区的关注和控制力度。从标题来看，情感倾向较为中性，没有明显的紧张或冲突情绪。因此，我将其评为41分，即局势中性/无明显波动。"
+    }
+  },
+  {
+    "url": "http://tw.people.com.cn/n1/2025/1215/c14657-40624351.html",
+    "title": "“台湾阿公”的“归根”之旅",
+    "timestamp": 1767073779335,
+    "analysis": {
+      "score": 0,
+      "reason": "此标题主要描述了一个关于台湾老人的亲情故事，没有涉及台海局势的政治内容。"
+    }
+  },
+  {
+    "url": "http://tw.people.com.cn/n1/2025/1224/c14657-40631197.html",
+    "title": "两岸人士在京共话赓续抗战精神",
+    "timestamp": 1767073776579,
+    "analysis": {
+      "score": 41,
+      "reason": "该消息涉及两岸人士交流，没有直接表达对台海局势的影响，因此中性偏正面。"
+    }
+  },
+  {
+    "url": "http://tw.people.com.cn/n1/2025/1229/c14657-40634234.html",
+    "title": "年终报道丨铭记历史荣耀 积蓄统一大势——两岸关系这一年",
+    "timestamp": 1767073774453,
+    "analysis": {
+      "score": 45,
+      "reason": "该新闻标题强调了两岸关系的积极发展，但同时也提到了历史荣耀和统一大势的积蓄，暗示着未来可能的挑战和紧张局势。因此，打分为45分，表示局势中性/无明显波动。"
+    }
+  },
+  {
+    "url": "https://www.state.gov/countries-and-areas-list/",
+    "title": "Countries & Areas",
+    "timestamp": 1767073644048,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.state.gov/",
+    "title": "United States Department of State",
+    "timestamp": 1767073642585,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.itaiwannews.cn/2025-12-25/6076afb6-7753-4277-a1c8-f38c62b40895.html",
+    "title": "国防部：“台独”挑衅一次我们就进逼一步 直至祖国统一",
+    "timestamp": 1767073640864,
+    "analysis": {
+      "score": 60,
+      "reason": "该消息体现了中国政府对台湾问题的坚定立场，强调了维护国家统一的决心。"
+    }
+  },
+  {
+    "url": "https://www.itaiwannews.cn/2025-12-25/88bb05de-900f-49ea-b658-64bc1abe54c5.html",
+    "title": "国防部：背叛民族、分裂国家的人终将被钉上历史耻辱柱",
+    "timestamp": 1767073638705,
+    "analysis": {
+      "score": 0,
+      "reason": "该消息强调了维护国家统一和民族尊严的决心，有助于稳定台海局势，促进两岸和平发展。"
+    }
+  },
+  {
+    "url": "https://www.itaiwannews.cn/2025-12-26/04c4c0a3-bed7-47f0-a33e-ec4f977ed78f.html",
+    "title": "台湾民意机构通过赖清德弹劾提案 明年1月将举办公听会",
+    "timestamp": 1767073636665,
+    "analysis": {
+      "score": 100,
+      "reason": "台湾是中国不可分割的一部分，任何旨在分裂国家的行径都是徒劳的，并将严重危害台海地区的和平稳定。"
+    }
+  },
+  {
+    "url": "http://www.mod.gov.cn/gfbw/qwfb/jwjgswglzj/index.html",
+    "title": "军委机关事务管理总局",
+    "timestamp": 1767073632537,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://www.mod.gov.cn/gfbw/qwfb/jwgjjshzbgs/index.html",
+    "title": "军委国际军事合作办公室",
+    "timestamp": 1767073631048,
+    "analysis": {
+      "score": 40,
+      "reason": "包含关键词\"合作\"，判定为局势缓和"
+    }
+  },
+  {
+    "url": "http://www.mod.gov.cn/gfbw/qwfb/jwgghbzbgs/index.html",
+    "title": "军委改革和编制办公室",
+    "timestamp": 1767073629659,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://apnews.com/hub/asia-pacific",
+    "title": "Asia Pacific",
+    "timestamp": 1767073463993,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://apnews.com/hub/russia-ukraine",
+    "title": "Russia-Ukraine War",
+    "timestamp": 1767073462310,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://apnews.com/hub/israel-hamas-war",
+    "title": "Israel-Hamas War",
+    "timestamp": 1767073458743,
+    "analysis": {
+      "score": "无法回答",
+      "reason": "问题中涉及的新闻标题‘Israel-Hamas War’是一个国际冲突事件，与台海局势没有直接关系。此外，该问题要求对不存在的事件或言论进行否定，而‘Israel-Hamas War’是一个真实发生的冲突，因此无法给出合理的回答。"
+    }
+  },
+  {
+    "url": "https://china.chinadaily.com.cn/a/202512/29/WS69528cd7a310942cc49993e3.html",
+    "title": "龙腾“货”跃——再造一条物流出海“新黄河”",
+    "timestamp": 1767073455216,
+    "analysis": {
+      "score": 0,
+      "reason": "该新闻标题主要描述的是物流发展方面的积极进展，与台海局势无直接关联，因此无法对其对台海局势的影响进行分析和打分。"
+    }
+  },
+  {
+    "url": "https://china.chinadaily.com.cn/a/202512/29/WS69528d21a310942cc49993e5.html",
+    "title": "5万公里高铁延展中国式现代化幸福画卷",
+    "timestamp": 1767073452017,
+    "analysis": {
+      "score": 0,
+      "reason": "新闻标题\"5万公里高铁延展中国式现代化幸福画卷\"主要描述了中国高铁建设的成就，展现了中国的现代化发展。此消息对台海局势没有直接影响，因此打分为0，代表局势缓和/正面交流。"
+    }
+  },
+  {
+    "url": "https://china.chinadaily.com.cn/a/202512/29/WS69528ad4a310942cc49993de.html",
+    "title": "数览成绩单｜激发内生动能 大市场活力加速释放",
+    "timestamp": 1767073447527,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://ent.people.com.cn/",
+    "title": "������繚雿栞��",
+    "timestamp": 1767073300639,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://finance.people.com.cn/",
+    "title": "蝏𤩺�羗瑞�烐��",
+    "timestamp": 1767073295463,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://cpc.people.com.cn/",
+    "title": "��𡁶�嚊瑟𧒄�錇",
+    "timestamp": 1767073288902,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.state.gov",
+    "title": "State Department Home State Department Home State Department Home",
+    "timestamp": 1767073167663,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.state.gov/department-email-updates/",
+    "title": "GovDelivery",
+    "timestamp": 1767073166256,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.state.gov/#content",
+    "title": "Skip to content",
+    "timestamp": 1767073164628,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.mfa.gov.cn/web/zwjg_674741/zwtc_674771/200712/t20071213_7679656.shtml",
+    "title": "常驻联合国亚洲及太平洋经济和社会委员会代表处",
+    "timestamp": 1767073162803,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.mfa.gov.cn/web/zwjg_674741/zwtc_674771/200607/t20060711_7679659.shtml",
+    "title": "常驻维也纳联合国和其他国际组织代表团",
+    "timestamp": 1767073161155,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.mfa.gov.cn/web/zwjg_674741/zwtc_674771/200707/t20070703_7679663.shtml",
+    "title": "常驻联合国日内瓦办事处和瑞士其他国际组织代表团",
+    "timestamp": 1767073159779,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
     "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251228_12743091.htm",
     "title": "新城市志｜突破5萬公里，對中國高鐵意味著什麼",
     "timestamp": 1766904969154,

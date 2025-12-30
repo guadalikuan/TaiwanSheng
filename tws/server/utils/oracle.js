@@ -12,9 +12,53 @@ import { pushUpdate } from './sseManager.js';
 import { v4 as uuidv4 } from 'uuid';
 import { isDuplicate, addToHistory } from './historyManager.js';
 
+// 完整的新闻源列表
+const NEWS_SOURCES = [
+  // === 红色 (Red) - 大陆视角 ===
+  { type: 'Red', name: '海峡飞虹中文网', section: '台湾新闻', url: 'https://www.itaiwannews.cn/news/taiwan-media' },
+  { type: 'Red', name: '中国台湾网', section: '时政要闻', url: 'http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/', encoding: 'big5' },
+  { type: 'Red', name: '中国日报网', section: '要闻', url: 'https://china.chinadaily.com.cn/5bd5639ca3101a87ca8ff636' },
+  { type: 'Red', name: '央视网', section: '新闻', url: 'https://news.cctv.com/?spm=C94212.PBZrLs0D62ld.EqC6QDfEmmsv.1' },
+  { type: 'Red', name: '新华网', section: '新华台湾', url: 'https://www.news.cn/tw/' },
+  { type: 'Red', name: '人民网', section: '台湾频道', url: 'http://tw.people.com.cn/' },
+  { type: 'Red', name: '国台办', section: '新闻动态', url: 'http://www.gwytb.gov.cn/xwdt/' },
+  { type: 'Red', name: '国防部', section: '新闻发言人', url: 'http://www.mod.gov.cn/gfbw/xwfyr/index.html' },
+  { type: 'Red', name: '外交部', section: '外交部新闻', url: 'https://www.fmprc.gov.cn/wjbxw_new/' },
+
+  // === 绿色 (Green) - 台湾本土/执政党视角 ===
+  { type: 'Green', name: '自由时报', section: '政治', url: 'https://news.ltn.com.tw/list/breakingnews/politics' },
+  { type: 'Green', name: '民报', section: '焦点新闻', url: 'https://www.peoplenews.tw/articles/category/hot-news' },
+  { type: 'Green', name: '民视新闻网', section: '即时新闻', url: 'https://www.ftvnews.com.tw/realtime/' },
+  { type: 'Green', name: '公视新闻网', section: '即时新闻', url: 'https://news.pts.org.tw/dailynews' },
+  { type: 'Green', name: '激进新闻稿', section: '最新消息', url: 'https://statebuilding.tw/category/press-release/' },
+  { type: 'Green', name: '中华民国国防部', section: '本部新闻', url: 'https://www.mnd.gov.tw/news/mndlist' },
+  { type: 'Green', name: '中华民国大陆委员会', section: '政策与情势', url: 'https://www.mac.gov.tw/Content_List.aspx?n=ABBF62618F53F8DE' },
+  { type: 'Green', name: '中华民国总统府', section: '新闻与活动', url: 'https://www.president.gov.tw/Page/35' },
+  { type: 'Green', name: '行政院', section: '新闻与公告', url: 'https://www.ey.gov.tw/Page/26952B6BCAD013A7' },
+
+  // === 蓝色 (Blue) - 国际/美日视角 ===
+  { type: 'Blue', name: '纽约时报', section: '政治', url: 'https://www.nytimes.com/section/politics' },
+  { type: 'Blue', name: '华盛顿邮报', section: '政治', url: 'https://www.washingtonpost.com/politics/' },
+  { type: 'Blue', name: 'CNN', section: '政治', url: 'https://edition.cnn.com/politics' },
+  { type: 'Blue', name: '美联社', section: '政治', url: 'https://apnews.com/politics' },
+  { type: 'Blue', name: '彭博社', section: '政治', url: 'https://www.bloomberg.com/politics' },
+  { type: 'Blue', name: 'BBC', section: '新闻', url: 'https://www.bbc.com/news' },
+  { type: 'Blue', name: '美国国防部', section: '新闻', url: 'https://www.defense.gov/News/' }, // 修正了 URL (原为 war.gov)
+  { type: 'Blue', name: '美国国务院', section: '新闻稿', url: 'https://www.state.gov/press-releases/' },
+  { type: 'Blue', name: '美国印太司令部', section: '新闻', url: 'https://www.pacom.mil/Media/NEWS/' },
+  { type: 'Blue', name: '参谋长联席会议', section: '新闻', url: 'https://www.jcs.mil/Media/News/' },
+  { type: 'Blue', name: '美国空军', section: '新闻', url: 'https://www.af.mil/News/' },
+  { type: 'Blue', name: '美国海军', section: '新闻', url: 'https://www.navy.mil/Press-Office/' },
+  { type: 'Blue', name: '美国海军陆战队', section: '新闻', url: 'https://www.marines.mil/News/' },
+  { type: 'Blue', name: 'Military Times', section: '新闻', url: 'https://www.militarytimes.com/news/' },
+  { type: 'Blue', name: '日本防卫省', section: '新闻', url: 'https://www.mod.go.jp/j/press/news/index.html' },
+  { type: 'Blue', name: '陆上自卫队', section: '活动报告', url: 'https://www.mod.go.jp/gsdf/news/index.html' },
+  { type: 'Blue', name: '海上自卫队', section: '新闻稿', url: 'https://www.mod.go.jp/msdf/release/' },
+  { type: 'Blue', name: '航空自卫队', section: '活动报告', url: 'https://www.mod.go.jp/asdf/report/' }
+];
+
 // 配置
 const CONFIG = {
-  sourceUrl: 'http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/',
   scanInterval: '0 * * * *', // 每小时执行一次
   spark: {
     appId: 'befd8e29',
@@ -40,53 +84,117 @@ const KEYWORDS = {
 const sparkClient = new SparkClient(CONFIG.spark);
 
 /**
- * 抓取新闻列表
+ * 随机选择新闻源
+ * 从每种类型中随机选择 count 个源
  */
-const fetchNewsList = async () => {
+const selectRandomSources = (count = 1) => {
+  const types = ['Red', 'Green', 'Blue'];
+  const selected = [];
+  
+  types.forEach(type => {
+    const sources = NEWS_SOURCES.filter(s => s.type === type);
+    // 随机打乱并取前 count 个
+    const shuffled = sources.sort(() => 0.5 - Math.random());
+    selected.push(...shuffled.slice(0, count));
+  });
+  
+  return selected;
+};
+
+/**
+ * 抓取单个新闻源
+ */
+const fetchNewsFromSource = async (source) => {
+  console.log(`📡 正在抓取 [${source.type}] ${source.name}...`);
   try {
-    const response = await axios.get(CONFIG.sourceUrl, {
+    const response = await axios.get(source.url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       },
-      responseType: 'arraybuffer' // Handle encoding if needed, though axios handles utf8 usually
+      responseType: 'arraybuffer',
+      timeout: 10000 // 10秒超时
     });
     
-    // big5.chinataiwan.cn returns Big5 content
-    // Decode buffer using iconv-lite
-    // Check content-type or infer. It's usually big5.
-    const html = iconv.decode(response.data, 'big5');
-    const $ = cheerio.load(html);
+    // 尝试从 HTML meta 标签中检测编码
+    // 先用 UTF-8 解码前 1024 字节来查找 meta 标签
+    const headBuffer = Buffer.from(response.data).slice(0, 1024);
+    const headStr = headBuffer.toString('utf-8');
     
+    let detectedEncoding = null;
+    const charsetMatch = headStr.match(/<meta[^>]*charset=["']?([^"'>\s]+)["']?/i);
+    if (charsetMatch) {
+      detectedEncoding = charsetMatch[1].toLowerCase();
+    } else {
+      // 检查 content-type meta
+      const contentTypeMatch = headStr.match(/<meta[^>]*http-equiv=["']?Content-Type["']?[^>]*content=["']?[^"']*charset=([^"'>\s]+)["']?/i);
+      if (contentTypeMatch) {
+        detectedEncoding = contentTypeMatch[1].toLowerCase();
+      }
+    }
+
+    // 规范化编码名称
+    if (detectedEncoding === 'gb2312') detectedEncoding = 'gbk'; // iconv-lite 处理 gbk 更好
+    
+    console.log(`   🔠 ${source.name} 编码检测: ${detectedEncoding || '未检测到'} (预设: ${source.encoding || '无'})`);
+
+    // 决定最终使用的编码
+    // 优先级: 显式配置 > 自动检测 > UTF-8
+    let finalEncoding = 'utf-8';
+    if (source.encoding) {
+      finalEncoding = source.encoding;
+    } else if (detectedEncoding && iconv.encodingExists(detectedEncoding)) {
+      finalEncoding = detectedEncoding;
+    }
+
+    // 解码
+    let html = iconv.decode(response.data, finalEncoding);
+    
+    const $ = cheerio.load(html);
     const newsList = [];
     
-    // Selector needs to be adjusted based on actual site structure. 
-    // Inspecting typical structure for chinataiwan.cn
-    // Assuming structure based on common patterns or simple list
-    // This selector is a guess and should be robust or I should ask user to verify if it fails.
-    // Let's try a generic list selector often used in news sites
-    // 通常是 ul.list_01 li 或者类似的
-    // 这里先用比较宽泛的选择器抓取链接
+    // 通用抓取逻辑：提取所有链接文本
+    // 针对不同网站可能需要优化，这里使用启发式过滤
     $('a').each((i, el) => {
-      const title = $(el).text().trim();
+      const title = $(el).text().trim().replace(/\s+/g, ' ');
       const href = $(el).attr('href');
       
-      // 简单过滤：标题长度大于10，且链接有效
-      if (title.length > 10 && href && href.indexOf('.htm') > -1) {
-        // Fix relative URLs
+      // 启发式过滤条件：
+      // 1. 标题长度 > 10 (排除导航链接)
+      // 2. 必须有 href
+      // 3. 排除明显无关的链接 (如 javascript:, mailto:)
+      // 4. 排除常见非新闻文本
+      const invalidTexts = [
+        'Skip to content', 'Skip to main content', 'Home', 'Contact', 'About', 
+        'Search', 'Menu', 'Language', 'Privacy Policy', 'Terms of Use', 'Copyright',
+        '首页', '联系我们', '关于我们', '搜索', '菜单', '语言', '隐私政策', '版权所有',
+        '更多', 'More', 'Login', 'Sign up', '登录', '注册'
+      ];
+      
+      const isInvalid = invalidTexts.some(t => title.includes(t)) || title.length < 5; // Relax length check if needed, but 10 is safer for news titles
+
+      if (title.length >= 10 && href && !href.startsWith('javascript') && !href.startsWith('mailto') && !isInvalid) {
+        
+        // 补全 URL
         let fullUrl = href;
         if (!href.startsWith('http')) {
-           // Base is http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/
-           // But href might be relative to root or current dir.
-           // Let's assume relative to current dir for simplicity or resolve it properly.
-           const baseUrl = 'http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/';
-           fullUrl = new URL(href, baseUrl).toString();
+           try {
+             const baseUrl = new URL(source.url).origin;
+             fullUrl = new URL(href, baseUrl).toString();
+           } catch (e) {
+             // 如果 source.url 也是相对路径(不太可能)或者出错，保持原样
+           }
         }
         
-        newsList.push({ title, url: fullUrl });
+        newsList.push({ 
+          source: source.name,
+          type: source.type,
+          title, 
+          url: fullUrl 
+        });
       }
     });
     
-    // 去重并取前5条
+    // 去重并取前 3 条（避免单个源占用太多）
     const uniqueNews = [];
     const seen = new Set();
     for (const news of newsList) {
@@ -96,11 +204,34 @@ const fetchNewsList = async () => {
       }
     }
     
-    return uniqueNews.slice(0, 5);
+    console.log(`   ✅ ${source.name} 获取到 ${uniqueNews.length} 条新闻`);
+    return uniqueNews.slice(0, 3);
+    
   } catch (error) {
-    console.error('Fetch news list failed:', error.message);
+    console.error(`   ❌ ${source.name} 抓取失败: ${error.message}`);
     return [];
   }
+};
+
+/**
+ * 抓取新闻列表（聚合多个源）
+ */
+const fetchNewsList = async () => {
+  // 每次随机选择红蓝绿各2个源进行抓取，保证视角平衡且不造成过大负载 (共6个源)
+  const selectedSources = selectRandomSources(2);
+  console.log(`🎯 本轮选中源: ${selectedSources.map(s => s.name).join(', ')}`);
+  
+  const allNews = [];
+  
+  // 并行抓取
+  const promises = selectedSources.map(source => fetchNewsFromSource(source));
+  const results = await Promise.all(promises);
+  
+  results.forEach(newsItems => {
+    allNews.push(...newsItems);
+  });
+  
+  return allNews;
 };
 
 /**
@@ -169,7 +300,7 @@ const analyzeNewsLocal = (news) => {
  * 主扫描逻辑
  */
 export const scanNewsSources = async () => {
-  console.log('🔍 开始扫描红色源头 (中国台湾网)...');
+  console.log('🔍 开始扫描新闻源...');
   
   const newsList = await fetchNewsList();
   if (newsList.length === 0) {
@@ -216,7 +347,7 @@ export const scanNewsSources = async () => {
     totalTimeAdjustment += adjustmentMs;
     
     results.push({
-      source: '中国台湾网',
+      source: news.source,
       title: news.title,
       score,
       reason,

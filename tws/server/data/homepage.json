@@ -4,52 +4,164 @@
     "riskPremium": 142.5,
     "events": [
       {
-        "id": "1766914328037-5uxb3ks",
-        "text": "[TRIGGER] Trade executed: 0.30 @ 12045532.78 by bot_user_kbdgzy",
+        "id": "f85ec2c8-af27-4f83-ace9-0de3f6d8339c",
+        "text": "Press Products",
         "impact": "NEUTRAL",
-        "timestamp": 1766914328037
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767073856006
       },
       {
-        "id": "1766914324642-d5posne",
-        "text": "[TRIGGER] Trade executed: 10.14 @ 12045532.78 by bot_user_2vldam",
+        "id": "8594418e-ebb4-4a0a-819e-73e13da8ac57",
+        "text": "Place Holder",
         "impact": "NEUTRAL",
-        "timestamp": 1766914324642
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767073854500
       },
       {
-        "id": "1766914322858-lh093bi",
-        "text": "[TRIGGER] Trade executed: 76.71 @ 12045532.78 by bot_user_r6hzhs",
+        "id": "cd34fd25-c56b-48d2-923f-85e9b71b0546",
+        "text": "U.S. DepartmentofWar",
         "impact": "NEUTRAL",
-        "timestamp": 1766914322858
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767073852025
       },
       {
-        "id": "1766914312464-tbohds7",
-        "text": "[TRIGGER] Trade executed: 56.49 @ 12045469.47 by bot_user_s8n0iv",
+        "id": "09995e15-7ca1-4e79-bfbf-87c072fa3f83",
+        "text": "新华网独家直播回放：军事专家谈 “正义使命-2025”演习",
         "impact": "NEUTRAL",
-        "timestamp": 1766914312464
+        "score": 45,
+        "reason": "该新闻标题主要涉及军事演习，但并未直接提及台海局势，因此对台海局势的影响较为中性。同时，新闻标题也未表现出明显的紧张或冲突情绪，因此打分在40-59分之间较为合理。",
+        "timestamp": 1767073850589
       },
       {
-        "id": "1766914306021-urg31io",
-        "text": "[TRIGGER] Trade executed: 36.86 @ 12038472.39 by bot_user_n0m2zb",
+        "id": "2bdaa0d7-8779-4f6f-8671-89b34bfc2fe4",
+        "text": "立体驱歼，联合精打，尽远出击，招招制敌！东部战区发布军事演习现场视频《驱歼 破击 远袭》",
         "impact": "NEUTRAL",
-        "timestamp": 1766914306021
+        "score": 60,
+        "reason": "包含关键词\"演习\"，判定为局势紧张",
+        "timestamp": 1767073847892
       },
       {
-        "id": "1766914303665-m6vvsm1",
-        "text": "[TRIGGER] Asset submitted: CN-NW-BKR-2099 from 西安",
+        "id": "eca37c3a-c2d4-4de9-9253-38586399d85e",
+        "text": "中国海警局发布台岛及其附属岛屿执法巡查现场视频《巡控·除妄念》",
         "impact": "NEUTRAL",
-        "timestamp": 1766914303665
+        "score": 41,
+        "reason": "该消息展示了中国海警局在台岛及其附属岛屿的执法巡查行动，表明了对该地区的关注和控制力度。从标题来看，情感倾向较为中性，没有明显的紧张或冲突情绪。因此，我将其评为41分，即局势中性/无明显波动。",
+        "timestamp": 1767073844813
       },
       {
-        "id": "1766914301321-y2sp1ia",
-        "text": "[TRIGGER] Trade executed: 6.89 @ 12031406.79 by bot_user_p7wh2u",
-        "impact": "NEUTRAL",
-        "timestamp": 1766914301321
+        "id": "d084bfcd-7921-4bf1-9b1f-fdb938300f58",
+        "text": "“台湾阿公”的“归根”之旅",
+        "impact": "+40h",
+        "score": 0,
+        "reason": "此标题主要描述了一个关于台湾老人的亲情故事，没有涉及台海局势的政治内容。",
+        "timestamp": 1767073779338
       },
       {
-        "id": "1766914297697-2591qer",
-        "text": "[TRIGGER] Trade executed: 40.48 @ 12026195.35 by bot_user_9o3hv1",
+        "id": "755fbaed-e25d-41ab-9414-b4d58b7534ef",
+        "text": "两岸人士在京共话赓续抗战精神",
         "impact": "NEUTRAL",
-        "timestamp": 1766914297697
+        "score": 41,
+        "reason": "该消息涉及两岸人士交流，没有直接表达对台海局势的影响，因此中性偏正面。",
+        "timestamp": 1767073776580
+      },
+      {
+        "id": "6e1daff7-02a1-43e0-a50c-e6c80b624e2a",
+        "text": "年终报道丨铭记历史荣耀 积蓄统一大势——两岸关系这一年",
+        "impact": "NEUTRAL",
+        "score": 45,
+        "reason": "该新闻标题强调了两岸关系的积极发展，但同时也提到了历史荣耀和统一大势的积蓄，暗示着未来可能的挑战和紧张局势。因此，打分为45分，表示局势中性/无明显波动。",
+        "timestamp": 1767073774456
+      },
+      {
+        "id": "504fcab4-d819-42f9-9a35-38913c8e78b7",
+        "text": "Countries & Areas",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767073644050
+      },
+      {
+        "id": "fd4ff312-0f2f-44a6-8967-fb7a5e9b600c",
+        "text": "United States Department of State",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767073642587
+      },
+      {
+        "id": "7f46f929-351c-44d4-b8b7-f55d64e069da",
+        "text": "国防部：“台独”挑衅一次我们就进逼一步 直至祖国统一",
+        "impact": "NEUTRAL",
+        "score": 60,
+        "reason": "该消息体现了中国政府对台湾问题的坚定立场，强调了维护国家统一的决心。",
+        "timestamp": 1767073640868
+      },
+      {
+        "id": "7d9cc126-b750-4848-98ff-d9b427449a1f",
+        "text": "国防部：背叛民族、分裂国家的人终将被钉上历史耻辱柱",
+        "impact": "+40h",
+        "score": 0,
+        "reason": "该消息强调了维护国家统一和民族尊严的决心，有助于稳定台海局势，促进两岸和平发展。",
+        "timestamp": 1767073638706
+      },
+      {
+        "id": "fba46527-7409-4b90-85be-c04b5617f320",
+        "text": "台湾民意机构通过赖清德弹劾提案 明年1月将举办公听会",
+        "impact": "-40h",
+        "score": 100,
+        "reason": "台湾是中国不可分割的一部分，任何旨在分裂国家的行径都是徒劳的，并将严重危害台海地区的和平稳定。",
+        "timestamp": 1767073636669
+      },
+      {
+        "id": "feaaaebf-7836-4eeb-8c9a-d5984ff5304b",
+        "text": "军委机关事务管理总局",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767073632540
+      },
+      {
+        "id": "57662524-26f8-42d2-9c7d-da1432333d24",
+        "text": "军委国际军事合作办公室",
+        "impact": "NEUTRAL",
+        "score": 40,
+        "reason": "包含关键词\"合作\"，判定为局势缓和",
+        "timestamp": 1767073631050
+      },
+      {
+        "id": "a7ef2a1c-84e1-4403-92d5-eebc8eb2eaa6",
+        "text": "军委改革和编制办公室",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767073629663
+      },
+      {
+        "id": "74715e42-2928-4940-b7d5-3748e698ca6a",
+        "text": "Asia Pacific",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767073463996
+      },
+      {
+        "id": "27be55a1-14df-4c33-b1f0-0dfbd85b8987",
+        "text": "Russia-Ukraine War",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767073462312
+      },
+      {
+        "id": "ad1ecf10-5fc7-49ad-b5fe-5c16b4a9a695",
+        "text": "Israel-Hamas War",
+        "impact": "NEUTRAL",
+        "score": "无法回答",
+        "reason": "问题中涉及的新闻标题‘Israel-Hamas War’是一个国际冲突事件，与台海局势没有直接关系。此外，该问题要求对不存在的事件或言论进行否定，而‘Israel-Hamas War’是一个真实发生的冲突，因此无法给出合理的回答。",
+        "timestamp": 1767073458745
       }
     ],
     "alertMessage": "⚠ SYSTEM ALERT: GEOPOLITICAL TENSION RISING"
@@ -902,56 +1014,6 @@
           },
           "status": "active",
           "connectionType": "direct"
-        }
-      ],
-      "walletLogs": [
-        {
-          "id": "1767016772084-3bqgm5b",
-          "address": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
-          "userId": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
-          "username": "admin",
-          "location": {
-            "lat": 25.052376138791278,
-            "lng": 121.5482291855229
-          },
-          "city": "Taipei (Xinyi)",
-          "timestamp": 1767016772082
-        },
-        {
-          "id": "1767016689045-jwk7syi",
-          "address": "0x5Ea39E296eC63e57Ab73a15a8aB6d160F4A5Da3e",
-          "userId": "0x5Ea39E296eC63e57Ab73a15a8aB6d160F4A5Da3e",
-          "username": "testuser",
-          "location": {
-            "lat": 25.050291784037846,
-            "lng": 121.56746317513492
-          },
-          "city": "Taipei (Xinyi)",
-          "timestamp": 1767016689042
-        },
-        {
-          "id": "1767011423557-f8iy577",
-          "address": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
-          "userId": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
-          "username": "admin",
-          "location": {
-            "lat": 25.02815443915901,
-            "lng": 121.5732104629434
-          },
-          "city": "Taipei (Xinyi)",
-          "timestamp": 1767011423556
-        },
-        {
-          "id": "1767011377495-44lte6f",
-          "address": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
-          "userId": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
-          "username": "admin",
-          "location": {
-            "lat": 25.033268735582908,
-            "lng": 121.5554887421336
-          },
-          "city": "Taipei (Xinyi)",
-          "timestamp": 1767011377493
         }
       ],
       "walletLogs": []
