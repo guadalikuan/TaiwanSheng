@@ -12,6 +12,7 @@ import homepageRoutes from './routes/homepage.js';
 import oracleRoutes from './routes/oracle.js';
 import paymentRoutes from './routes/payment.js';
 import referralRoutes from './routes/referral.js';
+import openRoutes from './routes/open.js';
 // #region agent log
 fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'server.js:9',message:'准备导入auctionRoutes',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
 // #endregion
@@ -154,6 +155,7 @@ app.use('/api/oracle', oracleRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/referral', referralRoutes);
 app.use('/api/auction', auctionRoutes);
+app.use('/api/open', openRoutes);
 
 // 调试：列出所有注册的路由
 console.log('📋 已注册的路由:');
@@ -190,7 +192,8 @@ app.get('/', (req, res) => {
         homepage: '/api/homepage',
         oracle: '/api/oracle',
         payment: '/api/payment',
-        referral: '/api/referral'
+        referral: '/api/referral',
+        open: '/api/open/countdown'
       }
     },
     timestamp: new Date().toISOString()

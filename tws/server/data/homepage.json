@@ -4,6 +4,22 @@
     "riskPremium": 142.5,
     "events": [
       {
+        "id": "e8ba3662-3461-4267-864f-9c58869baf71",
+        "text": "財米油鹽堶盤點2025你參與的那些“大項目”",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767080092623
+      },
+      {
+        "id": "faf11252-1c46-40dc-9ab2-4023a0db7b28",
+        "text": "2025年終經濟觀察|開放合作互利共贏，中國為世界帶來新機遇",
+        "impact": "NEUTRAL",
+        "score": 40,
+        "reason": "包含关键词\"合作\"，判定为局势缓和",
+        "timestamp": 1767080090346
+      },
+      {
         "id": "f85ec2c8-af27-4f83-ace9-0de3f6d8339c",
         "text": "Press Products",
         "impact": "NEUTRAL",
@@ -146,22 +162,6 @@
         "score": 50,
         "reason": "常规报道",
         "timestamp": 1767073463996
-      },
-      {
-        "id": "27be55a1-14df-4c33-b1f0-0dfbd85b8987",
-        "text": "Russia-Ukraine War",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767073462312
-      },
-      {
-        "id": "ad1ecf10-5fc7-49ad-b5fe-5c16b4a9a695",
-        "text": "Israel-Hamas War",
-        "impact": "NEUTRAL",
-        "score": "无法回答",
-        "reason": "问题中涉及的新闻标题‘Israel-Hamas War’是一个国际冲突事件，与台海局势没有直接关系。此外，该问题要求对不存在的事件或言论进行否定，而‘Israel-Hamas War’是一个真实发生的冲突，因此无法给出合理的回答。",
-        "timestamp": 1767073458745
       }
     ],
     "alertMessage": "⚠ SYSTEM ALERT: GEOPOLITICAL TENSION RISING"
