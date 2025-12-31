@@ -1,5 +1,95 @@
 [
   {
+    "url": "https://www.news.cn/tw/20251231/9e3cc52bab834dae81b5fab7c3c32b2e/c.html",
+    "title": "年终报道丨2025两岸青年交流热词",
+    "timestamp": 1767163314476,
+    "analysis": {
+      "score": 45,
+      "reason": "该消息聚焦两岸青年交流，体现了正面的交流趋势，有助于增进理解和友谊，对台海局势有积极影响。"
+    }
+  },
+  {
+    "url": "https://my-h5news.app.xinhuanet.com/h5/specialTopic/indexPc.html?articleId=91844cfba919401daaeafeb527fa8c99&",
+    "title": "专题：东部战区开展“正义使命-2025”演习",
+    "timestamp": 1767163312305,
+    "analysis": {
+      "score": 60,
+      "reason": "包含关键词\"演习\"，判定为局势紧张"
+    }
+  },
+  {
+    "url": "https://www.militarytimes.com/education-transition",
+    "title": "Education & Transition",
+    "timestamp": 1767163219627,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.militarytimes.com/flashpoints",
+    "title": "Flashpoints",
+    "timestamp": 1767163218430,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.militarytimes.com/pay-benefits",
+    "title": "Pay & Benefits",
+    "timestamp": 1767163210158,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://china.chinadaily.com.cn/a/202512/30/WS6953df22a310942cc49997ec.html",
+    "title": "优化支持范围！2026年“两新”政策部署来了",
+    "timestamp": 1767163208332,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://china.chinadaily.com.cn/a/202512/30/WS6953df85a310942cc49997ef.html",
+    "title": "促进就业增收为消费添动力",
+    "timestamp": 1767163206881,
+    "analysis": {
+      "score": 0,
+      "reason": "该消息与台海局势无关，内容主要涉及促进就业增收和消费动力，与政治冲突或紧张局势无直接关联。"
+    }
+  },
+  {
+    "url": "https://china.chinadaily.com.cn/a/202512/30/WS6953d663a310942cc49997e0.html",
+    "title": "年终特稿｜2025，以中国方案作答“世界之问”",
+    "timestamp": 1767163204407,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://news.cctv.com/2025/12/31/ARTIdXkDvMuNv7GwlJOuULXN251231.shtml",
+    "title": "发改委：对这些违法违规行为 发现一起查处一起",
+    "timestamp": 1767163203188,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://news.cctv.com/2025/12/31/ARTIRxwrG5tkttyQa5OW5FLH251231.shtml",
+    "title": "国台办：赖清德操弄、挑起政治恶斗 大失人心",
+    "timestamp": 1767163196108,
+    "analysis": {
+      "score": 80,
+      "reason": "新闻标题显示大陆官方对台湾地区政治人物的批评，表明两岸关系因台独言论而紧张。"
+    }
+  },
+  {
     "url": "https://www.mod.go.jp/202512/20251212.pdf",
     "title": "日米共同訓練について",
     "timestamp": 1767099566345,

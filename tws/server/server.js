@@ -17,6 +17,7 @@ import openRoutes from './routes/open.js';
 fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'server.js:9',message:'准备导入auctionRoutes',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
 // #endregion
 import auctionRoutes from './routes/auction.js';
+import predictionRoutes from './routes/prediction.js';
 import sseRoutes, { startSSEKeepalive } from './routes/sse.js';
 import { startBackgroundTasks } from './utils/backgroundTasks.js';
 import { startScanning } from './utils/oracle.js';
@@ -156,6 +157,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/referral', referralRoutes);
 app.use('/api/auction', auctionRoutes);
 app.use('/api/open', openRoutes);
+app.use('/api/prediction', predictionRoutes);
 
 // 调试：列出所有注册的路由
 console.log('📋 已注册的路由:');

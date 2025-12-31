@@ -4,6 +4,86 @@
     "riskPremium": 142.5,
     "events": [
       {
+        "id": "d0397a3c-840d-463d-8de8-5f4b1bdb77fa",
+        "text": "年终报道丨2025两岸青年交流热词",
+        "impact": "NEUTRAL",
+        "score": 45,
+        "reason": "该消息聚焦两岸青年交流，体现了正面的交流趋势，有助于增进理解和友谊，对台海局势有积极影响。",
+        "timestamp": 1767163314479
+      },
+      {
+        "id": "3947ac7a-e710-498f-afae-d0f0ff93d6e9",
+        "text": "专题：东部战区开展“正义使命-2025”演习",
+        "impact": "NEUTRAL",
+        "score": 60,
+        "reason": "包含关键词\"演习\"，判定为局势紧张",
+        "timestamp": 1767163312307
+      },
+      {
+        "id": "5168c781-7d49-46c7-ae71-a2dba8baf57a",
+        "text": "Education & Transition",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767163219629
+      },
+      {
+        "id": "b79e950d-70b5-4a97-baa9-feb82e76cbfd",
+        "text": "Flashpoints",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767163218431
+      },
+      {
+        "id": "39178e26-9e32-4a11-a7ab-776597f50592",
+        "text": "Pay & Benefits",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767163210159
+      },
+      {
+        "id": "1ebbae35-417e-4c71-9464-a7608724de6b",
+        "text": "优化支持范围！2026年“两新”政策部署来了",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767163208333
+      },
+      {
+        "id": "58fdb8b1-cddc-482c-b84b-8e2ace89d752",
+        "text": "促进就业增收为消费添动力",
+        "impact": "+40h",
+        "score": 0,
+        "reason": "该消息与台海局势无关，内容主要涉及促进就业增收和消费动力，与政治冲突或紧张局势无直接关联。",
+        "timestamp": 1767163206882
+      },
+      {
+        "id": "33239f04-2ed1-4a76-be2f-eac7660ebaa0",
+        "text": "年终特稿｜2025，以中国方案作答“世界之问”",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767163204409
+      },
+      {
+        "id": "eed79d41-ae49-4364-bab8-609df3e82c9b",
+        "text": "发改委：对这些违法违规行为 发现一起查处一起",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767163203192
+      },
+      {
+        "id": "0f0d3477-c7ae-4e3d-9ed5-65decde0b6ae",
+        "text": "国台办：赖清德操弄、挑起政治恶斗 大失人心",
+        "impact": "-20h",
+        "score": 80,
+        "reason": "新闻标题显示大陆官方对台湾地区政治人物的批评，表明两岸关系因台独言论而紧张。",
+        "timestamp": 1767163196113
+      },
+      {
         "id": "3d6f7b04-30b9-4f2d-aa27-b980d6a6a86b",
         "text": "日米共同訓練について",
         "impact": "NEUTRAL",
@@ -82,86 +162,6 @@
         "score": 60,
         "reason": "包含关键词\"演习\"，判定为局势紧张",
         "timestamp": 1767097086727
-      },
-      {
-        "id": "2296b62e-b92d-4b8f-a4d2-fb7e39cefeb8",
-        "text": "第五届“携手圆梦——两岸同胞交流研讨活动”在四川举行",
-        "impact": "+40h",
-        "score": 0,
-        "reason": "该新闻标题描述的是两岸同胞的交流研讨活动，体现了两岸关系的积极互动和和平发展。",
-        "timestamp": 1767094622071
-      },
-      {
-        "id": "f6ec794a-9b22-455a-beb6-513d0f1b7e80",
-        "text": "2025年全国台协会长座谈会在北京举行",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767094619699
-      },
-      {
-        "id": "9d457b28-32b9-4729-94ee-e5e9e2d4e48f",
-        "text": "中共中央台湾工作办公室、国务院台湾事务办公室",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767094615597
-      },
-      {
-        "id": "ee939b5e-e89d-4b9f-aa78-556b2afaa13f",
-        "text": "部分商品关税将调整 专家：为国际社会注入稳定预期",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767084291426
-      },
-      {
-        "id": "72f57ba3-c6da-4bad-9c74-cc9a0f6e65f0",
-        "text": "假日氛围拉满 多领域掀热潮释放经济“热”活力",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767084289609
-      },
-      {
-        "id": "e8ba3662-3461-4267-864f-9c58869baf71",
-        "text": "財米油鹽堶盤點2025你參與的那些“大項目”",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767080092623
-      },
-      {
-        "id": "faf11252-1c46-40dc-9ab2-4023a0db7b28",
-        "text": "2025年終經濟觀察|開放合作互利共贏，中國為世界帶來新機遇",
-        "impact": "NEUTRAL",
-        "score": 40,
-        "reason": "包含关键词\"合作\"，判定为局势缓和",
-        "timestamp": 1767080090346
-      },
-      {
-        "id": "f85ec2c8-af27-4f83-ace9-0de3f6d8339c",
-        "text": "Press Products",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767073856006
-      },
-      {
-        "id": "8594418e-ebb4-4a0a-819e-73e13da8ac57",
-        "text": "Place Holder",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767073854500
-      },
-      {
-        "id": "cd34fd25-c56b-48d2-923f-85e9b71b0546",
-        "text": "U.S. DepartmentofWar",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767073852025
       }
     ],
     "alertMessage": "⚠ SYSTEM ALERT: GEOPOLITICAL TENSION RISING"

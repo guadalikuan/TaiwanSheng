@@ -11,7 +11,7 @@ import { TWSCoin_MINT } from '../../utils/twscoin';
 import { Home, Check, X, AlertTriangle, Smartphone, Globe, Clock } from 'lucide-react';
 
 // House Wallet for Predictions (Receives bets)
-const HOUSE_WALLET_PUBKEY = new PublicKey(TWSCoin_MINT); // Temporary placeholder using Mint address
+const HOUSE_WALLET_PUBKEY = new PublicKey('8V77HPB5pWN5tRTPdVncCqYTQCaqyCpWyvHP7eCpdFpB'); // TWS Treasury Address
 
 window.Buffer = window.Buffer || Buffer;
 
