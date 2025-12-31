@@ -1,11 +1,11 @@
 {
-  "targetTime": 1831183200000,
-  "totalAdjustmentMs": 972000000,
-  "lastUpdated": "2025-12-31T06:40:19.631Z",
+  "targetTime": 1831255200000,
+  "totalAdjustmentMs": 1044000000,
+  "lastUpdated": "2025-12-30T14:27:01.789Z",
   "history": [
     {
-      "timestamp": 1767163219631,
-      "adjustment": 72000000,
+      "timestamp": 1767104821789,
+      "adjustment": 144000000,
       "reason": "AI Analysis",
       "source": "Oracle"
     },
