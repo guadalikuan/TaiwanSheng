@@ -15,7 +15,7 @@ import { validateMnemonic } from '../utils/web3';
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loginWithMnemonic, isAuthenticated } = useAuth();
+  const { login, loginWithMnemonic, loginWithWallet, isAuthenticated } = useAuth();
   
   const [loginMode, setLoginMode] = useState('username'); // 'username' or 'mnemonic'
   const [formData, setFormData] = useState({
@@ -107,6 +107,33 @@ const LoginPage = () => {
       console.error('登录错误:', error);
       setErrors({ submit: error.message || '登录失败，请重试' });
     } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleWalletLogin = async () => {
+    const { solana } = window;
+    if (!solana) {
+      alert('请先安装 Phantom 钱包');
+      window.open('https://phantom.app/', '_blank');
+      return;
+    }
+    
+    try {
+      setSubmitting(true);
+      const response = await solana.connect();
+      const address = response.publicKey.toString();
+      const result = await loginWithWallet(address);
+      
+      if (result.success) {
+         // Effect will handle redirect
+      } else {
+         setErrors({ submit: result.message });
+         setSubmitting(false);
+      }
+    } catch (err) {
+      console.error(err);
+      setErrors({ submit: '钱包连接失败' });
       setSubmitting(false);
     }
   };
@@ -269,6 +296,19 @@ const LoginPage = () => {
               )}
             </button>
           </form>
+
+          {/* Wallet Login */}
+          <div className="mt-4 pt-4 border-t border-slate-800">
+             <button
+               type="button"
+               onClick={handleWalletLogin}
+               disabled={submitting}
+               className="w-full px-6 py-3 bg-indigo-900/30 border border-indigo-800 text-indigo-400 hover:bg-indigo-800 hover:text-white font-bold text-sm tracking-widest rounded-lg transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+             >
+                <ShieldCheck size={18} />
+                钱包登录 / CONNECT WALLET
+             </button>
+          </div>
 
           {/* 注册链接 */}
           <div className="mt-6 text-center">

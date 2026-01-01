@@ -3,7 +3,20 @@
  */
 
 // TWSCoin 铸造地址（也是 TWS 财库地址）
-export const TWSCoin_MINT = 'ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk';
+// 优先使用环境变量 VITE_TWS_COIN_MINT
+// 如果未设置，根据环境自动切换（生产环境需手动配置，开发环境使用默认测试币）
+const DEFAULT_DEVNET_MINT = 'ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk';
+const DEFAULT_MAINNET_MINT = 'ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk';
+
+export const TWSCoin_MINT = import.meta.env.VITE_TWS_COIN_MINT || (
+  import.meta.env.MODE === 'production' 
+    ? DEFAULT_MAINNET_MINT 
+    : DEFAULT_DEVNET_MINT
+);
+
+// 调试日志，帮助开发者确认当前使用的 Mint 地址和环境
+console.log(`[TWSCoin] Environment: ${import.meta.env.MODE}`);
+console.log(`[TWSCoin] Active Mint Address: ${TWSCoin_MINT}`);
 
 /**
  * 格式化 TWSCoin 余额（9 decimals）

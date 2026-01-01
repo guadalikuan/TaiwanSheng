@@ -210,7 +210,7 @@ const AssetsSection = () => {
             <li className="hover:text-cyan-400 cursor-pointer flex items-center">
               <Globe size={10} className="mr-2" />  {/* 可换成Discord专属图标 */}
               <a 
-                href="https://discord.gg/mrF59Qxu"  // 替换成实际的Discord社群链接
+                href="https://discord.com/invite/WChB9fEqTe"  // 替换成实际的Discord社群链接
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-full"

@@ -1058,7 +1058,7 @@ export const useAuction = () => {
       // ---------------------------------------------------------
       
       // 1. 定义接收方 (TWS 国库地址)
-      const treasuryKey = new PublicKey("8V77HPB5pWN5tRTPdVncCqYTQCaqyCpWyvHP7eCpdFpB");
+      const treasuryKey = new PublicKey("JBuwuVzAFDZWVW4o63PtYfLvPGHbSNnRMv5hPzcstyK6");
 
       // 2. 构建交易指令
       const transaction = new Transaction().add(

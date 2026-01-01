@@ -511,14 +511,96 @@ class SolanaBlockchainService {
       throw error;
     }
   }
+  /**
+   * 分发预测市场奖励
+   * @param {Array<{wallet: string, amount: number, betId: string}>} distributions
+   * @returns {Promise<Array<{wallet: string, success: boolean, txHash: string, error: string}>>}
+   */
+  async distributePredictionRewards(distributions) {
+    if (!this.wallet) {
+      throw new Error("Treasury wallet not loaded");
+    }
+
+    const results = [];
+    
+    // 获取财库的 TWS 代币账户
+    const sourceTokenAccount = await getAssociatedTokenAddress(
+      TWSCoin_MINT,
+      this.wallet.publicKey
+    );
+
+    console.log(`开始分发奖励，共 ${distributions.length} 笔...`);
+
+    for (const dist of distributions) {
+      try {
+        const recipientPubkey = new PublicKey(dist.wallet);
+        
+        // 获取接收者的 TWS 代币账户
+        const destinationTokenAccount = await getAssociatedTokenAddress(
+          TWSCoin_MINT,
+          recipientPubkey
+        );
+
+        // 构建转账交易
+        const transaction = new Transaction();
+        
+        // 注意：这里假设用户参与过预测，因此已经有代币账户。
+        // 如果没有，转账会失败。为了简化流程，我们不在此处自动创建账户（因为需要支付 SOL）。
+        
+        // 转换金额为最小单位 (9位小数)
+        const rawAmount = Math.floor(dist.amount * 1_000_000_000);
+
+        transaction.add(
+          createTransferInstruction(
+            sourceTokenAccount,
+            destinationTokenAccount,
+            this.wallet.publicKey,
+            rawAmount,
+            []
+          )
+        );
+
+        // 发送交易
+        const signature = await this.connection.sendTransaction(transaction, [this.wallet]);
+        
+        // 等待确认
+        await this.connection.confirmTransaction(signature);
+        
+        console.log(`✅ 已分发 ${dist.amount} TWS 到 ${dist.wallet}, Tx: ${signature}`);
+        
+        results.push({
+          wallet: dist.wallet,
+          success: true,
+          txHash: signature,
+          amount: dist.amount
+        });
+        
+      } catch (error) {
+        console.error(`❌ 分发失败 ${dist.wallet}:`, error);
+        results.push({
+          wallet: dist.wallet,
+          success: false,
+          error: error.message
+        });
+      }
+    }
+    
+    return results;
+  }
 }
 
 // 创建单例
 const solanaBlockchainService = new SolanaBlockchainService();
 
+// 导出别名以匹配 prediction.js 的引用
+export const solanaBlockchain = solanaBlockchainService;
+
 export default solanaBlockchainService;
 
 // 导出便捷函数
+export const distributePredictionRewards = (distributions) =>
+  solanaBlockchainService.distributePredictionRewards(distributions);
+
 export const initializeBunker = (bunkerId, sectorCode, totalShares, authority) =>
   solanaBlockchainService.initializeBunker(bunkerId, sectorCode, totalShares, authority);
 
