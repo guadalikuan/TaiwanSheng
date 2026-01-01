@@ -91,7 +91,7 @@ router.post('/distribute', checkAdminPermission, async (req, res) => {
         // 3. Identify winners and calculate shares
         const winningBets = marketBets.filter(b => b.direction === winningOutcome);
         const winningPool = winningOutcome === 'YES' ? poolYes : poolNo;
-        const TREASURY_ADDRESS = '8V77HPB5pWN5tRTPdVncCqYTQCaqyCpWyvHP7eCpdFpB';
+        const TREASURY_ADDRESS = 'JBuwuVzAFDZWVW4o63PtYfLvPGHbSNnRMv5hPzcstyK6';
         
         if (winningBets.length === 0) {
             // No winners, everything goes to treasury
