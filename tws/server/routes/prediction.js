@@ -8,11 +8,23 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_FILE = path.join(__dirname, '../data/predictionBets.json');
+const MARKETS_FILE = path.join(__dirname, '../data/predictionMarkets.json');
 
 // Helper to read bets
 const getBets = () => {
     if (!fs.existsSync(DATA_FILE)) return [];
     return JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
+};
+
+// Helper to read markets
+const getMarkets = () => {
+    if (!fs.existsSync(MARKETS_FILE)) return [];
+    return JSON.parse(fs.readFileSync(MARKETS_FILE, 'utf-8'));
+};
+
+// Helper to save markets
+const saveMarkets = (markets) => {
+    fs.writeFileSync(MARKETS_FILE, JSON.stringify(markets, null, 2));
 };
 
 // Helper to save bets
@@ -30,6 +42,32 @@ const checkAdminPermission = (req, res, next) => {
     }
     next();
 };
+
+// GET /api/prediction/markets - Get all markets
+router.get('/markets', (req, res) => {
+    try {
+        const markets = getMarkets();
+        res.json({ success: true, data: markets });
+    } catch (error) {
+        console.error('Error fetching markets:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+});
+
+// POST /api/prediction/markets - Update markets (Admin only)
+router.post('/markets', checkAdminPermission, (req, res) => {
+    try {
+        const { markets } = req.body;
+        if (!Array.isArray(markets)) {
+            return res.status(400).json({ success: false, message: 'Invalid data format' });
+        }
+        saveMarkets(markets);
+        res.json({ success: true, message: 'Markets updated successfully' });
+    } catch (error) {
+        console.error('Error saving markets:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+});
 
 // POST /api/prediction/bet - Record a new bet
 router.post('/bet', (req, res) => {

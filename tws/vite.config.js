@@ -73,6 +73,13 @@ export default defineConfig({
     port: 5173,
     open: true,
     cors: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   
   // 预览配置

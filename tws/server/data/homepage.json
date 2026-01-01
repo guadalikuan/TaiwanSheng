@@ -2,7 +2,56 @@
   "omega": {
     "etuTargetTime": 1819004485507,
     "riskPremium": 142.5,
-    "events": [],
+    "events": [
+      {
+        "id": "297da67b-4773-4e32-a759-7cb22e9072fe",
+        "text": "时习之丨2026，蒸蒸日上",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767268073232
+      },
+      {
+        "id": "67694b66-9db5-43bc-b22d-ec9b8918e8b3",
+        "text": "視頻堶中老鐵路開通運營滿四年 跨境果蔬運輸需求旺盛",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767258039800
+      },
+      {
+        "id": "a9639fb8-c17f-4d4f-a8b9-9b94ec7c5200",
+        "text": "多地多部門持續強化運能保障 確保民眾元旦假期出行順暢",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767258035702
+      },
+      {
+        "id": "32cd6ddf-30b4-417e-9815-aa07e305f3ab",
+        "text": "习近平新年贺词里的你与我",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767258030303
+      },
+      {
+        "id": "a0ae927d-af92-4757-aff0-3e3744b60b1a",
+        "text": "一见·一年一度，这份幸福的守候何以动人？",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767258022725
+      },
+      {
+        "id": "c738aa83-12bb-4cbc-9dac-8f245b64a1e8",
+        "text": "总书记的新年贺词充满力量，温暖人心",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767258016260
+      }
+    ],
     "alertMessage": "⚠ SYSTEM ALERT: GEOPOLITICAL TENSION RISING"
   },
   "market": {
