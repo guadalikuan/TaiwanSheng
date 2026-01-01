@@ -4,6 +4,102 @@
     "riskPremium": 142.5,
     "events": [
       {
+        "id": "5c8a3a3f-a962-4b55-a918-0de0227697f7",
+        "text": "涉及社會民生多個領域 一批新規今起正式施行",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767258007105
+      },
+      {
+        "id": "04f5c47e-270b-40ac-8fcd-1db7bfb03e53",
+        "text": "視頻堶中老鐵路開通運營滿四年 跨境果蔬運輸需求旺盛",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767258005978
+      },
+      {
+        "id": "c1e4f5d7-90df-41e1-a417-5c48e5d8ae04",
+        "text": "多地多部門持續強化運能保障 確保民眾元旦假期出行順暢",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767258002789
+      },
+      {
+        "id": "dd01476d-2c5e-4ea1-a980-23cd68666223",
+        "text": "網絡安全法修訂： 為智能時代織就安全法治之網",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767164408276
+      },
+      {
+        "id": "1ea364ae-6057-49c6-8ac1-de3f8f7ac7e5",
+        "text": "從國博鳳冠到英歌舞，血脈里的國風DNA動了。一絲一線，織就千年風雅　一餐一飲，品味煙火人間",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767164406725
+      },
+      {
+        "id": "b1736457-c584-45a4-9d1f-9e8d323c2115",
+        "text": "2025→2026，接力向前！",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767164405499
+      },
+      {
+        "id": "acb121a4-c0eb-403f-bb6a-d0410fa8b095",
+        "text": "優化支持范圍！2026年“兩新”政策部署來了",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767106808652
+      },
+      {
+        "id": "a90d52bb-93c3-4887-88b7-474b9eeb1e32",
+        "text": "2026年農業強國建設，“施工圖”來了！",
+        "impact": "+40h",
+        "score": 0,
+        "reason": "该消息是关于中国农业发展的积极新闻，与台海局势无直接关联。",
+        "timestamp": 1767106807400
+      },
+      {
+        "id": "75fdc3b8-a722-4fef-924b-9469792efcb9",
+        "text": "促進就業增收為消費添動力",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767106805313
+      },
+      {
+        "id": "7eeba8a3-4cde-4ef4-b9cc-bf0e7f3eaad3",
+        "text": "深耕中國堶2025，外資“不見外”，創新是錨點",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767103207536
+      },
+      {
+        "id": "1cf8decf-5393-4a0a-a94b-032b0aa86588",
+        "text": "年終特稿堶2025，以中國方案作答“世界之問”",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767103206196
+      },
+      {
+        "id": "2c29915b-0b26-4033-802d-40f41e9953e0",
+        "text": "【社論】服務消費提質擴容，點燃消費新引擎",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767103204900
+      },
+      {
         "id": "1766914328037-5uxb3ks",
         "text": "[TRIGGER] Trade executed: 0.30 @ 12045532.78 by bot_user_kbdgzy",
         "impact": "NEUTRAL",
@@ -902,56 +998,6 @@
           },
           "status": "active",
           "connectionType": "direct"
-        }
-      ],
-      "walletLogs": [
-        {
-          "id": "1767016772084-3bqgm5b",
-          "address": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
-          "userId": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
-          "username": "admin",
-          "location": {
-            "lat": 25.052376138791278,
-            "lng": 121.5482291855229
-          },
-          "city": "Taipei (Xinyi)",
-          "timestamp": 1767016772082
-        },
-        {
-          "id": "1767016689045-jwk7syi",
-          "address": "0x5Ea39E296eC63e57Ab73a15a8aB6d160F4A5Da3e",
-          "userId": "0x5Ea39E296eC63e57Ab73a15a8aB6d160F4A5Da3e",
-          "username": "testuser",
-          "location": {
-            "lat": 25.050291784037846,
-            "lng": 121.56746317513492
-          },
-          "city": "Taipei (Xinyi)",
-          "timestamp": 1767016689042
-        },
-        {
-          "id": "1767011423557-f8iy577",
-          "address": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
-          "userId": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
-          "username": "admin",
-          "location": {
-            "lat": 25.02815443915901,
-            "lng": 121.5732104629434
-          },
-          "city": "Taipei (Xinyi)",
-          "timestamp": 1767011423556
-        },
-        {
-          "id": "1767011377495-44lte6f",
-          "address": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
-          "userId": "0x4dCfd244F1591F289cda1F7b4B893fd06E0B044A",
-          "username": "admin",
-          "location": {
-            "lat": 25.033268735582908,
-            "lng": 121.5554887421336
-          },
-          "city": "Taipei (Xinyi)",
-          "timestamp": 1767011377493
         }
       ],
       "walletLogs": []
