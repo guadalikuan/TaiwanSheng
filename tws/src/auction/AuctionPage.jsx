@@ -42,7 +42,7 @@ const AuctionPage = () => {
     try {
       const result = await getTWSCoinBalanceAPI(address);
       if (result.success) {
-        const formattedBalance = formatTWSCoinBalance(result.data.balance || '0', result.data.decimals || 9);
+        const formattedBalance = formatTWSCoinBalance(result.data.balance || '0', result.data.decimals || 6);
         setWalletBalance(formattedBalance);
       }
     } catch (err) {

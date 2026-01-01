@@ -16,7 +16,608 @@ const HOUSE_WALLET_PUBKEY = new PublicKey('JBuwuVzAFDZWVW4o63PtYfLvPGHbSNnRMv5hP
 
 window.Buffer = window.Buffer || Buffer;
 
-export const PREDICTION_MARKETS = [];
+export const PREDICTION_MARKETS = [
+  { 
+    "id": 1, 
+    "category": "Livelihood", 
+    "question": "明日 12:00-14:00，桃园/新竹地区是否会发生突发性跳电？", 
+    "poolYes": 150000, 
+    "poolNo": 300000, 
+    "onlineTime": "2025-05-18T10:00:00",
+    "startTime": "2025-05-19T00:00:00",
+    "endTime": "2025-05-21T12:00:00", 
+    "drawTime": "2025-05-21T14:30:00",
+    "image": "https://www.taipower.com.tw/upload/244/2021051714242666542.jpg" 
+  },
+  { 
+    "id": 2, 
+    "category": "Livelihood", 
+    "question": "台北全联超市明日 18:00 前，普通白蛋是否会售罄？", 
+    "poolYes": 80000, 
+    "poolNo": 120000, 
+    "onlineTime": "2025-05-18T10:00:00",
+    "startTime": "2025-05-19T00:00:00",
+    "endTime": "2025-05-21T18:00:00", 
+    "drawTime": "2025-05-21T18:30:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Chicken_egg_2009-06-04.jpg/1200px-Chicken_egg_2009-06-04.jpg" 
+  },
+  { 
+    "id": 3, 
+    "category": "Livelihood", 
+    "question": "明日台积电（2330）外资是净买入还是净卖出？", 
+    "poolYes": 5000000, 
+    "poolNo": 4200000, 
+    "onlineTime": "2025-05-18T09:00:00",
+    "startTime": "2025-05-19T09:00:00",
+    "endTime": "2025-05-21T13:30:00", 
+    "drawTime": "2025-05-21T14:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/TSMC_Logo.svg/1200px-TSMC_Logo.svg.png" 
+  },
+  { 
+    "id": 4, 
+    "category": "Livelihood", 
+    "question": "未来 24 小时内，花莲海域是否会发生里氏 4.5 级以上地震？", 
+    "poolYes": 200000, 
+    "poolNo": 800000, 
+    "onlineTime": "2025-05-19T00:00:00",
+    "startTime": "2025-05-20T00:00:00",
+    "endTime": "2025-05-21T23:59:59", 
+    "drawTime": "2025-05-22T01:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/2018_Hualien_earthquake_intensity_map.png/600px-2018_Hualien_earthquake_intensity_map.png" 
+  },
+  { 
+    "id": 5, 
+    "category": "Livelihood", 
+    "question": "明日下午，高雄市中心积水深度是否超过 10 厘米？", 
+    "poolYes": 100000, 
+    "poolNo": 500000, 
+    "onlineTime": "2025-05-19T12:00:00",
+    "startTime": "2025-05-20T12:00:00",
+    "endTime": "2025-05-21T18:00:00", 
+    "drawTime": "2025-05-21T19:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Flooding_in_Kaohsiung.jpg/800px-Flooding_in_Kaohsiung.jpg" 
+  },
+  { 
+    "id": 6, 
+    "category": "Livelihood", 
+    "question": "本周内，台北捷运文湖线是否会再次发生信号故障停运？", 
+    "poolYes": 300000, 
+    "poolNo": 400000, 
+    "onlineTime": "2025-05-20T08:00:00",
+    "startTime": "2025-05-21T06:00:00",
+    "endTime": "2025-05-27T23:59:59", 
+    "drawTime": "2025-05-28T10:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Taipei_Metro_Wenhu_Line_Bombardier_Innovia_APM_256_train.jpg/800px-Taipei_Metro_Wenhu_Line_Bombardier_Innovia_APM_256_train.jpg" 
+  },
+  { 
+    "id": 7, 
+    "category": "Livelihood", 
+    "question": "台南市本周新增登革热病例是否超过 100 例？", 
+    "poolYes": 50000, 
+    "poolNo": 20000, 
+    "onlineTime": "2025-05-20T09:00:00",
+    "startTime": "2025-05-21T00:00:00",
+    "endTime": "2025-05-27T23:59:59", 
+    "drawTime": "2025-05-28T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Aedes_aegypti_feeding.jpg/800px-Aedes_aegypti_feeding.jpg" 
+  },
+  { 
+    "id": 8, 
+    "category": "Livelihood", 
+    "question": "明日台中火力发电厂是否全负荷运转（PM2.5 是否紫爆）？", 
+    "poolYes": 600000, 
+    "poolNo": 100000, 
+    "onlineTime": "2025-05-19T08:00:00",
+    "startTime": "2025-05-20T08:00:00",
+    "endTime": "2025-05-21T18:00:00", 
+    "drawTime": "2025-05-21T20:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Taichung_Power_Plant.jpg/800px-Taichung_Power_Plant.jpg" 
+  },
+  { 
+    "id": 9, 
+    "category": "Livelihood", 
+    "question": "明日新台币兑美元汇率是否跌破 32.5 大关？", 
+    "poolYes": 2000000, 
+    "poolNo": 1500000, 
+    "onlineTime": "2025-05-19T09:00:00",
+    "startTime": "2025-05-20T09:00:00",
+    "endTime": "2025-05-21T16:00:00", 
+    "drawTime": "2025-05-21T16:30:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/New_Taiwan_Dollar_1000_bill.jpg/800px-New_Taiwan_Dollar_1000_bill.jpg" 
+  },
+  { 
+    "id": 10, 
+    "category": "Livelihood", 
+    "question": "台湾本月法拍屋数量是否突破 500 户？", 
+    "poolYes": 150000, 
+    "poolNo": 300000, 
+    "onlineTime": "2025-05-01T09:00:00",
+    "startTime": "2025-05-01T09:00:00",
+    "endTime": "2025-05-31T23:59:59", 
+    "drawTime": "2025-06-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Real_estate_sold_sign.jpg/800px-Real_estate_sold_sign.jpg" 
+  },
+  { 
+    "id": 11, 
+    "category": "Politics", 
+    "question": "赖清德明日公开发言中，是否会提及“两岸互不隶属”关键词？", 
+    "poolYes": 800000, 
+    "poolNo": 200000, 
+    "onlineTime": "2025-05-19T08:00:00",
+    "startTime": "2025-05-20T08:00:00",
+    "endTime": "2025-05-21T20:00:00", 
+    "drawTime": "2025-05-21T22:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Lai_Ching-te_Official_Photo_2024.jpg/800px-Lai_Ching-te_Official_Photo_2024.jpg" 
+  },
+  { 
+    "id": 12, 
+    "category": "Politics", 
+    "question": "下一次立法院会议，是否会发生肢体冲突（推挤/丢水球/勒脖子）？", 
+    "poolYes": 900000, 
+    "poolNo": 100000, 
+    "onlineTime": "2025-05-20T09:00:00",
+    "startTime": "2025-05-21T09:00:00",
+    "endTime": "2025-05-25T18:00:00", 
+    "drawTime": "2025-05-25T20:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Legislative_Yuan_meeting_hall.jpg/800px-Legislative_Yuan_meeting_hall.jpg" 
+  },
+  { 
+    "id": 13, 
+    "category": "Politics", 
+    "question": "黄国昌委员在明日质询中，分贝是否超过 85 分贝？", 
+    "poolYes": 600000, 
+    "poolNo": 300000, 
+    "onlineTime": "2025-05-19T09:00:00",
+    "startTime": "2025-05-20T09:00:00",
+    "endTime": "2025-05-21T18:00:00", 
+    "drawTime": "2025-05-21T19:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Huang_Kuo-chang_2019.jpg/800px-Huang_Kuo-chang_2019.jpg" 
+  },
+  { 
+    "id": 14, 
+    "category": "Politics", 
+    "question": "韩国瑜院长本周是否会爆出新的“韩式金句”？", 
+    "poolYes": 400000, 
+    "poolNo": 500000, 
+    "onlineTime": "2025-05-20T10:00:00",
+    "startTime": "2025-05-21T00:00:00",
+    "endTime": "2025-05-27T23:59:59", 
+    "drawTime": "2025-05-28T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Han_Kuo-yu_2019.jpg/800px-Han_Kuo-yu_2019.jpg" 
+  },
+  { 
+    "id": 15, 
+    "category": "Politics", 
+    "question": "本月内，检调是否会二度搜查柯文哲办公室？", 
+    "poolYes": 700000, 
+    "poolNo": 600000, 
+    "onlineTime": "2025-05-01T09:00:00",
+    "startTime": "2025-05-01T09:00:00",
+    "endTime": "2025-05-31T23:59:59", 
+    "drawTime": "2025-06-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Ko_Wen-je_2019.jpg/800px-Ko_Wen-je_2019.jpg" 
+  },
+  { 
+    "id": 16, 
+    "category": "Politics", 
+    "question": "本月内，是否有民进党立委被爆出婚外情或不雅视频？", 
+    "poolYes": 300000, 
+    "poolNo": 800000, 
+    "onlineTime": "2025-05-01T00:00:00",
+    "startTime": "2025-05-01T00:00:00",
+    "endTime": "2025-05-31T23:59:59", 
+    "drawTime": "2025-06-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Democratic_Progressive_Party_flag.svg/800px-Democratic_Progressive_Party_flag.svg.png" 
+  },
+  { 
+    "id": 17, 
+    "category": "Politics", 
+    "question": "明日 PTT 八卦版，“王义川”相关讨论帖是否超过 50 篇？", 
+    "poolYes": 200000, 
+    "poolNo": 150000, 
+    "onlineTime": "2025-05-20T00:00:00",
+    "startTime": "2025-05-20T12:00:00",
+    "endTime": "2025-05-21T23:59:59", 
+    "drawTime": "2025-05-22T02:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/PTT_Bulletin_Board_System_logo.svg/800px-PTT_Bulletin_Board_System_logo.svg.png" 
+  },
+  { 
+    "id": 18, 
+    "category": "Politics", 
+    "question": "本周是否会有新的高端疫苗相关弊案录音流出？", 
+    "poolYes": 100000, 
+    "poolNo": 900000, 
+    "onlineTime": "2025-05-20T00:00:00",
+    "startTime": "2025-05-21T00:00:00",
+    "endTime": "2025-05-27T23:59:59", 
+    "drawTime": "2025-05-28T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Medigen_Vaccine_Biologics_logo.svg/800px-Medigen_Vaccine_Biologics_logo.svg.png" 
+  },
+  { 
+    "id": 19, 
+    "category": "Politics", 
+    "question": "赖清德在今年 520 前，是否会宣布特赦陈水扁？", 
+    "poolYes": 50000, 
+    "poolNo": 1000000, 
+    "onlineTime": "2025-05-01T00:00:00",
+    "startTime": "2025-05-01T00:00:00",
+    "endTime": "2025-05-20T12:00:00", 
+    "drawTime": "2025-05-20T14:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Chen_Shui-bian_2008.jpg/800px-Chen_Shui-bian_2008.jpg" 
+  },
+  { 
+    "id": 20, 
+    "category": "Politics", 
+    "question": "本月内，是否有国民党地方派系宣布退党？", 
+    "poolYes": 150000, 
+    "poolNo": 400000, 
+    "onlineTime": "2025-05-01T00:00:00",
+    "startTime": "2025-05-01T00:00:00",
+    "endTime": "2025-05-31T23:59:59", 
+    "drawTime": "2025-06-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Kuomintang_flag.svg/800px-Kuomintang_flag.svg.png" 
+  },
+  { 
+    "id": 21, 
+    "category": "Military", 
+    "question": "明日解放军绕台军机总数是否超过 30 架次？", 
+    "poolYes": 500000, 
+    "poolNo": 200000, 
+    "onlineTime": "2025-05-20T08:00:00",
+    "startTime": "2025-05-20T18:00:00",
+    "endTime": "2025-05-21T18:00:00", 
+    "drawTime": "2025-05-21T20:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/J-20_at_Airshow_China_2016.jpg/1200px-J-20_at_Airshow_China_2016.jpg" 
+  },
+  { 
+    "id": 22, 
+    "category": "Military", 
+    "question": "明日是否会有 5 艘以上解放军军舰跨越所谓“海峡中线”？", 
+    "poolYes": 400000, 
+    "poolNo": 300000, 
+    "onlineTime": "2025-05-20T08:00:00",
+    "startTime": "2025-05-20T18:00:00",
+    "endTime": "2025-05-21T18:00:00", 
+    "drawTime": "2025-05-21T20:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/PLAN_Type_052D_destroyer_Hefei_%28174%29.jpg/800px-PLAN_Type_052D_destroyer_Hefei_%28174%29.jpg" 
+  },
+  { 
+    "id": 23, 
+    "category": "Military", 
+    "question": "本周内，是否有大陆无人机飞越金门/马祖哨所上空？", 
+    "poolYes": 300000, 
+    "poolNo": 400000, 
+    "onlineTime": "2025-05-20T08:00:00",
+    "startTime": "2025-05-21T00:00:00",
+    "endTime": "2025-05-27T23:59:59", 
+    "drawTime": "2025-05-28T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/BZK-005_UAV.jpg/800px-BZK-005_UAV.jpg" 
+  },
+  { 
+    "id": 24, 
+    "category": "Military", 
+    "question": "未来 72 小时内，山东舰航母编队是否会通过巴士海峡？", 
+    "poolYes": 600000, 
+    "poolNo": 500000, 
+    "onlineTime": "2025-05-20T12:00:00",
+    "startTime": "2025-05-20T12:00:00",
+    "endTime": "2025-05-23T12:00:00", 
+    "drawTime": "2025-05-23T14:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Shandong_CV-17.jpg/800px-Shandong_CV-17.jpg" 
+  },
+  { 
+    "id": 25, 
+    "category": "Military", 
+    "question": "东部战区本月是否会发布带有“围岛”字样的宣传视频？", 
+    "poolYes": 800000, 
+    "poolNo": 100000, 
+    "onlineTime": "2025-05-01T08:00:00",
+    "startTime": "2025-05-01T08:00:00",
+    "endTime": "2025-05-31T23:59:59", 
+    "drawTime": "2025-06-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/PLA_Eastern_Theater_Command_Emblem.svg/800px-PLA_Eastern_Theater_Command_Emblem.svg.png" 
+  },
+  { 
+    "id": 26, 
+    "category": "Military", 
+    "question": "若台海演习升级，美军里根号航母是向北航行（日本）还是向南（菲律宾）？", 
+    "poolYes": 500000, 
+    "poolNo": 500000, 
+    "onlineTime": "2025-05-20T10:00:00",
+    "startTime": "2025-05-20T12:00:00",
+    "endTime": "2025-06-01T12:00:00", 
+    "drawTime": "2025-06-01T14:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/USS_Ronald_Reagan_%28CVN-76%29_underway_in_the_Pacific_Ocean_on_12_June_2020.jpg/800px-USS_Ronald_Reagan_%28CVN-76%29_underway_in_the_Pacific_Ocean_on_12_June_2020.jpg" 
+  },
+  { 
+    "id": 27, 
+    "category": "Military", 
+    "question": "未来 3 个月内，是否会有拉美邦交国宣布与台湾断交？", 
+    "poolYes": 200000, 
+    "poolNo": 600000, 
+    "onlineTime": "2025-05-01T00:00:00",
+    "startTime": "2025-05-01T00:00:00",
+    "endTime": "2025-08-01T12:00:00", 
+    "drawTime": "2025-08-01T16:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Flag_of_the_Republic_of_China.svg/800px-Flag_of_the_Republic_of_China.svg.png" 
+  },
+  { 
+    "id": 28, 
+    "category": "Military", 
+    "question": "大陆商务部本月是否会宣布中止下一批 ECFA 关税减让产品？", 
+    "poolYes": 700000, 
+    "poolNo": 300000, 
+    "onlineTime": "2025-05-01T09:00:00",
+    "startTime": "2025-05-01T09:00:00",
+    "endTime": "2025-05-31T17:00:00", 
+    "drawTime": "2025-05-31T18:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Ministry_of_Commerce_of_the_PRC_gate.jpg/800px-Ministry_of_Commerce_of_the_PRC_gate.jpg" 
+  },
+  { 
+    "id": 29, 
+    "category": "Military", 
+    "question": "下一个被大陆海关暂停输入的台湾农产品是：A. 凤梨释迦 B. 午仔鱼 C. 莲雾？", 
+    "poolYes": 100000, 
+    "poolNo": 100000, 
+    "onlineTime": "2025-05-15T09:00:00",
+    "startTime": "2025-05-15T09:00:00",
+    "endTime": "2025-06-01T12:00:00", 
+    "drawTime": "2025-06-01T14:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wax_apple.jpg/800px-Wax_apple.jpg" 
+  },
+  { 
+    "id": 30, 
+    "category": "Military", 
+    "question": "本周内，大陆海警是否会在金厦海域再次登检台湾游船？", 
+    "poolYes": 400000, 
+    "poolNo": 400000, 
+    "onlineTime": "2025-05-20T08:00:00",
+    "startTime": "2025-05-21T00:00:00",
+    "endTime": "2025-05-27T23:59:59", 
+    "drawTime": "2025-05-28T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/China_Coast_Guard_Vessel_2901.jpg/800px-China_Coast_Guard_Vessel_2901.jpg" 
+  },
+  { 
+    "id": 31, 
+    "category": "International", 
+    "question": "特朗普下次演讲，是否会再次提到“台湾偷走了芯片生意”？", 
+    "poolYes": 900000, 
+    "poolNo": 200000, 
+    "onlineTime": "2025-05-18T10:00:00",
+    "startTime": "2025-05-19T00:00:00",
+    "endTime": "2025-05-31T23:59:59", 
+    "drawTime": "2025-06-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Donald_Trump_official_portrait.jpg/800px-Donald_Trump_official_portrait.jpg" 
+  },
+  { 
+    "id": 32, 
+    "category": "International", 
+    "question": "美国承诺交付的 F-16V 战机，本月是否会宣布再次延期？", 
+    "poolYes": 800000, 
+    "poolNo": 200000, 
+    "onlineTime": "2025-05-01T09:00:00",
+    "startTime": "2025-05-01T09:00:00",
+    "endTime": "2025-05-31T23:59:59", 
+    "drawTime": "2025-06-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/F-16_Fighting_Falcon.jpg/800px-F-16_Fighting_Falcon.jpg" 
+  },
+  { 
+    "id": 33, 
+    "category": "International", 
+    "question": "日本驻台协会是否会在本季度更新“在台日侨紧急撤离指南”？", 
+    "poolYes": 300000, 
+    "poolNo": 500000, 
+    "onlineTime": "2025-04-01T09:00:00",
+    "startTime": "2025-04-01T09:00:00",
+    "endTime": "2025-06-30T23:59:59", 
+    "drawTime": "2025-07-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Flag_of_Japan.svg/800px-Flag_of_Japan.svg.png" 
+  },
+  { 
+    "id": 34, 
+    "category": "International", 
+    "question": "台积电是否会宣布在德国或美国建立新的 2nm 晶圆厂？", 
+    "poolYes": 400000, 
+    "poolNo": 600000, 
+    "onlineTime": "2025-01-01T09:00:00",
+    "startTime": "2025-01-01T09:00:00",
+    "endTime": "2025-12-31T23:59:59", 
+    "drawTime": "2026-01-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/TSMC_Logo.svg/1200px-TSMC_Logo.svg.png" 
+  },
+  { 
+    "id": 35, 
+    "category": "International", 
+    "question": "本年内，是否会有东南亚国家取消对台湾的免签待遇？", 
+    "poolYes": 200000, 
+    "poolNo": 700000, 
+    "onlineTime": "2025-01-01T00:00:00",
+    "startTime": "2025-01-01T00:00:00",
+    "endTime": "2025-12-31T23:59:59", 
+    "drawTime": "2026-01-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Flag_of_Vietnam.svg/800px-Flag_of_Vietnam.svg.png" 
+  },
+  { 
+    "id": 36, 
+    "category": "International", 
+    "question": "黄仁勋下周是否会访问中国大陆（上海/北京）？", 
+    "poolYes": 500000, 
+    "poolNo": 500000, 
+    "onlineTime": "2025-05-20T00:00:00",
+    "startTime": "2025-05-21T00:00:00",
+    "endTime": "2025-05-27T23:59:59", 
+    "drawTime": "2025-05-28T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Jensen_Huang_at_Computex_2023.jpg/800px-Jensen_Huang_at_Computex_2023.jpg" 
+  },
+  { 
+    "id": 37, 
+    "category": "International", 
+    "question": "马斯克本月是否会在 X 上发表关于“台湾是中国一部分”的言论？", 
+    "poolYes": 300000, 
+    "poolNo": 800000, 
+    "onlineTime": "2025-05-01T00:00:00",
+    "startTime": "2025-05-01T00:00:00",
+    "endTime": "2025-05-31T23:59:59", 
+    "drawTime": "2025-06-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Elon_Musk_Royal_Society_%28crop2%29.jpg/800px-Elon_Musk_Royal_Society_%28crop2%29.jpg" 
+  },
+  { 
+    "id": 38, 
+    "category": "International", 
+    "question": "台湾央行本月黄金储备量是否减少（暗示转移）？", 
+    "poolYes": 100000, 
+    "poolNo": 900000, 
+    "onlineTime": "2025-05-01T09:00:00",
+    "startTime": "2025-05-01T09:00:00",
+    "endTime": "2025-05-31T23:59:59", 
+    "drawTime": "2025-06-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Gold_Bullion_Bars.jpg/800px-Gold_Bullion_Bars.jpg" 
+  },
+  { 
+    "id": 39, 
+    "category": "International", 
+    "question": "台湾百大富豪榜中，本月是否有人变更国籍为新加坡？", 
+    "poolYes": 200000, 
+    "poolNo": 400000, 
+    "onlineTime": "2025-05-01T00:00:00",
+    "startTime": "2025-05-01T00:00:00",
+    "endTime": "2025-05-31T23:59:59", 
+    "drawTime": "2025-06-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Flag_of_Singapore.svg/800px-Flag_of_Singapore.svg.png" 
+  },
+  { 
+    "id": 40, 
+    "category": "International", 
+    "question": "2026 年底前，新台币是否会发行新版（去中国化设计）？", 
+    "poolYes": 100000, 
+    "poolNo": 800000, 
+    "onlineTime": "2025-01-01T00:00:00",
+    "startTime": "2025-01-01T00:00:00",
+    "endTime": "2026-12-31T23:59:59", 
+    "drawTime": "2027-01-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/New_Taiwan_Dollar_1000_bill.jpg/800px-New_Taiwan_Dollar_1000_bill.jpg" 
+  },
+  { 
+    "id": 41, 
+    "category": "Humor", 
+    "question": "2028 年 1 月 1 日，台北总统府的产权归属是：A. 中华民国 B. 中华人民共和国 C. TWS 资产管理公司？", 
+    "poolYes": 1000, 
+    "poolNo": 1000000, 
+    "onlineTime": "2025-05-20T00:00:00",
+    "startTime": "2025-05-20T00:00:00",
+    "endTime": "2028-01-01T00:00:00", 
+    "drawTime": "2028-01-02T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Presidential_Office_Building_Taipei.jpg/800px-Presidential_Office_Building_Taipei.jpg" 
+  },
+  { 
+    "id": 42, 
+    "category": "Humor", 
+    "question": "假如开战，台军能撑过：A. 24小时 B. 72小时 C. 1周？", 
+    "poolYes": 500000, 
+    "poolNo": 500000, 
+    "onlineTime": "2025-01-01T00:00:00",
+    "startTime": "2025-01-01T00:00:00",
+    "endTime": "2025-12-31T23:59:59", 
+    "drawTime": "2026-01-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/ROCA_soldier_with_T91_assault_rifle.jpg/800px-ROCA_soldier_with_T91_assault_rifle.jpg" 
+  },
+  { 
+    "id": 43, 
+    "category": "Humor", 
+    "question": "解放军首批登陆点预测：A. 桃园竹围 B. 台北港 C. 宜兰头城？", 
+    "poolYes": 300000, 
+    "poolNo": 300000, 
+    "onlineTime": "2025-01-01T00:00:00",
+    "startTime": "2025-01-01T00:00:00",
+    "endTime": "2025-12-31T23:59:59", 
+    "drawTime": "2026-01-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Port_of_Taipei.jpg/800px-Port_of_Taipei.jpg" 
+  },
+  { 
+    "id": 44, 
+    "category": "Humor", 
+    "question": "开战后，AIT（美国在台协会）直升机能带走多少人？ A. <50人 B. 100-500人 C. 仅限处长？", 
+    "poolYes": 600000, 
+    "poolNo": 200000, 
+    "onlineTime": "2025-01-01T00:00:00",
+    "startTime": "2025-01-01T00:00:00",
+    "endTime": "2025-12-31T23:59:59", 
+    "drawTime": "2026-01-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/AIT_New_Compound.jpg/800px-AIT_New_Compound.jpg" 
+  },
+  { 
+    "id": 45, 
+    "category": "Humor", 
+    "question": "台北故宫翠玉白菜最终会：A. 留在台北 B. 回到北京 C. 被运往日本？", 
+    "poolYes": 200000, 
+    "poolNo": 400000, 
+    "onlineTime": "2025-01-01T00:00:00",
+    "startTime": "2025-01-01T00:00:00",
+    "endTime": "2025-12-31T23:59:59", 
+    "drawTime": "2026-01-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Jadeite_Cabbage_with_Insects.jpg/800px-Jadeite_Cabbage_with_Insects.jpg" 
+  },
+  { 
+    "id": 46, 
+    "category": "Humor", 
+    "question": "台北市防空洞租金本月环比涨幅是否超过 5%？", 
+    "poolYes": 50000, 
+    "poolNo": 100000, 
+    "onlineTime": "2025-05-01T00:00:00",
+    "startTime": "2025-05-01T00:00:00",
+    "endTime": "2025-05-31T23:59:59", 
+    "drawTime": "2025-06-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Air_raid_shelter_sign_in_Taipei.jpg/800px-Air_raid_shelter_sign_in_Taipei.jpg" 
+  },
+  { 
+    "id": 47, 
+    "category": "Humor", 
+    "question": "统一后，康师傅方便面在台湾的售价是：A. 涨价 B. 降价 C. 免费发放？", 
+    "poolYes": 100000, 
+    "poolNo": 200000, 
+    "onlineTime": "2025-01-01T00:00:00",
+    "startTime": "2025-01-01T00:00:00",
+    "endTime": "2025-12-31T23:59:59", 
+    "drawTime": "2026-01-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Kang_Shi_Fu_Instant_Noodles.jpg/800px-Kang_Shi_Fu_Instant_Noodles.jpg" 
+  },
+  { 
+    "id": 48, 
+    "category": "Humor", 
+    "question": "您的台胞证号码最后一位是奇数还是偶数？（纯博彩）", 
+    "poolYes": 500000, 
+    "poolNo": 500000, 
+    "onlineTime": "2025-01-01T00:00:00",
+    "startTime": "2025-01-01T00:00:00",
+    "endTime": "2025-12-31T23:59:59", 
+    "drawTime": "2026-01-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Mainland_Travel_Permit_for_Taiwan_Residents_%28sample%29.jpg/800px-Mainland_Travel_Permit_for_Taiwan_Residents_%28sample%29.jpg" 
+  },
+  { 
+    "id": 49, 
+    "category": "Humor", 
+    "question": "下一批公布的“台独顽固分子”名单中，是否包含名嘴于北辰？", 
+    "poolYes": 800000, 
+    "poolNo": 100000, 
+    "onlineTime": "2025-05-01T00:00:00",
+    "startTime": "2025-05-01T00:00:00",
+    "endTime": "2025-05-31T23:59:59", 
+    "drawTime": "2025-06-01T12:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Yu_Pei-chen.jpg/800px-Yu_Pei-chen.jpg" 
+  },
+  { 
+    "id": 50, 
+    "category": "Humor", 
+    "question": "本周五收盘，TWS Coin 能否突破 $10 美元？", 
+    "poolYes": 10000000, 
+    "poolNo": 100000, 
+    "onlineTime": "2025-05-18T00:00:00",
+    "startTime": "2025-05-19T00:00:00",
+    "endTime": "2025-05-24T16:00:00", 
+    "drawTime": "2025-05-24T18:00:00",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Cryptocurrency_Logo.svg/800px-Cryptocurrency_Logo.svg.png" 
+  }
+];
 
 
 const PredictionCard = ({ market, position, onClick, currentOdds }) => {
@@ -226,14 +827,14 @@ const PredictionHome = () => {
   const [manualAddress, setManualAddress] = useState(null); // From Auction-style connection
   
   // Display State
-  const [markets, setMarkets] = useState([]);
+  const [markets, setMarkets] = useState(PREDICTION_MARKETS.slice(0, 5));
   const [activeIndex, setActiveIndex] = useState(0);
   
   // Loading & Pagination State
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(PREDICTION_MARKETS.length > 5);
   const [loadError, setLoadError] = useState(false);
-  const [allMarkets, setAllMarkets] = useState([]);
+  const [allMarkets, setAllMarkets] = useState(PREDICTION_MARKETS);
   
   // Initial Load - Fetch from Server
   useEffect(() => {
@@ -385,10 +986,10 @@ const PredictionHome = () => {
     }
   }, [connected, publicKey, isAuthenticated, manualAddress]);
 
-  // 格式化 TWSCoin 余额（9 decimals）
+  // 格式化 TWSCoin 余额（6 decimals）
   const formatBalance = (rawBalance) => {
     if (!rawBalance) return 0;
-    return Number(rawBalance) / Math.pow(10, 9);
+    return Number(rawBalance) / Math.pow(10, 6);
   };
 
   const fetchBalance = async (publicKeyStr) => {
@@ -540,7 +1141,9 @@ const PredictionHome = () => {
       const destTokenAccount = await splToken.getAssociatedTokenAddress(mint, toPublicKey);
 
       const transaction = new Transaction();
-      const amountRaw = BigInt(amount * Math.pow(10, 9));
+      // 2. Transfer tokens
+      // Amount is already in TWS units (e.g. 100), need to convert to Raw for transfer
+      const amountRaw = BigInt(Math.round(amount * Math.pow(10, 6)));
 
       transaction.add(
           splToken.createTransferInstruction(

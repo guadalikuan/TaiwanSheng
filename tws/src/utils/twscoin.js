@@ -14,17 +14,21 @@ export const TWSCoin_MINT = import.meta.env.VITE_TWS_COIN_MINT || (
     : DEFAULT_DEVNET_MINT
 );
 
+// TWS Coin Decimals
+export const TWS_DECIMALS = 6;
+
 // 调试日志，帮助开发者确认当前使用的 Mint 地址和环境
 console.log(`[TWSCoin] Environment: ${import.meta.env.MODE}`);
 console.log(`[TWSCoin] Active Mint Address: ${TWSCoin_MINT}`);
+console.log(`[TWSCoin] Decimals: ${TWS_DECIMALS}`);
 
 /**
- * 格式化 TWSCoin 余额（9 decimals）
+ * 格式化 TWSCoin 余额
  * @param {string|number} balance - 余额（最小单位）
- * @param {number} decimals - 小数位数，默认 9
+ * @param {number} decimals - 小数位数，默认 6
  * @returns {string} 格式化后的余额
  */
-export const formatTWSCoinBalance = (balance, decimals = 9) => {
+export const formatTWSCoinBalance = (balance, decimals = TWS_DECIMALS) => {
   if (!balance) return '0.00';
   const balanceBigInt = BigInt(balance.toString());
   return (Number(balanceBigInt) / Math.pow(10, decimals)).toFixed(2);
