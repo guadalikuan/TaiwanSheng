@@ -49,8 +49,11 @@ class SolanaBlockchainService {
   async initialize() {
     try {
       // 创建连接
+      // 优先使用配置中的 RPC URL，如果为空则使用 clusterApiUrl 或其他默认值
+      // 注意: server端 config.getRpcUrl() 已经处理了 process.env.SOLANA_RPC_URL 的读取
       this.connection = new Connection(this.rpcUrl, 'confirmed');
       console.log(`✅ Solana 连接已建立: ${this.cluster}`);
+      console.log(`   RPC 端点: ${this.rpcUrl}`);
 
       // 加载程序 ID
       const deploymentFile = join(__dirname, '../../deployments/solana-' + this.cluster + '.json');

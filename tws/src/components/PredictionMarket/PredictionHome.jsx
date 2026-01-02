@@ -1027,6 +1027,8 @@ const PredictionHome = () => {
           const mint = new PublicKey(TWSCoin_MINT);
           
           console.log(`[Balance_Debug] Fetching from RPC for ${publicKeyStr} (Mint: ${TWSCoin_MINT})...`);
+          
+          // Use connection from useConnection() which is already configured with custom RPC
           const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, { 
             mint: mint 
           });

@@ -21,7 +21,14 @@ export const SolanaWalletProvider = ({ children }) => {
     }, [network]);
 
     // You can also provide a custom RPC endpoint.
-    const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+    const endpoint = useMemo(() => {
+        if (import.meta.env.VITE_SOLANA_RPC_URL) {
+            console.log(`[TWS Wallet] Using Custom RPC: ${import.meta.env.VITE_SOLANA_RPC_URL}`);
+            return import.meta.env.VITE_SOLANA_RPC_URL;
+        }
+        console.log(`[TWS Wallet] Using Default RPC: ${clusterApiUrl(network)}`);
+        return clusterApiUrl(network);
+    }, [network]);
 
     const wallets = useMemo(
         () => [
