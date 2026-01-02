@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { getAuctionInfo, seizeAuctionAsset, getTWSCoinBalanceAPI } from '../utils/api';
 import { TWSCoin_MINT, formatTWSCoinBalance, calculateMinBid } from '../utils/twscoin';
 
 const AuctionPage = () => {
-  const [assetId] = useState(1); // 默认资产ID，可以从路由参数获取
+  const { assetId: assetIdParam } = useParams();
+  const assetId = assetIdParam ? parseInt(assetIdParam, 10) : 1; // 从路由参数获取，默认为1
   const [auctionInfo, setAuctionInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

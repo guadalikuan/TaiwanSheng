@@ -1,66 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { Radio, BarChart3, Map, Database, ShieldAlert, Activity, LogIn, LogOut, User } from 'lucide-react';
+import { Radio, BarChart3, Map, Database, ShieldAlert, LogIn, LogOut, User, Hammer, Wallet } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getHomepageStats } from '../utils/api';
-import { useSSE } from '../contexts/SSEContext';
-import { useServerStatus } from '../contexts/ServerStatusContext';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, user, logout } = useAuth();
-  const { isOnline } = useServerStatus();
+  const { isAuthenticated, user, logout, loginWithWallet } = useAuth();
+  const { publicKey, connected } = useWallet();
+  const { setVisible } = useWalletModal();
   const [scrolled, setScrolled] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState(12405);
   const isHomePage = location.pathname === '/';
 
-  // 加载初始统计数据
+  // 当钱包连接后，自动登录
   useEffect(() => {
-    // 如果服务器离线，不发起请求，避免浏览器控制台显示错误
-    if (!isOnline) {
-      return;
+    if (connected && publicKey && !isAuthenticated) {
+      const walletAddress = publicKey.toString();
+      loginWithWallet(walletAddress);
     }
-
-    const loadStats = async () => {
-      try {
-        const response = await getHomepageStats();
-        if (response && response.success && response.data && response.data.onlineUsers) {
-          setOnlineUsers(response.data.onlineUsers);
-        } else if (response && response.success === false) {
-          // 处理错误响应（如服务器离线）
-          // 完全静默处理，不输出任何日志
-          // 服务器离线时，不更新用户数，保持默认值或显示离线状态
-        }
-      } catch (error) {
-        // 连接错误已在 api.js 中处理，这里只记录其他错误
-        if (error.name !== 'ConnectionRefusedError') {
-          console.error('Failed to load homepage stats:', error);
-        }
-      }
-    };
-    loadStats();
-  }, [isOnline]);
-
-  // 使用 SSE 接收实时更新
-  const { subscribe } = useSSE();
-  
-  useEffect(() => {
-    // 订阅 stats 数据更新
-    const unsubscribe = subscribe('stats', (message) => {
-      if (message.type === 'update' && message.data && message.data.onlineUsers !== undefined) {
-        setOnlineUsers(message.data.onlineUsers);
-      }
-    });
-    
-    return unsubscribe;
-  }, [subscribe]);
+  }, [connected, publicKey, isAuthenticated, loginWithWallet]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleConnectWallet = () => {
+    setVisible(true);
+  };
 
   const navLinks = [
     { id: 'omega', label: '天機 | OMEGA', icon: <Radio size={16} /> },
@@ -102,21 +72,20 @@ const Navbar = () => {
                   {link.label}
                 </a>
               ))}
+              {/* 处置按钮 */}
+              <button
+                onClick={() => navigate('/auction')}
+                className="flex items-center text-slate-300 hover:text-red-400 px-3 py-2 rounded-md text-sm font-medium transition-all hover:bg-white/5 group"
+              >
+                <span className="mr-2 opacity-50 group-hover:opacity-100 group-hover:animate-bounce">
+                  <Hammer size={16} />
+                </span>
+                處置 | AUCTION
+              </button>
             </div>
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            <div className="flex flex-col items-end border-r border-white/10 pr-4">
-              <div className="flex items-center text-xs text-green-500 font-mono">
-                <Activity size={12} className="mr-1" />
-                LIVE NODE
-              </div>
-              <div className="text-slate-200 font-mono text-sm">
-                {onlineUsers.toLocaleString()}
-                <span className="text-slate-500 text-xs"> CONN.</span>
-              </div>
-            </div>
-
             {isAuthenticated ? (
               <>
                 <div className="flex items-center space-x-2 border-r border-white/10 pr-4">
@@ -124,7 +93,7 @@ const Navbar = () => {
                   <div className="flex flex-col">
                     <span className="text-xs text-slate-300 font-mono">{user?.username || 'USER'}</span>
                     <span className="text-[10px] text-slate-500 font-mono">
-                      {user?.address ? `${user.address.slice(0, 6)}...${user.address.slice(-4)}` : ''}
+                      {publicKey ? `${publicKey.toString().slice(0, 6)}...${publicKey.toString().slice(-4)}` : (user?.address ? `${user.address.slice(0, 6)}...${user.address.slice(-4)}` : '')}
                     </span>
                   </div>
                 </div>
@@ -142,12 +111,12 @@ const Navbar = () => {
               </>
             ) : (
               <button
-                onClick={() => navigate('/login')}
-                className="bg-red-900/20 border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white px-4 py-1 rounded text-xs font-mono tracking-widest transition-all flex items-center"
+                onClick={handleConnectWallet}
+                className="bg-indigo-900/20 border border-indigo-900/50 text-indigo-400 hover:bg-indigo-600 hover:text-white px-4 py-1 rounded text-xs font-mono tracking-widest transition-all flex items-center"
                 type="button"
               >
-                <LogIn size={14} className="mr-2" />
-                登入 / LOGIN
+                <Wallet size={14} className="mr-2" />
+                連接錢包 / CONNECT WALLET
               </button>
             )}
           </div>

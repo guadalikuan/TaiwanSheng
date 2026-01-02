@@ -24,6 +24,7 @@ import TechProjectCreate from './components/TechProjectCreate';
 import TechProjectDetail from './components/TechProjectDetail';
 import MyInvestments from './components/MyInvestments';
 import AdminDashboard from './components/AdminDashboard';
+import AuctionPage from './auction/AuctionPage';
 
 const App = () => (
   <Routes>
@@ -51,6 +52,8 @@ const App = () => (
     <Route path="/tech-project/:id" element={<TechProjectDetail />} />
     <Route path="/my-investments" element={<MyInvestments />} />
     <Route path="/admin/dashboard" element={<AdminDashboard />} />
+    <Route path="/auction" element={<AuctionPage />} />
+    <Route path="/auction/:assetId" element={<AuctionPage />} />
   </Routes>
 );
 
