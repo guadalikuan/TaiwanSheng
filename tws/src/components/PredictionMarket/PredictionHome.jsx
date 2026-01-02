@@ -1159,8 +1159,15 @@ const PredictionHome = () => {
       );
       
       transaction.feePayer = fromPublicKey;
-      const { blockhash } = await connection.getLatestBlockhash();
-      transaction.recentBlockhash = blockhash;
+      
+      try {
+          console.log(`[Bet_Debug] Getting blockhash from: ${connection.rpcEndpoint}`);
+          const { blockhash } = await connection.getLatestBlockhash('confirmed');
+          transaction.recentBlockhash = blockhash;
+      } catch (e) {
+          console.error("[Bet_Debug] Failed to get blockhash:", e);
+          throw new Error(`连接节点失败 (${connection.rpcEndpoint})，请检查网络或更换 RPC 节点`);
+      }
       
       const signature = await sendTransaction(transaction, connection);
       

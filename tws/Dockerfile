@@ -33,6 +33,9 @@ RUN npm ci --only=production=false --ignore-scripts
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
+ARG VITE_SOLANA_RPC_URL
+ENV VITE_SOLANA_RPC_URL=$VITE_SOLANA_RPC_URL
+
 # 复制源代码
 COPY . .
 
