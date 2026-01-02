@@ -366,6 +366,118 @@ class SolanaBlockchainService {
   }
 
   /**
+   * 投资项目（构建TWSCoin转账交易）
+   * @param {string} projectId - 项目ID
+   * @param {number} amount - 投资金额（TWSCoin，单位：最小单位，需要乘以10^6）
+   * @param {string} investorAddress - 投资者钱包地址
+   * @param {string} projectTreasuryAddress - 项目收款地址（PDA）
+   * @returns {Promise<Transaction>} 构建好的交易对象（需要用户签名）
+   */
+  async buildInvestmentTransaction(projectId, amount, investorAddress, projectTreasuryAddress = null) {
+    try {
+      if (!this.connection) {
+        throw new Error('Connection not initialized');
+      }
+
+      const investorPubkey = new PublicKey(investorAddress);
+      
+      // 生成项目收款地址（PDA）
+      let treasuryPubkey;
+      if (projectTreasuryAddress) {
+        treasuryPubkey = new PublicKey(projectTreasuryAddress);
+      } else {
+        // 如果没有提供，生成基于项目ID的PDA
+        const [projectPda] = PublicKey.findProgramAddressSync(
+          [Buffer.from('tech_project'), Buffer.from(projectId)],
+          this.programId || anchor.web3.SystemProgram.programId
+        );
+        treasuryPubkey = projectPda;
+      }
+
+      // 获取投资者的TWSCoin关联代币账户
+      const investorTokenAccount = await getAssociatedTokenAddress(
+        TWSCoin_MINT,
+        investorPubkey
+      );
+
+      // 获取项目收款账户（如果不存在需要创建）
+      const treasuryTokenAccount = await getAssociatedTokenAddress(
+        TWSCoin_MINT,
+        treasuryPubkey
+      );
+
+      // 构建转账交易
+      const transaction = new Transaction();
+
+      // 检查收款账户是否存在，如果不存在需要创建
+      try {
+        await getAccount(this.connection, treasuryTokenAccount);
+      } catch (error) {
+        // 账户不存在，需要创建（这里简化处理，实际应该由项目创建者预先创建）
+        console.warn('⚠️  项目收款账户不存在，需要先创建');
+      }
+
+      // 添加转账指令
+      const amountRaw = BigInt(Math.floor(amount * Math.pow(10, 6))); // TWSCoin有6位小数
+      const transferInstruction = createTransferInstruction(
+        investorTokenAccount, // 发送方
+        treasuryTokenAccount, // 接收方
+        investorPubkey, // 授权账户
+        amountRaw, // 金额（转换为最小单位）
+        [],
+        TWSCoin_MINT
+      );
+
+      transaction.add(transferInstruction);
+
+      // 设置交易费用支付者
+      transaction.feePayer = investorPubkey;
+
+      // 获取最近的区块哈希
+      const { blockhash } = await this.connection.getLatestBlockhash('confirmed');
+      transaction.recentBlockhash = blockhash;
+
+      return {
+        transaction,
+        treasuryAddress: treasuryPubkey.toString(),
+        treasuryTokenAccount: treasuryTokenAccount.toString()
+      };
+    } catch (error) {
+      console.error('❌ 构建投资交易失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 生成项目收款地址（PDA）
+   * @param {string} projectId - 项目ID
+   * @returns {Promise<{address: string, tokenAccount: string}>} 项目收款地址和代币账户地址
+   */
+  async generateProjectTreasury(projectId) {
+    try {
+      // 生成基于项目ID的PDA
+      const [projectPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from('tech_project'), Buffer.from(projectId)],
+        this.programId || anchor.web3.SystemProgram.programId
+      );
+
+      // 获取关联代币账户地址
+      const tokenAccount = await getAssociatedTokenAddress(
+        TWSCoin_MINT,
+        projectPda
+      );
+
+      return {
+        address: projectPda.toString(),
+        tokenAccount: tokenAccount.toString()
+      };
+    } catch (error) {
+      console.error('❌ 生成项目收款地址失败:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 初始化拍卖资产
    */
   async initializeAuction(assetId, startPrice, tauntMessage, authority, treasury) {
@@ -630,4 +742,10 @@ export const seizeAsset = (assetId, bidMessage, userAddress, treasuryAddress) =>
 
 export const getAuctionInfo = (assetId) =>
   solanaBlockchainService.getAuctionInfo(assetId);
+
+export const buildInvestmentTransaction = (projectId, amount, investorAddress, projectTreasuryAddress) =>
+  solanaBlockchainService.buildInvestmentTransaction(projectId, amount, investorAddress, projectTreasuryAddress);
+
+export const generateProjectTreasury = (projectId) =>
+  solanaBlockchainService.generateProjectTreasury(projectId);
 

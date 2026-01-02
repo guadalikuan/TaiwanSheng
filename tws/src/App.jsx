@@ -20,6 +20,10 @@ import TelegramHome from './telegramapp/TelegramHome';
 import Market from './telegramapp/Market';
 import PredictionHome from './components/PredictionMarket/PredictionHome';
 import BettingHistory from './components/PredictionMarket/BettingHistory';
+import TechProjectCreate from './components/TechProjectCreate';
+import TechProjectDetail from './components/TechProjectDetail';
+import MyInvestments from './components/MyInvestments';
+import AdminDashboard from './components/AdminDashboard';
 
 const App = () => (
   <Routes>
@@ -43,6 +47,10 @@ const App = () => (
     <Route path="/tg-market" element={<Market />} />
     <Route path="/predict" element={<PredictionHome />} />
     <Route path="/predict/history" element={<BettingHistory />} />
+    <Route path="/tech-project/create" element={<TechProjectCreate />} />
+    <Route path="/tech-project/:id" element={<TechProjectDetail />} />
+    <Route path="/my-investments" element={<MyInvestments />} />
+    <Route path="/admin/dashboard" element={<AdminDashboard />} />
   </Routes>
 );
 

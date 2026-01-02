@@ -72,3 +72,50 @@ export const formatAddress = (address) => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 };
 
+/**
+ * 投资科技项目（Solana）
+ * @param {string} projectId - 项目ID
+ * @param {number} amount - 投资金额（TWSCoin）
+ * @param {string} investorAddress - 投资者钱包地址
+ * @param {Function} sendTransaction - Solana钱包发送交易函数
+ * @param {Connection} connection - Solana连接对象
+ * @returns {Promise<string>} 交易签名
+ */
+export const investInTechProject = async (projectId, amount, investorAddress, sendTransaction, connection) => {
+  try {
+    // 调用后端API获取交易对象
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+    const token = localStorage.getItem('tws_token');
+    
+    const response = await fetch(`${API_BASE_URL}/api/tech-project/${projectId}/build-transaction`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: JSON.stringify({ amount, investorAddress })
+    });
+
+    const result = await response.json();
+    
+    if (!result.success || !result.transaction) {
+      throw new Error(result.message || 'Failed to build transaction');
+    }
+
+    // 反序列化交易
+    const { Transaction } = await import('@solana/web3.js');
+    const transaction = Transaction.from(Buffer.from(result.transaction, 'base64'));
+
+    // 使用钱包发送交易（会自动签名）
+    const signature = await sendTransaction(transaction, connection);
+
+    // 等待确认
+    await connection.confirmTransaction(signature, 'confirmed');
+
+    return signature;
+  } catch (error) {
+    console.error('Error investing in tech project:', error);
+    throw error;
+  }
+};
+

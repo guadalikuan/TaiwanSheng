@@ -19,6 +19,9 @@ fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{metho
 import auctionRoutes from './routes/auction.js';
 import predictionRoutes from './routes/prediction.js';
 import sseRoutes, { startSSEKeepalive } from './routes/sse.js';
+import techProjectRoutes from './routes/techProject.js';
+import adminRoutes from './routes/admin.js';
+import investmentRoutes from './routes/investments.js';
 import { startBackgroundTasks } from './utils/backgroundTasks.js';
 import { startScanning } from './utils/oracle.js';
 import { initTimeManager } from './utils/timeManager.js';
@@ -158,6 +161,9 @@ app.use('/api/referral', referralRoutes);
 app.use('/api/auction', auctionRoutes);
 app.use('/api/open', openRoutes);
 app.use('/api/prediction', predictionRoutes);
+app.use('/api/tech-project', techProjectRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/investments', investmentRoutes);
 
 // 调试：列出所有注册的路由
 console.log('📋 已注册的路由:');

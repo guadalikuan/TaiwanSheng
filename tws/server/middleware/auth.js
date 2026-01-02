@@ -4,7 +4,7 @@ import { ROLES, isRoleAllowed } from '../utils/roles.js';
 /**
  * 认证中间件 - 验证 JWT token
  */
-export const authenticate = (req, res, next) => {
+export const authenticate = async (req, res, next) => {
   try {
     // 从请求头获取 token
     const authHeader = req.headers.authorization;
@@ -35,6 +35,26 @@ export const authenticate = (req, res, next) => {
     
     // 将用户信息附加到请求对象
     req.user = decoded;
+    
+    // 记录钱包地址到请求对象（用于后续日志记录）
+    if (decoded.address) {
+      req.walletAddress = decoded.address;
+    }
+    
+    // 异步记录登录行为（不阻塞请求）
+    if (decoded.address && req.path !== '/api/auth/login' && req.path !== '/api/auth/login-mnemonic') {
+      const { logAction } = await import('../utils/actionLogger.js');
+      logAction(decoded.address, 'API_ACCESS', {
+        path: req.path,
+        method: req.method,
+        ip: req.ip || req.connection.remoteAddress,
+        userAgent: req.headers['user-agent']
+      }).catch(err => {
+        // 日志记录失败不影响请求
+        console.warn('Failed to log action:', err);
+      });
+    }
+    
     next();
   } catch (error) {
     console.error('Authentication error:', error);
@@ -86,7 +106,7 @@ export const requireRole = (...allowedRoles) => {
 /**
  * 可选认证中间件 - 如果有 token 则验证，没有也不报错
  */
-export const optionalAuth = (req, res, next) => {
+export const optionalAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     
@@ -98,6 +118,9 @@ export const optionalAuth = (req, res, next) => {
       const decoded = verifyToken(token);
       if (decoded) {
         req.user = decoded;
+        if (decoded.address) {
+          req.walletAddress = decoded.address;
+        }
       }
     }
     

@@ -1,44 +1,17 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { put, get, getAll, NAMESPACES, initRocksDB } from './rocksdb.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const DATA_DIR = join(__dirname, '../data');
-const USERS_FILE = join(DATA_DIR, 'users.json');
-
-// 确保数据目录存在
-const initDataDir = () => {
-  if (!existsSync(DATA_DIR)) {
-    mkdirSync(DATA_DIR, { recursive: true });
-  }
-  if (!existsSync(USERS_FILE)) {
-    writeFileSync(USERS_FILE, JSON.stringify([], null, 2), 'utf8');
+// 初始化RocksDB（如果尚未初始化）
+let dbInitialized = false;
+const ensureDB = async () => {
+  if (!dbInitialized) {
+    await initRocksDB();
+    dbInitialized = true;
   }
 };
 
-// 读取所有用户
-const readUsers = () => {
-  initDataDir();
-  try {
-    const data = readFileSync(USERS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading users:', error);
-    return [];
-  }
-};
-
-// 写入所有用户
-const writeUsers = (users) => {
-  initDataDir();
-  try {
-    writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
-  } catch (error) {
-    console.error('Error writing users:', error);
-    throw error;
-  }
+// 确保数据目录存在（兼容性函数）
+const initDataDir = async () => {
+  await ensureDB();
 };
 
 /**
@@ -46,30 +19,36 @@ const writeUsers = (users) => {
  * @param {Object} userData - 用户数据
  * @returns {Object} 保存的用户数据
  */
-export const saveUser = (userData) => {
-  const users = readUsers();
+export const saveUser = async (userData) => {
+  await ensureDB();
+  
+  if (!userData.address) {
+    throw new Error('User address is required');
+  }
+  
+  const address = userData.address.toLowerCase();
   
   // 检查地址是否已存在
-  const existingIndex = users.findIndex(u => u.address === userData.address);
+  const existing = await get(NAMESPACES.USERS, address);
   
-  if (existingIndex >= 0) {
+  if (existing) {
     // 更新现有用户
-    users[existingIndex] = {
-      ...users[existingIndex],
+    const updated = {
+      ...existing,
       ...userData,
       updatedAt: Date.now()
     };
-    writeUsers(users);
-    return users[existingIndex];
+    await put(NAMESPACES.USERS, address, updated);
+    return updated;
   } else {
     // 添加新用户
     const newUser = {
       ...userData,
+      address: address,
       createdAt: Date.now(),
       updatedAt: Date.now()
     };
-    users.push(newUser);
-    writeUsers(users);
+    await put(NAMESPACES.USERS, address, newUser);
     return newUser;
   }
 };
@@ -79,9 +58,12 @@ export const saveUser = (userData) => {
  * @param {string} address - 钱包地址
  * @returns {Object|null} 用户数据或 null
  */
-export const getUserByAddress = (address) => {
-  const users = readUsers();
-  return users.find(u => u.address.toLowerCase() === address.toLowerCase()) || null;
+export const getUserByAddress = async (address) => {
+  await ensureDB();
+  if (!address) return null;
+  
+  const user = await get(NAMESPACES.USERS, address.toLowerCase());
+  return user || null;
 };
 
 /**
@@ -89,9 +71,13 @@ export const getUserByAddress = (address) => {
  * @param {string} username - 用户名
  * @returns {Object|null} 用户数据或 null
  */
-export const getUserByUsername = (username) => {
-  const users = readUsers();
-  return users.find(u => u.username === username) || null;
+export const getUserByUsername = async (username) => {
+  await ensureDB();
+  if (!username) return null;
+  
+  const allUsers = await getAll(NAMESPACES.USERS);
+  const user = allUsers.find(u => u.value.username === username);
+  return user ? user.value : null;
 };
 
 /**
@@ -100,30 +86,33 @@ export const getUserByUsername = (username) => {
  * @param {Object} updates - 要更新的字段
  * @returns {Object|null} 更新后的用户数据或 null
  */
-export const updateUser = (address, updates) => {
-  const users = readUsers();
-  const index = users.findIndex(u => u.address.toLowerCase() === address.toLowerCase());
+export const updateUser = async (address, updates) => {
+  await ensureDB();
+  if (!address) return null;
   
-  if (index === -1) {
+  const user = await get(NAMESPACES.USERS, address.toLowerCase());
+  if (!user) {
     return null;
   }
   
-  users[index] = {
-    ...users[index],
+  const updated = {
+    ...user,
     ...updates,
     updatedAt: Date.now()
   };
   
-  writeUsers(users);
-  return users[index];
+  await put(NAMESPACES.USERS, address.toLowerCase(), updated);
+  return updated;
 };
 
 /**
  * 获取所有用户（管理员用）
  * @returns {Array} 所有用户数组
  */
-export const getAllUsers = () => {
-  return readUsers();
+export const getAllUsers = async () => {
+  await ensureDB();
+  const results = await getAll(NAMESPACES.USERS);
+  return results.map(r => r.value);
 };
 
 /**
@@ -131,8 +120,8 @@ export const getAllUsers = () => {
  * @param {string} role - 角色 (USER, SUBMITTER, REVIEWER, ADMIN)
  * @returns {Array} 匹配角色的用户数组
  */
-export const getUsersByRole = (role) => {
-  const users = readUsers();
-  return users.filter(u => u.role === role);
+export const getUsersByRole = async (role) => {
+  await ensureDB();
+  const allUsers = await getAllUsers();
+  return allUsers.filter(u => u.role === role);
 };
-

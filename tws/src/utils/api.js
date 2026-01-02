@@ -607,12 +607,13 @@ export const postMapAsset = async (assetData) => {
 
 /**
  * 获取首页资产列表
+ * @param {string} assetType - 资产类型：房产、农田、科创、酒水、文创
  * @returns {Promise<Object>}
  */
-export const getHomepageAssets = async () => {
+export const getHomepageAssets = async (assetType = '房产') => {
   try {
     return await fetchWithRetry(
-      `${API_BASE_URL}/api/homepage/assets`,
+      `${API_BASE_URL}/api/homepage/assets?type=${encodeURIComponent(assetType)}`,
       {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
@@ -865,6 +866,161 @@ export const getTWSCoinBalanceAPI = async (userAddress) => {
   } catch (error) {
     console.error('API getTWSCoinBalance error:', error);
     return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 创建科技项目
+ * @param {Object} projectData - 项目数据
+ * @returns {Promise<Object>}
+ */
+export const createTechProject = async (projectData) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/tech-project/create`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify(projectData)
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API createTechProject error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取科技项目详情
+ * @param {string} projectId - 项目ID
+ * @returns {Promise<Object>}
+ */
+export const getTechProject = async (projectId) => {
+  try {
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/tech-project/${projectId}`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API getTechProject error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取科技项目列表
+ * @param {Object} filters - 筛选条件（status, category）
+ * @returns {Promise<Object>}
+ */
+export const getTechProjects = async (filters = {}) => {
+  try {
+    const params = new URLSearchParams();
+    if (filters.status) params.append('status', filters.status);
+    if (filters.category) params.append('category', filters.category);
+    
+    const queryString = params.toString();
+    const url = `${API_BASE_URL}/api/tech-project${queryString ? `?${queryString}` : ''}`;
+    
+    return await fetchWithRetry(
+      url,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API getTechProjects error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 投资科技项目
+ * @param {string} projectId - 项目ID
+ * @param {number} amount - 投资金额（TWSCoin）
+ * @param {string} txSignature - 交易签名
+ * @returns {Promise<Object>}
+ */
+export const investTechProject = async (projectId, amount, txSignature) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/tech-project/${projectId}/invest`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({ amount, txSignature })
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API investTechProject error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取项目的投资者列表
+ * @param {string} projectId - 项目ID
+ * @returns {Promise<Object>}
+ */
+export const getProjectInvestors = async (projectId) => {
+  try {
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/tech-project/${projectId}/investors`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API getProjectInvestors error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取我的投资记录
+ * @param {string} walletAddress - 钱包地址
+ * @returns {Promise<Object>}
+ */
+export const getMyInvestments = async (walletAddress) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/investments/my?walletAddress=${encodeURIComponent(walletAddress)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API getMyInvestments error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
   }
 };
 

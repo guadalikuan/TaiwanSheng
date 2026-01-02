@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Database, ShieldCheck, ArrowRight, Lock, FileText, Globe, Zap, Key, Package, Github } from 'lucide-react';
+import { Database, ShieldCheck, ArrowRight, Lock, FileText, Globe, Zap, Key, Package, Github, Building2, Wheat, FlaskConical, Wine, Palette, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getHomepageAssets } from '../utils/api';
 import { useServerStatus } from '../contexts/ServerStatusContext';
@@ -9,8 +9,18 @@ const AssetsSection = () => {
   const { isOnline } = useServerStatus();
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('房产'); // 当前选中的资产类型
 
-  // 載入資產列表
+  // 资产类型配置
+  const assetTypes = [
+    { id: '房产', icon: Building2, color: 'text-blue-400' },
+    { id: '农田', icon: Wheat, color: 'text-green-400' },
+    { id: '科创', icon: FlaskConical, color: 'text-purple-400' },
+    { id: '酒水', icon: Wine, color: 'text-red-400' },
+    { id: '文创', icon: Palette, color: 'text-yellow-400' },
+  ];
+
+  // 載入資產列表（根据类型筛选）
   useEffect(() => {
     // 如果服务器离线，不发起请求，避免浏览器控制台显示错误
     if (!isOnline) {
@@ -20,7 +30,7 @@ const AssetsSection = () => {
 
     const loadAssets = async () => {
       try {
-        const response = await getHomepageAssets();
+        const response = await getHomepageAssets(activeTab);
         if (response && response.success && response.data && response.data.assets) {
           setAssets(response.data.assets);
         } else if (response && response.success === false) {
@@ -39,7 +49,7 @@ const AssetsSection = () => {
       }
     };
     loadAssets();
-  }, [isOnline]);
+  }, [isOnline, activeTab]);
   
   return (
     <div className="w-full min-h-full bg-slate-950 relative flex flex-col pt-16 md:pt-20">
@@ -55,13 +65,49 @@ const AssetsSection = () => {
               <span className="text-red-500">WARNING: TITLES ARE ANCHORED TO THE &apos;ONE CHINA&apos; POLICY.</span>
             </p>
           </div>
-          <button
-            onClick={() => navigate('/loadout')}
-            className="ml-4 bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 hover:bg-emerald-600 hover:text-white px-6 py-3 rounded text-sm font-mono tracking-widest transition-all flex items-center gap-2 whitespace-nowrap"
-          >
-            <Key size={16} />
-            查看我的資產
-          </button>
+          <div className="flex gap-2">
+            {/* 科创项目发布按钮（仅科创选项卡显示） */}
+            {activeTab === '科创' && (
+              <button
+                onClick={() => navigate('/tech-project/create')}
+                className="ml-4 bg-purple-600/20 border border-purple-600/50 text-purple-400 hover:bg-purple-600 hover:text-white px-6 py-3 rounded text-sm font-mono tracking-widest transition-all flex items-center gap-2 whitespace-nowrap"
+              >
+                <Plus size={16} />
+                发布科技项目
+              </button>
+            )}
+            <button
+              onClick={() => navigate('/loadout')}
+              className="ml-4 bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 hover:bg-emerald-600 hover:text-white px-6 py-3 rounded text-sm font-mono tracking-widest transition-all flex items-center gap-2 whitespace-nowrap"
+            >
+              <Key size={16} />
+              查看我的資產
+            </button>
+          </div>
+        </div>
+
+        {/* 资产类型选项卡 */}
+        <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar">
+          {assetTypes.map((type) => {
+            const Icon = type.icon;
+            const isActive = activeTab === type.id;
+            return (
+              <button
+                key={type.id}
+                onClick={() => setActiveTab(type.id)}
+                className={`
+                  flex items-center gap-2 px-6 py-3 rounded-lg font-mono text-sm transition-all whitespace-nowrap
+                  ${isActive 
+                    ? 'bg-gold text-black border-2 border-gold' 
+                    : 'bg-slate-800/50 text-slate-400 border-2 border-slate-700 hover:border-slate-600 hover:text-slate-300'
+                  }
+                `}
+              >
+                <Icon size={18} className={isActive ? 'text-black' : type.color} />
+                {type.id}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -82,7 +128,14 @@ const AssetsSection = () => {
             className={`group relative bg-slate-900/50 border ${
               item.status === 'LOCKED' ? 'border-slate-800 opacity-50' : 'border-slate-700 hover:border-gold'
             } p-6 transition-all duration-300 hover:-translate-y-2 cursor-pointer`}
-            onClick={() => navigate(`/asset-detail/${item.id}`)}
+            onClick={() => {
+              // 根据资产类型跳转到不同详情页
+              if (activeTab === '科创') {
+                navigate(`/tech-project/${item.id}`);
+              } else {
+                navigate(`/asset-detail/${item.id}?type=${activeTab}`);
+              }
+            }}
           >
             <div className="flex justify-between items-start mb-4">
               <span className="text-xs font-mono text-slate-500">ID: TWS-{item.id}0{index}</span>
@@ -100,8 +153,20 @@ const AssetsSection = () => {
             </div>
 
             <div className="h-24 bg-slate-800/50 mb-4 flex items-center justify-center overflow-hidden relative">
-              <Database className="text-slate-700 opacity-20 w-16 h-16" />
-              <div className="absolute bottom-0 left-0 bg-black/60 px-2 text-[10px] text-white font-mono">{item.city}</div>
+              {activeTab === '科创' ? (
+                <FlaskConical className="text-purple-700 opacity-20 w-16 h-16" />
+              ) : activeTab === '农田' ? (
+                <Wheat className="text-green-700 opacity-20 w-16 h-16" />
+              ) : activeTab === '酒水' ? (
+                <Wine className="text-red-700 opacity-20 w-16 h-16" />
+              ) : activeTab === '文创' ? (
+                <Palette className="text-yellow-700 opacity-20 w-16 h-16" />
+              ) : (
+                <Database className="text-slate-700 opacity-20 w-16 h-16" />
+              )}
+              <div className="absolute bottom-0 left-0 bg-black/60 px-2 text-[10px] text-white font-mono">
+                {item.city || item.location || 'N/A'}
+              </div>
             </div>
 
             <h3 className="text-xl font-bold text-white mb-2 font-mono truncate">{item.title}</h3>
@@ -124,6 +189,10 @@ const AssetsSection = () => {
             >
               {item.status === 'LOCKED' ? (
                 <Lock size={14} />
+              ) : activeTab === '科创' ? (
+                <>
+                  投资项目 <ArrowRight size={14} className="ml-2" />
+                </>
               ) : (
                 <>
                   獲取產權 <ArrowRight size={14} className="ml-2" />

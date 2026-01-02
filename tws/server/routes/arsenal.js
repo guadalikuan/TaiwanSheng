@@ -105,14 +105,14 @@ router.post('/submit', async (req, res) => {
     };
 
     // 保存原始资产
-    const savedRawAsset = saveRawAsset(rawAsset);
+    const savedRawAsset = await saveRawAsset(rawAsset);
 
     // 脱敏包装
     const sanitizedAsset = wrapAsset(savedRawAsset);
     sanitizedAsset.id = savedRawAsset.id; // 保持ID关联
 
     // 保存脱敏资产
-    const savedSanitizedAsset = saveSanitizedAsset(sanitizedAsset);
+    const savedSanitizedAsset = await saveSanitizedAsset(sanitizedAsset);
 
     res.json({
       success: true,
@@ -168,9 +168,9 @@ router.get('/preview', (req, res) => {
 });
 
 // GET /api/arsenal/pending - 获取所有待审核资产（需要审核员或管理员权限）
-router.get('/pending', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), (req, res) => {
+router.get('/pending', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), async (req, res) => {
   try {
-    const pendingAssets = getPendingAssets();
+    const pendingAssets = await getPendingAssets();
     res.json({
       success: true,
       count: pendingAssets.length,
@@ -186,9 +186,9 @@ router.get('/pending', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), (
 });
 
 // GET /api/arsenal/assets - 获取所有已审核通过的资产（用于前端展示）
-router.get('/assets', (req, res) => {
+router.get('/assets', async (req, res) => {
   try {
-    const approvedAssets = getApprovedAssets();
+    const approvedAssets = await getApprovedAssets();
     res.json({
       success: true,
       count: approvedAssets.length,
@@ -204,10 +204,10 @@ router.get('/assets', (req, res) => {
 });
 
 // GET /api/arsenal/assets/:id - 根据ID获取单个资产（公开端点，用于资产详情页）
-router.get('/assets/:id', (req, res) => {
+router.get('/assets/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const assetData = getAssetById(id);
+    const assetData = await getAssetById(id);
     
     if (!assetData.raw || !assetData.sanitized) {
       return res.status(404).json({
@@ -226,7 +226,7 @@ router.get('/assets/:id', (req, res) => {
     if (raw && raw.city) {
       city = raw.city;
     } else if (sanitized.internalRef) {
-      const allAssets = getAllAssets();
+      const allAssets = await getAllAssets();
       const rawAsset = allAssets.raw.find(r => r.id === sanitized.internalRef);
       if (rawAsset && rawAsset.city) {
         city = rawAsset.city;
@@ -303,8 +303,8 @@ router.put('/approve/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN
     const { autoMint = true, mintToAddress } = req.body;
     
     // 更新资产状态
-    const assetData = getAssetById(id);
-    const updatedAsset = updateAssetStatus(id, 'AVAILABLE', {
+    const assetData = await getAssetById(id);
+    const updatedAsset = await updateAssetStatus(id, 'AVAILABLE', {
       reviewedBy: req.user?.username || req.body.reviewedBy || 'system',
       reviewNotes: req.body.reviewNotes || ''
     });
@@ -343,10 +343,10 @@ router.put('/approve/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN
 });
 
 // PUT /api/arsenal/reject/:id - 拒绝资产（需要审核员或管理员权限）
-router.put('/reject/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), (req, res) => {
+router.put('/reject/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedAsset = updateAssetStatus(id, 'REJECTED', {
+    const updatedAsset = await updateAssetStatus(id, 'REJECTED', {
       reviewedBy: req.user?.username || req.body.reviewedBy || 'system',
       reviewNotes: req.body.reviewNotes || 'Rejected by admin'
     });
@@ -366,13 +366,13 @@ router.put('/reject/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN)
 });
 
 // GET /api/arsenal/stats - 获取统计信息（需要审核员或管理员权限）
-router.get('/stats', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), (req, res) => {
+router.get('/stats', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), async (req, res) => {
   try {
-    const allAssets = getAllAssets();
-    const pending = getAssetsByStatus('MINTING');
-    const approved = getAssetsByStatus('AVAILABLE');
-    const rejected = getAssetsByStatus('REJECTED');
-    const locked = getAssetsByStatus('LOCKED');
+    const allAssets = await getAllAssets();
+    const pending = await getAssetsByStatus('MINTING');
+    const approved = await getAssetsByStatus('AVAILABLE');
+    const rejected = await getAssetsByStatus('REJECTED');
+    const locked = await getAssetsByStatus('LOCKED');
     
     res.json({
       success: true,
@@ -573,22 +573,13 @@ router.put('/edit/:id', authenticate, requireRole(ROLES.SUBMITTER, ROLES.ADMIN),
     sanitizedAsset.id = id;
     
     // 更新脱敏资产（保持状态不变）
-    const sanitizedAssets = getSanitizedAssets();
-    const index = sanitizedAssets.findIndex(a => a.id === id);
-    if (index !== -1) {
-      sanitizedAssets[index] = {
-        ...sanitizedAsset,
-        status: assetData.sanitized.status, // 保持原状态
-        reviewHistory: assetData.sanitized.reviewHistory || []
-      };
-      const { writeFileSync } = await import('fs');
-      const { join, dirname } = await import('path');
-      const { fileURLToPath } = await import('url');
-      const __filename = fileURLToPath(import.meta.url);
-      const __dirname = dirname(__filename);
-      const SANITIZED_ASSETS_FILE = join(__dirname, '../data/sanitizedAssets.json');
-      writeFileSync(SANITIZED_ASSETS_FILE, JSON.stringify(sanitizedAssets, null, 2), 'utf8');
-    }
+    const { saveSanitizedAsset } = await import('../utils/storage.js');
+    const updatedSanitized = {
+      ...sanitizedAsset,
+      status: assetData.sanitized.status, // 保持原状态
+      reviewHistory: assetData.sanitized.reviewHistory || []
+    };
+    await saveSanitizedAsset(updatedSanitized);
 
     res.json({
       success: true,

@@ -267,18 +267,50 @@ router.post('/map/asset', (req, res) => {
 // GET /api/homepage/assets - 获取Assets屏数据（复用arsenal API）
 router.get('/assets', async (req, res) => {
   try {
-    // 获取已审核资产和所有资产（用于匹配原始数据）
-    const { getApprovedAssets, getAllAssets, getAssetsByStatus } = await import('../utils/storage.js');
+    // 获取资产类型参数
+    const assetType = req.query.type || '房产';
     
-    // 获取AVAILABLE状态的资产，如果不够则也包含MINTING状态的资产
-    let availableAssets = getApprovedAssets();
-    if (availableAssets.length < 10) {
-      const mintingAssets = getAssetsByStatus('MINTING');
-      availableAssets = [...availableAssets, ...mintingAssets.slice(0, 10 - availableAssets.length)];
+    // 获取已审核资产和所有资产（用于匹配原始数据）
+    const { getApprovedAssets, getAllAssets, getAssetsByStatus, getAssetsByType } = await import('../utils/storage.js');
+    
+    // 根据类型获取资产
+    let availableAssets = [];
+    if (assetType === '房产') {
+      // 房产使用原有逻辑
+      availableAssets = await getApprovedAssets();
+      if (availableAssets.length < 10) {
+        const mintingAssets = await getAssetsByStatus('MINTING');
+        availableAssets = [...availableAssets, ...mintingAssets.slice(0, 10 - availableAssets.length)];
+      }
+    } else if (assetType === '科创') {
+      // 科创类型从techProjects获取
+      const { getAll, NAMESPACES } = await import('../utils/rocksdb.js');
+      const techProjects = await getAll(NAMESPACES.TECH_PROJECTS);
+      availableAssets = techProjects
+        .map(p => p.value)
+        .filter(p => p.status === 'FUNDING' || p.status === 'FUNDED')
+        .map(project => ({
+          id: project.id,
+          codeName: project.codeName,
+          title: project.projectName,
+          assetType: '科创',
+          price: project.targetAmount,
+          yield: project.yield || '15%',
+          status: project.status === 'FUNDING' ? 'AVAILABLE' : 'RESERVED',
+          location: project.location || '科技园区',
+          tokenPrice: project.targetAmount,
+          financials: {
+            totalTokens: project.targetAmount,
+            yield: project.yield || '15% APY'
+          }
+        }));
+    } else {
+      // 其他类型从getAssetsByType获取
+      availableAssets = await getAssetsByType(assetType);
     }
     
-    // 获取所有资产数据以匹配原始数据
-    const allAssets = getAllAssets();
+    // 获取所有资产数据以匹配原始数据（仅用于房产类型）
+    const allAssets = assetType === '房产' ? await getAllAssets() : { raw: [], sanitized: [] };
     
     // 转换为首页需要的格式
     const formattedAssets = availableAssets.slice(0, 20).map((asset, index) => {
@@ -343,7 +375,8 @@ router.get('/assets', async (req, res) => {
     res.json({
       success: true,
       data: {
-        assets: formattedAssets
+        assets: formattedAssets,
+        type: assetType
       }
     });
   } catch (error) {
@@ -367,14 +400,14 @@ router.get('/all', async (req, res) => {
     const { getApprovedAssets, getAllAssets, getAssetsByStatus } = await import('../utils/storage.js');
     
     // 获取AVAILABLE状态的资产，如果不够则也包含MINTING状态的资产
-    let availableAssets = getApprovedAssets();
+    let availableAssets = await getApprovedAssets();
     if (availableAssets.length < 10) {
-      const mintingAssets = getAssetsByStatus('MINTING');
+      const mintingAssets = await getAssetsByStatus('MINTING');
       availableAssets = [...availableAssets, ...mintingAssets.slice(0, 10 - availableAssets.length)];
     }
     
     // 获取所有资产数据以匹配原始数据
-    const allAssets = getAllAssets();
+    const allAssets = await getAllAssets();
     
     // 转换为首页需要的格式（使用与/assets相同的格式化逻辑）
     const formattedAssets = availableAssets.slice(0, 20).map((asset, index) => {
