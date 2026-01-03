@@ -583,6 +583,40 @@ export const getMapData = async () => {
 };
 
 /**
+ * 获取访问记录
+ * @param {Object} filters - 过滤条件 { route, ip, userId, startDate, endDate, country, limit }
+ * @returns {Promise<Object>}
+ */
+export const getVisitLogs = async (filters = {}) => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (filters.route) queryParams.append('route', filters.route);
+    if (filters.ip) queryParams.append('ip', filters.ip);
+    if (filters.userId) queryParams.append('userId', filters.userId);
+    if (filters.startDate) queryParams.append('startDate', filters.startDate);
+    if (filters.endDate) queryParams.append('endDate', filters.endDate);
+    if (filters.country) queryParams.append('country', filters.country);
+    if (filters.limit) queryParams.append('limit', filters.limit.toString());
+
+    const queryString = queryParams.toString();
+    const url = `${API_BASE_URL}/api/homepage/visit-logs${queryString ? `?${queryString}` : ''}`;
+
+    return await fetchWithRetry(
+      url,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API getVisitLogs error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
  * 提交地图资产标注
  * @param {Object} assetData - 资产数据 { lot, location: { lat, lng }, value }
  * @returns {Promise<Object>}

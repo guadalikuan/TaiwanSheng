@@ -15,11 +15,18 @@ import {
 } from '../utils/homepageStorage.js';
 import { getBotUserStats } from '../utils/botUserManager.js';
 import { homepageRateLimiter } from '../middleware/security.js';
+import { visitLogger } from '../middleware/visitLogger.js';
+import { getVisitLogs, getVisitStats } from '../utils/visitLogger.js';
 
 const router = express.Router();
 
 // 为所有首页路由应用专用的速率限制器
 router.use(homepageRateLimiter);
+
+// 为所有首页路由应用访问记录中间件
+router.use(visitLogger({
+  routes: ['/api/homepage/omega', '/api/homepage/market', '/api/homepage/map', '/api/homepage/assets']
+}));
 
 // GET /api/homepage/omega - 获取Omega屏数据
 router.get('/omega', async (req, res) => {
@@ -577,6 +584,57 @@ router.get('/node/:id', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to get node detail',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/homepage/visit-logs - 获取访问记录
+router.get('/visit-logs', async (req, res) => {
+  try {
+    const { route, ip, userId, startDate, endDate, country, limit } = req.query;
+    const filters = {};
+    if (route) filters.route = route;
+    if (ip) filters.ip = ip;
+    if (userId) filters.userId = userId;
+    if (startDate) filters.startDate = startDate;
+    if (endDate) filters.endDate = endDate;
+    if (country) filters.country = country;
+    
+    const logs = await getVisitLogs(filters, limit ? parseInt(limit) : 100);
+    res.json({
+      success: true,
+      data: logs
+    });
+  } catch (error) {
+    console.error('Error getting visit logs:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get visit logs',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/homepage/visit-stats - 获取访问统计
+router.get('/visit-stats', async (req, res) => {
+  try {
+    const { startDate, endDate, route } = req.query;
+    const filters = {};
+    if (startDate) filters.startDate = startDate;
+    if (endDate) filters.endDate = endDate;
+    if (route) filters.route = route;
+    
+    const stats = await getVisitStats(filters);
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('Error getting visit stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get visit stats',
       message: error.message
     });
   }

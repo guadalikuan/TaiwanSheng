@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AMAP_CONFIG, loadAMapScript } from '../config/amap';
 import { generateUniqueId } from '../utils/uniqueId';
-import { getMapData, getHomepageAssets } from '../utils/api';
+import { getMapData, getHomepageAssets, getVisitLogs } from '../utils/api';
 import { useSSE } from '../contexts/SSEContext';
 import { useServerStatus } from '../contexts/ServerStatusContext';
 import { getIpLocation } from '../utils/ipLocation';
@@ -68,6 +68,8 @@ const MapSection = () => {
   const taiwanMarkersRef = useRef([]);
   const mainlandMarkersRef = useRef([]);
   const walletMarkersRef = useRef([]);
+  const visitMarkersRef = useRef([]); // 访问记录标记
+  const visitClustererRef = useRef(null); // MarkerClusterer实例
   const taiwanLanternOverlayRef = useRef(null);
 
   // 加载初始数据
@@ -249,6 +251,11 @@ const MapSection = () => {
           // 备用：延迟加载安全屋
           loadSafehouses();
         }, 2000);
+
+        // 加载访问记录（延迟执行，确保台湾地图已初始化）
+        setTimeout(() => {
+          loadVisitLogs();
+        }, 3000);
       } catch (e) {
         console.error('Failed to initialize mainland map:', e);
       }
@@ -276,9 +283,23 @@ const MapSection = () => {
       walletMarkersRef.current.forEach(marker => {
         try { marker.setMap(null); } catch (e) {}
       });
+      visitMarkersRef.current.forEach(marker => {
+        try { marker.setMap(null); } catch (e) {}
+      });
+      if (visitClustererRef.current) {
+        try {
+          if (typeof visitClustererRef.current.clearMarkers === 'function') {
+            visitClustererRef.current.clearMarkers();
+          } else if (typeof visitClustererRef.current.clear === 'function') {
+            visitClustererRef.current.clear();
+          }
+        } catch (e) {}
+        visitClustererRef.current = null;
+      }
       taiwanMarkersRef.current = [];
       mainlandMarkersRef.current = [];
       walletMarkersRef.current = [];
+      visitMarkersRef.current = [];
     };
   }, []);
 
@@ -565,6 +586,200 @@ const MapSection = () => {
       } catch (e) {
         console.warn('Failed to remove old wallet marker:', e);
       }
+    }
+  };
+
+  // 添加访问记录标记到台湾地图（青色脉冲点）
+  const addVisitMarker = (lat, lng, visitId) => {
+    if (!taiwanMapRef.current || !window.AMap) return;
+
+    // 创建青色脉冲点动画效果的HTML
+    const html = `
+      <div class="visit-location-cyan-wrapper" style="z-index:1050;pointer-events:auto;">
+        <div class="visit-location-cyan"></div>
+      </div>
+    `;
+
+    const marker = new window.AMap.Marker({
+      content: html,
+      position: new window.AMap.LngLat(lng, lat),
+      offset: new window.AMap.Pixel(-12, -12), // 居中
+      zIndex: 1050,
+    });
+
+    marker.on('click', () => {
+      console.log('Visit marker clicked:', visitId);
+    });
+
+    marker.setMap(taiwanMapRef.current);
+    visitMarkersRef.current.push(marker);
+  };
+
+  // 创建访问记录标记（不直接添加到地图）
+  const createVisitMarker = (lat, lng, visitId) => {
+    if (!window.AMap) return null;
+
+    // 创建青色脉冲点动画效果的HTML
+    const html = `
+      <div class="visit-location-cyan-wrapper" style="z-index:1050;pointer-events:auto;">
+        <div class="visit-location-cyan"></div>
+      </div>
+    `;
+
+    const marker = new window.AMap.Marker({
+      content: html,
+      position: new window.AMap.LngLat(lng, lat),
+      offset: new window.AMap.Pixel(-12, -12), // 居中
+      zIndex: 1050,
+    });
+
+    marker.on('click', () => {
+      console.log('Visit marker clicked:', visitId);
+    });
+
+    return marker;
+  };
+
+  // 使用高性能方式加载大量访问记录（批量渲染）
+  const loadVisitLogsWithClusterer = async (visitsWithLocation) => {
+    if (!taiwanMapRef.current || !window.AMap) return;
+
+    try {
+      // 清除旧的聚合器
+      if (visitClustererRef.current) {
+        try {
+          if (typeof visitClustererRef.current.clearMarkers === 'function') {
+            visitClustererRef.current.clearMarkers();
+          } else if (typeof visitClustererRef.current.clear === 'function') {
+            visitClustererRef.current.clear();
+          }
+        } catch (e) {
+          console.warn('Failed to clear clusterer:', e);
+        }
+        visitClustererRef.current = null;
+      }
+
+      // 清除旧的普通标记
+      visitMarkersRef.current.forEach(marker => {
+        try {
+          marker.setMap(null);
+        } catch (e) {
+          console.warn('Failed to remove old visit marker:', e);
+        }
+      });
+      visitMarkersRef.current = [];
+
+      // 创建标记数组
+      const markers = [];
+      visitsWithLocation.forEach(visit => {
+        const lat = visit.location.lat;
+        const lng = visit.location.lng;
+        // 验证坐标（使用mainland范围，因为现在显示所有地区）
+        const validated = validateAndFixCoordinates(lat, lng, 'mainland');
+        const marker = createVisitMarker(validated.lat, validated.lng, visit.id);
+        if (marker) {
+          markers.push(marker);
+        }
+      });
+
+      // 尝试使用MarkerClusterer（如果可用）
+      // 高德地图v1.4.15可能不直接支持，需要加载插件
+      // 这里使用批量添加的方式，使用requestAnimationFrame分批渲染以提高性能
+      if (markers.length > 0) {
+        // 使用批量添加，但分批渲染以避免阻塞
+        const batchSize = 100; // 每批处理100个标记
+        let currentIndex = 0;
+
+        const addBatch = () => {
+          const endIndex = Math.min(currentIndex + batchSize, markers.length);
+          for (let i = currentIndex; i < endIndex; i++) {
+            markers[i].setMap(taiwanMapRef.current);
+            visitMarkersRef.current.push(markers[i]);
+          }
+          currentIndex = endIndex;
+
+          if (currentIndex < markers.length) {
+            // 使用requestAnimationFrame继续下一批
+            requestAnimationFrame(addBatch);
+          } else {
+            console.log(`已加载 ${markers.length} 个访问记录标记（批量模式）`);
+          }
+        };
+
+        // 开始批量添加
+        requestAnimationFrame(addBatch);
+      }
+    } catch (error) {
+      console.error('Failed to load visit logs with clusterer:', error);
+      // 回退到普通模式（分批）
+      console.log('回退到普通模式（分批）');
+      const batchSize = 100;
+      for (let i = 0; i < Math.min(visitsWithLocation.length, 1000); i += batchSize) {
+        const batch = visitsWithLocation.slice(i, i + batchSize);
+        setTimeout(() => {
+          batch.forEach(visit => {
+            const lat = visit.location.lat;
+            const lng = visit.location.lng;
+            const validated = validateAndFixCoordinates(lat, lng, 'mainland');
+            addVisitMarker(validated.lat, validated.lng, visit.id);
+          });
+        }, i / batchSize * 50); // 每批间隔50ms
+      }
+    }
+  };
+
+  // 加载访问记录并在地图上显示
+  const loadVisitLogs = async () => {
+    if (!taiwanMapRef.current || !window.AMap) {
+      // 如果地图还没初始化，延迟重试
+      setTimeout(loadVisitLogs, 1000);
+      return;
+    }
+
+    try {
+      const response = await getVisitLogs({ limit: 10000 }); // 增加限制以获取更多记录
+      if (response?.success && response.data && Array.isArray(response.data)) {
+        // 过滤出有位置信息的访问记录
+        const visitsWithLocation = response.data.filter(visit => 
+          visit.location && visit.location.lat && visit.location.lng
+        );
+
+        console.log(`已获取 ${visitsWithLocation.length} 个有位置信息的访问记录`);
+
+        // 根据数量选择显示方式
+        if (visitsWithLocation.length < 100) {
+          // 少量标记：使用普通Marker
+          // 清除旧标记和聚合器
+          if (visitClustererRef.current) {
+            visitClustererRef.current.clearMarkers();
+            visitClustererRef.current = null;
+          }
+          visitMarkersRef.current.forEach(marker => {
+            try {
+              marker.setMap(null);
+            } catch (e) {
+              console.warn('Failed to remove old visit marker:', e);
+            }
+          });
+          visitMarkersRef.current = [];
+
+          // 为每个访问记录添加地图标记
+          visitsWithLocation.forEach(visit => {
+            const lat = visit.location.lat;
+            const lng = visit.location.lng;
+            // 验证坐标（使用mainland范围，因为现在显示所有地区）
+            const validated = validateAndFixCoordinates(lat, lng, 'mainland');
+            addVisitMarker(validated.lat, validated.lng, visit.id);
+          });
+
+          console.log(`已加载 ${visitsWithLocation.length} 个访问记录标记（普通模式）`);
+        } else {
+          // 大量标记：使用MarkerClusterer聚合
+          loadVisitLogsWithClusterer(visitsWithLocation);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load visit logs:', error);
     }
   };
 

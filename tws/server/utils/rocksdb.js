@@ -274,7 +274,8 @@ export const NAMESPACES = {
   PREDICTION_MARKETS: 'predictionMarkets', // 预测市场题目
   PREDICTION_BETS: 'predictionBets', // 预测市场下注
   ORDER_BOOK: 'orderBook', // 交易市场挂单
-  TRADES: 'trades' // 交易市场成交记录
+  TRADES: 'trades', // 交易市场成交记录
+  VISIT_LOGS: 'visitLogs' // 访问记录
 };
 
 export default {
