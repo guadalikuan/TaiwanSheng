@@ -1,6 +1,6 @@
-# 使用 Node.js 18 Slim 版本作为基础镜像
-# Slim 版本更小，但包含运行 Node.js 所需的基本库
-FROM node:18-slim
+# 使用 Node.js 20 Slim 版本作为基础镜像
+# File API 在 Node 18 中是实验性的或不完全支持，升级到 Node 20 可解决 ReferenceError: File is not defined
+FROM node:20-slim
 
 # 安装构建依赖
 # RocksDB 是 C++ 编写的，npm install 时需要编译原生模块
