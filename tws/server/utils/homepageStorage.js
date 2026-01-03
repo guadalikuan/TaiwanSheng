@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, existsSync, renameSync } from 'fs';
+import { get, put } from './rocksdb.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { 
@@ -14,17 +15,11 @@ import { pushUpdate } from './sseManager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
 const DATA_DIR = join(__dirname, '../data');
 const HOMEPAGE_FILE = join(DATA_DIR, 'homepage.json');
+const HOMEPAGE_BAK_FILE = join(DATA_DIR, 'homepage.json.bak');
 
-// 确保数据目录存在
-const initDataDir = () => {
-  if (!existsSync(DATA_DIR)) {
-    mkdirSync(DATA_DIR, { recursive: true });
-  }
-  // 注意：默认数据创建现在在 readHomepageData() 中处理
-};
+let homepageCache = null;
 
 // 获取默认数据
 const getDefaultData = () => {
@@ -63,57 +58,50 @@ const getDefaultData = () => {
   };
 };
 
-// 读取首页数据
-const readHomepageData = () => {
-  initDataDir();
+// 初始化首页数据存储
+export const initHomepageStorage = async () => {
   try {
-    if (!existsSync(HOMEPAGE_FILE)) {
-      // 如果文件不存在，创建默认数据
-      const defaultData = getDefaultData();
-      writeFileSync(HOMEPAGE_FILE, JSON.stringify(defaultData, null, 2), 'utf8');
-      return defaultData;
-    }
-    
-    const data = readFileSync(HOMEPAGE_FILE, 'utf8');
-    const parsed = JSON.parse(data);
-    
-    // 验证数据完整性，如果缺少必要字段，使用默认值补充
-    const defaultData = getDefaultData();
-    return {
-      omega: { ...defaultData.omega, ...(parsed.omega || {}) },
-      market: { ...defaultData.market, ...(parsed.market || {}) },
-      map: {
-        ...defaultData.map,
-        ...(parsed.map || {}),
-        taiwan: {
-          ...defaultData.map.taiwan,
-          ...(parsed.map?.taiwan || {}),
-          walletLogs: parsed.map?.taiwan?.walletLogs || defaultData.map.taiwan.walletLogs
-        }
+    const data = await get('homepage', 'data');
+    if (data) {
+      homepageCache = data;
+      console.log('✅ Homepage data loaded from RocksDB');
+    } else {
+      if (existsSync(HOMEPAGE_FILE)) {
+        console.log('🔄 Migrating homepage.json to RocksDB...');
+        const fileData = JSON.parse(readFileSync(HOMEPAGE_FILE, 'utf8'));
+        homepageCache = { ...getDefaultData(), ...fileData };
+        await put('homepage', 'data', homepageCache);
+        renameSync(HOMEPAGE_FILE, HOMEPAGE_BAK_FILE);
+        console.log('✅ Homepage migration completed');
+      } else {
+        console.log('🆕 Initializing new homepage data in RocksDB');
+        homepageCache = getDefaultData();
+        await put('homepage', 'data', homepageCache);
       }
-    };
-  } catch (error) {
-    console.error('Error reading homepage data:', error);
-    // 返回默认数据而不是 null
-    const defaultData = getDefaultData();
-    // 尝试写入默认数据
-    try {
-      writeFileSync(HOMEPAGE_FILE, JSON.stringify(defaultData, null, 2), 'utf8');
-    } catch (writeError) {
-      console.error('Error writing default data:', writeError);
     }
-    return defaultData;
+  } catch (error) {
+    console.error('❌ Failed to init homepage storage:', error);
+    homepageCache = getDefaultData(); // Fallback
   }
 };
 
-// 写入首页数据
-const writeHomepageData = (data) => {
-  initDataDir();
+// 读取首页数据 (从缓存)
+const readHomepageData = () => {
+  if (!homepageCache) {
+    console.warn('⚠️ Homepage cache not initialized, returning default');
+    return getDefaultData();
+  }
+  return homepageCache;
+};
+
+// 写入首页数据 (异步)
+const writeHomepageData = async (data) => {
   try {
-    writeFileSync(HOMEPAGE_FILE, JSON.stringify(data, null, 2), 'utf8');
+    homepageCache = data; // Update cache immediately
+    await put('homepage', 'data', data);
     return true;
   } catch (error) {
-    console.error('Error writing homepage data:', error);
+    console.error('❌ Error writing homepage data to RocksDB:', error);
     return false;
   }
 };
@@ -142,10 +130,10 @@ const calculateRiskPremium = async () => {
     let currentPrice = null;
     
     try {
-      currentPrice = getCurrentPrice();
+      currentPrice = await getCurrentPrice();
       if (currentPrice !== null) {
-        priceChange24h = calculate24hPriceChange(currentPrice);
-        volume24h = calculate24hVolume();
+        priceChange24h = await calculate24hPriceChange(currentPrice);
+        volume24h = await calculate24hVolume();
       }
     } catch (error) {
       console.warn('Error getting market data for risk premium calculation:', error);
@@ -250,7 +238,7 @@ export const getOmegaData = async () => {
  * @param {Object} updates - 要更新的字段
  * @returns {Object|null} 更新后的数据
  */
-export const updateOmegaData = (updates) => {
+export const updateOmegaData = async (updates) => {
   const data = readHomepageData();
   if (!data) return null;
   
@@ -260,7 +248,7 @@ export const updateOmegaData = (updates) => {
     updatedAt: Date.now()
   };
   
-  if (writeHomepageData(data)) {
+  if (await writeHomepageData(data)) {
     // 推送 SSE 更新
     pushUpdate('omega', 'update', {
       riskPremium: data.omega.riskPremium,
@@ -277,9 +265,9 @@ export const updateOmegaData = (updates) => {
  * 添加Omega事件
  * @param {string} text - 事件文本
  * @param {string} [impact='NEUTRAL'] - 影响程度 (e.g. "+2h", "-1h", "NEUTRAL")
- * @returns {Object|null} 新事件
+ * @returns {Promise<Object|null>} 新事件
  */
-export const addOmegaEvent = (text, impact = 'NEUTRAL') => {
+export const addOmegaEvent = async (text, impact = 'NEUTRAL') => {
   const data = readHomepageData();
   if (!data) return null;
   
@@ -292,7 +280,7 @@ export const addOmegaEvent = (text, impact = 'NEUTRAL') => {
   
   data.omega.events = [newEvent, ...(data.omega.events || [])].slice(0, 8);
   
-  if (writeHomepageData(data)) {
+  if (await writeHomepageData(data)) {
     // 推送 SSE 更新（增量）
     pushUpdate('omega', 'incremental', {
       type: 'event',
@@ -435,7 +423,7 @@ export const getMarketData = () => {
  * @param {Object} updates - 要更新的字段
  * @returns {Object|null} 更新后的数据
  */
-export const updateMarketData = (updates) => {
+export const updateMarketData = async (updates) => {
   const data = readHomepageData();
   if (!data) return null;
   
@@ -445,7 +433,7 @@ export const updateMarketData = (updates) => {
     updatedAt: Date.now()
   };
   
-  if (writeHomepageData(data)) {
+  if (await writeHomepageData(data)) {
     // 推送 SSE 更新（如果包含价格相关数据）
     if (updates.currentPrice !== undefined || updates.priceChange24h !== undefined || updates.volume24h !== undefined) {
       pushUpdate('market', 'update', {
@@ -462,9 +450,9 @@ export const updateMarketData = (updates) => {
 /**
  * 添加K线数据点
  * @param {Object} klinePoint - K线数据点 {timestamp, open, high, low, close, volume}
- * @returns {boolean} 是否成功
+ * @returns {Promise<boolean>} 是否成功
  */
-export const addKlinePoint = (klinePoint) => {
+export const addKlinePoint = async (klinePoint) => {
   const data = readHomepageData();
   if (!data) return false;
   
@@ -482,16 +470,16 @@ export const addKlinePoint = (klinePoint) => {
     data.market.klineData = data.market.klineData.slice(-60);
   }
   
-  return writeHomepageData(data);
+  return await writeHomepageData(data);
 };
 
 /**
  * 添加交易记录（已废弃，现在使用订单撮合引擎的成交记录）
  * @param {Object} trade - 交易数据 {price, amount, type, time}
- * @returns {Object|null} 新交易
+ * @returns {Promise<Object|null>} 新交易
  * @deprecated 使用订单撮合引擎的成交记录
  */
-export const addMarketTrade = (trade) => {
+export const addMarketTrade = async (trade) => {
   // 这个方法现在主要用于兼容性，实际交易记录由订单撮合引擎管理
   const data = readHomepageData();
   if (!data) return null;
@@ -508,7 +496,7 @@ export const addMarketTrade = (trade) => {
   
   data.market.recentTrades = [newTrade, ...data.market.recentTrades].slice(0, 10);
   
-  if (writeHomepageData(data)) {
+  if (await writeHomepageData(data)) {
     return newTrade;
   }
   return null;
@@ -517,16 +505,16 @@ export const addMarketTrade = (trade) => {
 /**
  * 更新订单簿（已废弃，现在使用订单撮合引擎的订单簿）
  * @param {Object} orderBook - 订单簿 {asks: [], bids: []}
- * @returns {boolean} 是否成功
+ * @returns {Promise<boolean>} 是否成功
  * @deprecated 使用订单撮合引擎的订单簿
  */
-export const updateOrderBook = (orderBook) => {
+export const updateOrderBook = async (orderBook) => {
   // 这个方法现在主要用于兼容性，实际订单簿由订单撮合引擎管理
   const data = readHomepageData();
   if (!data) return false;
   
   data.market.orderBook = orderBook;
-  return writeHomepageData(data);
+  return await writeHomepageData(data);
 };
 
 /**
@@ -541,7 +529,7 @@ const calculateBlockHeight = async () => {
     // 获取交易数据
     let tradeCount = 0;
     try {
-      const recentTrades = getRecentTrades(10000);
+      const recentTrades = await getRecentTrades(10000);
       tradeCount = recentTrades.length;
     } catch (error) {
       console.warn('Error getting trades for block height calculation:', error);
@@ -589,7 +577,7 @@ export const getMapData = async () => {
  * @param {Object} updates - 要更新的字段
  * @returns {Object|null} 更新后的数据
  */
-export const updateMapData = (updates) => {
+export const updateMapData = async (updates) => {
   const data = readHomepageData();
   if (!data) return null;
   
@@ -599,7 +587,7 @@ export const updateMapData = (updates) => {
     updatedAt: Date.now()
   };
   
-  if (writeHomepageData(data)) {
+  if (await writeHomepageData(data)) {
     // 推送 SSE 更新
     pushUpdate('map', 'update', {
       taiwan: data.map.taiwan,
@@ -614,9 +602,9 @@ export const updateMapData = (updates) => {
 /**
  * 添加台湾连接日志
  * @param {string|Object} messageOrLog - 日志消息或完整日志对象
- * @returns {Object|null} 新日志
+ * @returns {Promise<Object|null>} 新日志
  */
-export const addTaiwanLog = (messageOrLog) => {
+export const addTaiwanLog = async (messageOrLog) => {
   const data = readHomepageData();
   if (!data) return null;
   
@@ -649,7 +637,7 @@ export const addTaiwanLog = (messageOrLog) => {
   data.map.taiwan.logs = [newLog, ...data.map.taiwan.logs].slice(0, 6);
   data.map.taiwan.nodeCount = (data.map.taiwan.nodeCount || 0) + 1;
   
-  if (writeHomepageData(data)) {
+  if (await writeHomepageData(data)) {
     // 推送 SSE 更新（增量）
     pushUpdate('map', 'incremental', {
       type: 'taiwanLog',
@@ -665,9 +653,9 @@ export const addTaiwanLog = (messageOrLog) => {
  * 添加资产确认日志
  * @param {string|Object} lotOrLog - 批次号或完整日志对象
  * @param {string} location - 位置（如果第一个参数是字符串）
- * @returns {Object|null} 新日志
+ * @returns {Promise<Object|null>} 新日志
  */
-export const addAssetLog = (lotOrLog, location) => {
+export const addAssetLog = async (lotOrLog, location) => {
   const data = readHomepageData();
   if (!data) return null;
   
@@ -703,7 +691,7 @@ export const addAssetLog = (lotOrLog, location) => {
   data.map.mainland.assetPoolValue = (data.map.mainland.assetPoolValue || 0) + (newLog.value || Math.floor(Math.random() * 500000));
   data.map.mainland.unitCount = (data.map.mainland.unitCount || 0) + 1;
   
-  if (writeHomepageData(data)) {
+  if (await writeHomepageData(data)) {
     // 推送 SSE 更新（增量）
     pushUpdate('map', 'incremental', {
       type: 'assetLog',

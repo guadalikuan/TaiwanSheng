@@ -25,9 +25,13 @@ import investmentRoutes from './routes/investments.js';
 import { startBackgroundTasks } from './utils/backgroundTasks.js';
 import { startScanning } from './utils/oracle.js';
 import { initTimeManager } from './utils/timeManager.js';
+import { initHistoryManager } from './utils/historyManager.js';
 import { securityMiddleware } from './middleware/security.js';
 import { initializeBotUsers } from './utils/botBehaviorSimulator.js';
-import { getBotUserStats, getActiveBotUsers } from './utils/botUserManager.js';
+import { getBotUserStats, getActiveBotUsers, initBotUserManager } from './utils/botUserManager.js';
+import { initHomepageStorage } from './utils/homepageStorage.js';
+import { initUserStorage } from './utils/userStorage.js';
+import { initStorage } from './utils/storage.js';
 import { getCurrentPrice, submitOrder, matchOrders } from './utils/orderMatchingEngine.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -438,24 +442,31 @@ const startServer = async () => {
   };
 
   // 初始化机器人用户池，然后启动后台任务
-  initializeBotUserPool().then(() => {
+  initializeBotUserPool().then(async () => {
+    // 初始化各个管理器（包括数据迁移）
+    console.log('🔄 Initializing storage managers...');
+    await initHistoryManager();
+    await initBotUserManager();
+    await initHomepageStorage();
+    await initUserStorage();
+    await initStorage();
+    await initTimeManager(); // initTimeManager now is async in my previous edit? let's check. Yes it is.
+
     // 初始化市场价格
     initializeMarketPrice();
-    // 初始化服务
-initTimeManager();
 
-// 启动后台任务
-startBackgroundTasks();
+    // 启动后台任务
+    startBackgroundTasks();
     console.log('\n✅ 所有服务已启动：');
     console.log('   ✓ Express API 服务器');
     console.log('   ✓ SSE (Server-Sent Events) 实时推送');
     console.log('   ✓ 后台数据生成任务（市场、订单簿、K线、地图、资产）');
     console.log('   ✓ 机器人用户池和调度器');
     console.log('   ✓ 订单撮合引擎');
-  }).catch(error => {
+  }).catch(async error => {
     console.error('⚠️  Error during initialization:', error);
     // 即使初始化失败，也初始化市场价格并启动后台任务
-    initializeMarketPrice();
+    await initializeMarketPrice();
     startBackgroundTasks();
     console.log('\n✅ 核心服务已启动（部分初始化失败）');
   });

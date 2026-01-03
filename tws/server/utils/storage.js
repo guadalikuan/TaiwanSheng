@@ -1,4 +1,16 @@
 import { put, get, getAll, getAllKeys, del, NAMESPACES, initRocksDB } from './rocksdb.js';
+import { readFileSync, existsSync, renameSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const DATA_DIR = join(__dirname, '../data');
+const RAW_ASSETS_FILE = join(DATA_DIR, 'rawAssets.json');
+const RAW_ASSETS_BAK_FILE = join(DATA_DIR, 'rawAssets.json.bak');
+const SANITIZED_ASSETS_FILE = join(DATA_DIR, 'sanitizedAssets.json');
+const SANITIZED_ASSETS_BAK_FILE = join(DATA_DIR, 'sanitizedAssets.json.bak');
 
 // 初始化RocksDB（如果尚未初始化）
 let dbInitialized = false;
@@ -9,10 +21,54 @@ const ensureDB = async () => {
   }
 };
 
-// 初始化数据文件（兼容性函数，实际使用RocksDB）
-const initDataFiles = async () => {
+// 初始化数据文件（迁移旧数据）
+export const initStorage = async () => {
   await ensureDB();
+  
+  try {
+    // 迁移原始资产
+    const rawAssets = await getAll(NAMESPACES.RAW_ASSETS);
+    if (rawAssets.length === 0 && existsSync(RAW_ASSETS_FILE)) {
+      console.log('🔄 Migrating rawAssets.json to RocksDB...');
+      const data = JSON.parse(readFileSync(RAW_ASSETS_FILE, 'utf8'));
+      if (Array.isArray(data)) {
+        for (const item of data) {
+          if (item.id) {
+            await put(NAMESPACES.RAW_ASSETS, item.id, item);
+          }
+        }
+      }
+      renameSync(RAW_ASSETS_FILE, RAW_ASSETS_BAK_FILE);
+      console.log('✅ Raw assets migration completed');
+    }
+
+    // 迁移脱敏资产
+    const sanitizedAssets = await getAll(NAMESPACES.SANITIZED_ASSETS);
+    if (sanitizedAssets.length === 0 && existsSync(SANITIZED_ASSETS_FILE)) {
+      console.log('🔄 Migrating sanitizedAssets.json to RocksDB...');
+      const data = JSON.parse(readFileSync(SANITIZED_ASSETS_FILE, 'utf8'));
+      if (Array.isArray(data)) {
+        for (const item of data) {
+          if (item.id) {
+            await put(NAMESPACES.SANITIZED_ASSETS, item.id, item);
+            
+            // 建立索引
+            const assetType = item.assetType || '房产';
+            const typeKey = `${assetType}:${item.id}`;
+            await put(NAMESPACES.ASSETS_BY_TYPE, typeKey, item.id);
+          }
+        }
+      }
+      renameSync(SANITIZED_ASSETS_FILE, SANITIZED_ASSETS_BAK_FILE);
+      console.log('✅ Sanitized assets migration completed');
+    }
+  } catch (error) {
+    console.error('❌ Storage migration failed:', error);
+  }
 };
+
+// 兼容旧接口
+const initDataFiles = initStorage;
 
 // 读取原始资产数据
 export const getRawAssets = async () => {

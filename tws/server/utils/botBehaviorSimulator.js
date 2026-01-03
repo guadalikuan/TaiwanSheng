@@ -46,7 +46,7 @@ export const simulateUserRegistration = async () => {
     
     // 生成Omega事件
     const eventText = `[TRIGGER] New user registered: ${botUser.username} (${role})`;
-    addOmegaEvent(eventText);
+    await addOmegaEvent(eventText);
     
     console.log(`🤖 Bot user registered: ${botUser.username} (${role})`);
     return botUser;
@@ -123,11 +123,11 @@ export const simulateAssetSubmission = async () => {
     }
     
     // 记录机器人行为
-    recordBotAction(botUser.id, 'submit_asset');
+    await recordBotAction(botUser.id, 'submit_asset');
     
     // 生成Omega事件
     const eventText = `[TRIGGER] Asset submitted: ${sanitizedAsset.codeName} from ${city}`;
-    addOmegaEvent(eventText);
+    await addOmegaEvent(eventText);
     
     console.log(`📦 Bot asset submitted: ${sanitizedAsset.codeName} by ${botUser.username}`);
     return sanitizedAsset;
@@ -177,11 +177,11 @@ export const simulateAssetPurchase = async () => {
     });
     
     // 记录机器人行为
-    recordBotAction(botUser.id, 'purchase_asset');
+    await recordBotAction(botUser.id, 'purchase_asset');
     
     // 生成Omega事件
     const eventText = `[TRIGGER] Asset purchased: ${selectedAsset.codeName || selectedAsset.id} by ${botUser.username}`;
-    addOmegaEvent(eventText);
+    await addOmegaEvent(eventText);
     
     console.log(`💰 Bot asset purchased: ${selectedAsset.codeName || selectedAsset.id} by ${botUser.username}`);
     return {
@@ -211,7 +211,7 @@ export const simulateOrderSubmission = async () => {
     }
     
     // 获取当前市场价格
-    let currentPrice = getCurrentPrice();
+    let currentPrice = await getCurrentPrice();
     
     // 如果没有当前价格，使用默认价格（100）
     if (!currentPrice) {
@@ -240,19 +240,19 @@ export const simulateOrderSubmission = async () => {
     };
     
     // 提交订单到订单簿
-    submitOrder(order);
+    await submitOrder(order);
     
     // 立即尝试撮合订单
-    const matchedTrades = matchOrders();
+    const matchedTrades = await matchOrders();
     
     // 记录机器人行为
-    recordBotAction(botUser.id, isBuy ? 'submit_buy_order' : 'submit_sell_order');
+    await recordBotAction(botUser.id, isBuy ? 'submit_buy_order' : 'submit_sell_order');
     
     // 如果有成交，生成Omega事件
     if (matchedTrades.length > 0) {
       const trade = matchedTrades[0];
       const eventText = `[TRIGGER] Trade executed: ${trade.amount.toFixed(2)} @ ${trade.price.toFixed(2)} by ${botUser.username}`;
-      addOmegaEvent(eventText);
+      await addOmegaEvent(eventText);
       console.log(`💱 Bot order matched: ${order.type} ${order.amount} @ ${order.price} by ${botUser.username}`);
     } else {
       console.log(`📝 Bot order submitted: ${order.type} ${order.amount} @ ${order.price} by ${botUser.username}`);
@@ -271,9 +271,9 @@ export const simulateOrderSubmission = async () => {
 
 /**
  * 生成Omega事件（基于系统状态）
- * @returns {Object|null} 生成的事件或 null
+ * @returns {Promise<Object|null>} 生成的事件或 null
  */
-export const generateOmegaEvent = () => {
+export const generateOmegaEvent = async () => {
   try {
     const stats = getBotUserStats();
     
@@ -293,7 +293,7 @@ export const generateOmegaEvent = () => {
     
     // 随机选择一个模板
     const template = eventTemplates[random(0, eventTemplates.length - 1)];
-    const event = addOmegaEvent(template);
+    const event = await addOmegaEvent(template);
     
     console.log(`⚡ Omega event generated: ${template}`);
     return event;

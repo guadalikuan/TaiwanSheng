@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { get, put, del, getAllWithPrefix } from './rocksdb.js';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { generateMnemonic, getAddressFromMnemonic } from './web3.js';
@@ -12,37 +13,75 @@ const __dirname = dirname(__filename);
 
 const DATA_DIR = join(__dirname, '../data');
 const BOT_USERS_FILE = join(DATA_DIR, 'botUsers.json');
+const BOT_USERS_BAK_FILE = join(DATA_DIR, 'botUsers.json.bak');
 
-// 确保数据目录存在
-const initDataDir = () => {
-  if (!existsSync(DATA_DIR)) {
-    mkdirSync(DATA_DIR, { recursive: true });
-  }
-  if (!existsSync(BOT_USERS_FILE)) {
-    writeFileSync(BOT_USERS_FILE, JSON.stringify([], null, 2), 'utf8');
+let botUsersCache = [];
+
+/**
+ * 初始化机器人用户管理器
+ * 负责从文件迁移数据到RocksDB，并加载数据到内存缓存
+ */
+export const initBotUserManager = async () => {
+  try {
+    // 确保数据目录存在
+    if (!existsSync(DATA_DIR)) {
+      mkdirSync(DATA_DIR, { recursive: true });
+    }
+
+    // 迁移逻辑：如果存在旧的JSON文件，将其迁移到RocksDB
+    if (existsSync(BOT_USERS_FILE)) {
+      console.log('🔄 Migrating botUsers.json to RocksDB...');
+      try {
+        const raw = readFileSync(BOT_USERS_FILE, 'utf8');
+        const oldBotUsers = JSON.parse(raw);
+        if (Array.isArray(oldBotUsers)) {
+          for (const bot of oldBotUsers) {
+            if (bot.id) {
+              await put('botUser', bot.id, bot);
+            }
+          }
+        }
+        renameSync(BOT_USERS_FILE, BOT_USERS_BAK_FILE);
+        console.log('✅ Bot users migration completed');
+      } catch (e) {
+        console.error('❌ Bot users migration failed:', e);
+      }
+    }
+
+    // 从 RocksDB 加载机器人用户
+    const items = await getAllWithPrefix('botUser');
+    botUsersCache = items;
+    console.log(`🤖 Bot users loaded from RocksDB: ${botUsersCache.length} users`);
+
+  } catch (error) {
+    console.error('❌ Init bot user manager failed:', error);
   }
 };
 
-// 读取所有机器人用户
+/**
+ * 获取所有机器人用户（从缓存）
+ */
 const readBotUsers = () => {
-  initDataDir();
-  try {
-    const data = readFileSync(BOT_USERS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading bot users:', error);
-    return [];
-  }
+  return botUsersCache;
 };
 
-// 写入所有机器人用户
-const writeBotUsers = (botUsers) => {
-  initDataDir();
+/**
+ * 保存机器人用户（更新缓存并异步写入RocksDB）
+ */
+const saveBotUser = async (botUser) => {
+  // 更新缓存
+  const index = botUsersCache.findIndex(b => b.id === botUser.id);
+  if (index !== -1) {
+    botUsersCache[index] = botUser;
+  } else {
+    botUsersCache.push(botUser);
+  }
+
+  // 写入RocksDB
   try {
-    writeFileSync(BOT_USERS_FILE, JSON.stringify(botUsers, null, 2), 'utf8');
+    await put('botUser', botUser.id, botUser);
   } catch (error) {
-    console.error('Error writing bot users:', error);
-    throw error;
+    console.error('❌ Failed to save bot user to RocksDB:', error);
   }
 };
 
@@ -95,9 +134,7 @@ export const createBotUser = async (options = {}) => {
   };
 
   // 保存到机器人用户列表
-  const botUsers = readBotUsers();
-  botUsers.push(botUser);
-  writeBotUsers(botUsers);
+  await saveBotUser(botUser);
 
   // 同时保存到主用户系统（这样机器人可以正常使用系统功能）
   const systemUser = {
@@ -185,9 +222,9 @@ export const getRandomBotUser = (options = {}) => {
  * 更新机器人用户的行为记录
  * @param {string} botId - 机器人ID
  * @param {string} actionType - 操作类型
- * @returns {Object|null} 更新后的机器人用户或 null
+ * @returns {Promise<Object|null>} 更新后的机器人用户或 null
  */
-export const recordBotAction = (botId, actionType) => {
+export const recordBotAction = async (botId, actionType) => {
   const botUsers = readBotUsers();
   const index = botUsers.findIndex(bot => bot.id === botId);
   
@@ -198,7 +235,7 @@ export const recordBotAction = (botId, actionType) => {
   botUsers[index].behaviorProfile.lastActionTime = Date.now();
   botUsers[index].behaviorProfile.actionCount = (botUsers[index].behaviorProfile.actionCount || 0) + 1;
   
-  writeBotUsers(botUsers);
+  await saveBotUser(botUsers[index]);
   return botUsers[index];
 };
 
@@ -228,9 +265,9 @@ export const getBotUserStats = () => {
 /**
  * 停用机器人用户
  * @param {string} botId - 机器人ID
- * @returns {boolean} 是否成功
+ * @returns {Promise<boolean>} 是否成功
  */
-export const deactivateBotUser = (botId) => {
+export const deactivateBotUser = async (botId) => {
   const botUsers = readBotUsers();
   const index = botUsers.findIndex(bot => bot.id === botId);
   
@@ -239,16 +276,16 @@ export const deactivateBotUser = (botId) => {
   }
   
   botUsers[index].isActive = false;
-  writeBotUsers(botUsers);
+  await saveBotUser(botUsers[index]);
   return true;
 };
 
 /**
  * 激活机器人用户
  * @param {string} botId - 机器人ID
- * @returns {boolean} 是否成功
+ * @returns {Promise<boolean>} 是否成功
  */
-export const activateBotUser = (botId) => {
+export const activateBotUser = async (botId) => {
   const botUsers = readBotUsers();
   const index = botUsers.findIndex(bot => bot.id === botId);
   
@@ -257,7 +294,7 @@ export const activateBotUser = (botId) => {
   }
   
   botUsers[index].isActive = true;
-  writeBotUsers(botUsers);
+  await saveBotUser(botUsers[index]);
   return true;
 };
 

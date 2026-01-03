@@ -357,7 +357,7 @@ export const scanNewsSources = async () => {
     });
 
     // 记录到历史（去重用）
-    addToHistory({
+    await addToHistory({
       url: news.url,
       title: news.title,
       timestamp: Date.now(),
@@ -384,12 +384,12 @@ export const scanNewsSources = async () => {
     
     data.omega.events.unshift(newEvent);
     if (data.omega.events.length > 20) data.omega.events.pop(); // Keep last 20
-    writeHomepageData(data);
+    await writeHomepageData(data);
   }
   
   // 更新总时间偏移
   if (totalTimeAdjustment !== 0) {
-    const newTarget = adjustTime(totalTimeAdjustment, 'AI Analysis', 'Oracle');
+    const newTarget = await adjustTime(totalTimeAdjustment, 'AI Analysis', 'Oracle');
     console.log(`⏱️ 倒计时调整: ${totalTimeAdjustment / (3600000)} 小时`);
     
     // 读取最新事件

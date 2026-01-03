@@ -1,6 +1,7 @@
 import bloomFilters from 'bloom-filters';
 const { BloomFilter } = bloomFilters;
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { get, put, del, getAllWithPrefix } from './rocksdb.js';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -9,42 +10,55 @@ const __dirname = dirname(__filename);
 
 const DATA_DIR = join(__dirname, '../data');
 const HISTORY_FILE = join(DATA_DIR, 'history.json');
+const HISTORY_BAK_FILE = join(DATA_DIR, 'history.json.bak');
 
 // 初始化布隆过滤器
-// bloom-filters 库的 BloomFilter 构造函数参数为 (size, nbHashes)
-// 或者使用静态方法 create(expectedItems, errorRate)
-// 这里我们改用 create 方法，因为它更直观
 const bloomFilter = BloomFilter.create(10000, 0.01);
 let historyCache = [];
 
 /**
  * 初始化历史记录管理器
  */
-export const initHistoryManager = () => {
+export const initHistoryManager = async () => {
   try {
     // 确保数据目录存在
     if (!existsSync(DATA_DIR)) {
       mkdirSync(DATA_DIR, { recursive: true });
     }
 
+    // 迁移逻辑：如果存在旧的JSON文件，将其迁移到RocksDB
     if (existsSync(HISTORY_FILE)) {
-      const raw = readFileSync(HISTORY_FILE, 'utf8');
+      console.log('🔄 Migrating history.json to RocksDB...');
       try {
-        historyCache = JSON.parse(raw);
-        if (!Array.isArray(historyCache)) {
-          historyCache = [];
+        const raw = readFileSync(HISTORY_FILE, 'utf8');
+        const oldHistory = JSON.parse(raw);
+        if (Array.isArray(oldHistory)) {
+           for (const item of oldHistory) {
+             if (item.url) {
+               // 使用URL作为key的一部分，确保唯一性
+               await put('history', item.url, item);
+             }
+           }
         }
+        renameSync(HISTORY_FILE, HISTORY_BAK_FILE);
+        console.log('✅ History migration completed');
       } catch (e) {
-        console.error('⚠️ 解析 history.json 失败，重置为空', e);
-        historyCache = [];
+        console.error('❌ Migration failed:', e);
       }
-    } else {
-      historyCache = [];
-      saveHistory(); // 创建空文件
     }
 
-    // 将现有历史记录加载到布隆过滤器
-    console.log(`📚 加载历史记录: ${historyCache.length} 条`);
+    // 从 RocksDB 加载历史记录
+    const items = await getAllWithPrefix('history');
+    // 按时间戳倒序排序（最新在前）
+    historyCache = items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    // 限制缓存大小为1000条，避免内存过大
+    if (historyCache.length > 1000) {
+      historyCache = historyCache.slice(0, 1000);
+    }
+
+    // 将加载的历史记录添加到布隆过滤器
+    console.log(`📚 History loaded from RocksDB: ${historyCache.length} items`);
     historyCache.forEach(item => {
       if (item.url) {
         bloomFilter.add(item.url);
@@ -52,18 +66,7 @@ export const initHistoryManager = () => {
     });
 
   } catch (error) {
-    console.error('❌ 初始化历史管理器失败:', error);
-  }
-};
-
-/**
- * 保存历史记录到磁盘
- */
-const saveHistory = () => {
-  try {
-    writeFileSync(HISTORY_FILE, JSON.stringify(historyCache, null, 2), 'utf8');
-  } catch (error) {
-    console.error('❌ 保存 history.json 失败:', error);
+    console.error('❌ Init history manager failed:', error);
   }
 };
 
@@ -77,19 +80,18 @@ export const isDuplicate = (url) => {
   if (!url) return false;
 
   // 1. 布隆过滤器初筛 (O(1))
-  // 如果布隆过滤器说"不存在"，那就一定不存在
   if (!bloomFilter.has(url)) {
     return false;
   }
 
-  // 2. 如果布隆过滤器说"存在"，可能是误判，需要查 historyCache 二次核实 (O(n))
-  // 考虑到 historyCache 在内存中，且数量级不大，性能可以接受
+  // 2. 二次核实 (O(n))
+  // 注意：如果历史记录超过缓存大小(1000)，这里只能检查最近的1000条
+  // 对于非常老的重复新闻，可能会漏掉检查，但RocksDB里有全量数据
+  // 如果需要严格去重，可能需要查RocksDB，但这会变成异步
+  // 目前保持同步接口，仅依赖缓存
   const exists = historyCache.some(item => item.url === url);
   
   if (!exists) {
-    // 这种情况就是布隆过滤器的误判（False Positive）
-    // 虽然 bloomFilter 认为存在，但实际记录里没有
-    // 这种情况极少发生，但为了严谨我们允许通过
     return false;
   }
 
@@ -100,26 +102,27 @@ export const isDuplicate = (url) => {
  * 添加新记录到历史
  * @param {object} item - 历史记录项 { url, title, timestamp, analysis }
  */
-export const addToHistory = (item) => {
+export const addToHistory = async (item) => {
   if (!item || !item.url) return;
 
   // 1. 添加到内存缓存
   historyCache.unshift(item); // 最新在前
 
-  // 保持历史记录长度在合理范围 (例如最近 1000 条)
+  // 保持历史记录长度在合理范围
   if (historyCache.length > 1000) {
     historyCache = historyCache.slice(0, 1000);
-    // 注意：布隆过滤器不支持删除，所以如果这里删除了旧记录，
-    // 布隆过滤器里依然会有。但这不影响"去重"的核心逻辑，
-    // 只会轻微增加"误判为存在"的概率（然后被二次核实拦截），这是可接受的。
   }
 
   // 2. 添加到布隆过滤器
   bloomFilter.add(item.url);
 
-  // 3. 持久化
-  saveHistory();
+  // 3. 持久化到 RocksDB
+  try {
+    await put('history', item.url, item);
+  } catch (error) {
+    console.error('❌ Failed to save history to RocksDB:', error);
+  }
 };
 
-// 立即初始化
-initHistoryManager();
+// 注意：initHistoryManager现在是异步的，需要在服务器启动时调用
+// 这里不再自动调用，而是由外部调用

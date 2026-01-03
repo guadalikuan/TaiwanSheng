@@ -287,7 +287,7 @@ const OmegaSection = () => {
           <div className="mt-1.5 md:mt-2 text-center">
             <p className="text-gray-400 text-[10px] md:text-xs uppercase tracking-[0.3em] md:tracking-[0.4em] font-mono">Current Risk Premium</p>
             <p className="text-2xl md:text-4xl text-white font-bold tracking-tight">
-              +{premium.toFixed(1)}% <span className="text-green-500 text-base md:text-lg">▲</span>
+              +{(premium || 0).toFixed(1)}% <span className="text-green-500 text-base md:text-lg">▲</span>
             </p>
           </div>
         </div>

@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { get, put } from './rocksdb.js';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { pushUpdate } from './sseManager.js';
@@ -8,6 +9,7 @@ const __dirname = dirname(__filename);
 
 const DATA_DIR = join(__dirname, '../data');
 const TIME_FILE = join(DATA_DIR, 'time.json');
+const TIME_BAK_FILE = join(DATA_DIR, 'time.json.bak');
 
 // 初始默认目标时间：2027年12月31日
 const DEFAULT_TARGET_DATE = '2027-12-31T00:00:00.000Z';
@@ -18,7 +20,7 @@ let timeData = null;
  * 初始化时间管理器
  * 检查是否存在 time.json，不存在则创建
  */
-export const initTimeManager = () => {
+export const initTimeManager = async () => {
   try {
     // 确保数据目录存在
     if (!existsSync(DATA_DIR)) {
@@ -26,12 +28,27 @@ export const initTimeManager = () => {
       mkdirSync(DATA_DIR, { recursive: true });
     }
 
+    // 迁移逻辑
     if (existsSync(TIME_FILE)) {
-      const raw = readFileSync(TIME_FILE, 'utf8');
-      timeData = JSON.parse(raw);
-      console.log('🕒 加载现有倒计时配置:', new Date(timeData.targetTime).toISOString());
+      console.log('🔄 Migrating time.json to RocksDB...');
+      try {
+        const raw = readFileSync(TIME_FILE, 'utf8');
+        const oldTimeData = JSON.parse(raw);
+        await put('system', 'timeData', oldTimeData);
+        renameSync(TIME_FILE, TIME_BAK_FILE);
+        console.log('✅ Time data migration completed');
+      } catch (e) {
+        console.error('❌ Time data migration failed:', e);
+      }
+    }
+
+    // 从 RocksDB 加载
+    const storedData = await get('system', 'timeData');
+    if (storedData) {
+      timeData = storedData;
+      console.log('🕒 Loaded time data from RocksDB:', new Date(timeData.targetTime).toISOString());
     } else {
-      console.log('🆕 初始化新的倒计时配置...');
+      console.log('🆕 Initializing new time data in RocksDB...');
       const targetTime = new Date(DEFAULT_TARGET_DATE).getTime();
       timeData = {
         targetTime: targetTime,
@@ -39,7 +56,7 @@ export const initTimeManager = () => {
         lastUpdated: new Date().toISOString(),
         history: [] // 记录最近几次调整
       };
-      saveTimeData();
+      await saveTimeData();
     }
   } catch (error) {
     console.error('Failed to init TimeManager:', error);
@@ -54,18 +71,15 @@ export const initTimeManager = () => {
 };
 
 /**
- * 保存数据到磁盘
+ * 保存数据到RocksDB
  */
-const saveTimeData = () => {
+const saveTimeData = async () => {
   try {
-    // 再次确保目录存在
-    if (!existsSync(DATA_DIR)) {
-      mkdirSync(DATA_DIR, { recursive: true });
+    if (timeData) {
+      await put('system', 'timeData', timeData);
     }
-    writeFileSync(TIME_FILE, JSON.stringify(timeData, null, 2), 'utf8');
-    console.log('💾 时间数据已保存至 time.json');
   } catch (error) {
-    console.error('Failed to save time.json:', error);
+    console.error('Failed to save time data to RocksDB:', error);
   }
 };
 
@@ -73,7 +87,9 @@ const saveTimeData = () => {
  * 获取当前目标时间
  */
 export const getTargetTime = () => {
-  if (!timeData) initTimeManager();
+  // 如果尚未初始化，返回默认值或抛出错误
+  // 注意：initTimeManager现在是异步的，应该在服务器启动时调用
+  if (!timeData) return new Date(DEFAULT_TARGET_DATE).getTime();
   return timeData.targetTime;
 };
 
@@ -83,8 +99,8 @@ export const getTargetTime = () => {
  * @param {string} reason - 调整原因
  * @param {string} source - 来源 (e.g., 'Oracle', 'Market')
  */
-export const adjustTime = (ms, reason, source = 'System') => {
-  if (!timeData) initTimeManager();
+export const adjustTime = async (ms, reason, source = 'System') => {
+  if (!timeData) await initTimeManager();
 
   if (ms === 0) return timeData.targetTime;
 
@@ -106,7 +122,7 @@ export const adjustTime = (ms, reason, source = 'System') => {
     timeData.history.pop();
   }
 
-  saveTimeData();
+  await saveTimeData();
 
   console.log(`⏱️ 时间调整: ${ms > 0 ? '+' : ''}${ms/1000/60}分钟 (${reason}) -> 新目标: ${new Date(timeData.targetTime).toISOString()}`);
 
@@ -122,6 +138,5 @@ export const adjustTime = (ms, reason, source = 'System') => {
  * 获取完整时间数据
  */
 export const getTimeData = () => {
-  if (!timeData) initTimeManager();
   return timeData;
 };

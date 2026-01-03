@@ -46,7 +46,7 @@ router.get('/omega', async (req, res) => {
 });
 
 // POST /api/homepage/omega/event - 添加Omega事件（用于模拟）
-router.post('/omega/event', (req, res) => {
+router.post('/omega/event', async (req, res) => {
   try {
     const { text } = req.body;
     if (!text) {
@@ -55,7 +55,7 @@ router.post('/omega/event', (req, res) => {
         error: 'Event text is required'
       });
     }
-    const event = addOmegaEvent(text);
+    const event = await addOmegaEvent(text);
     if (event) {
       res.json({
         success: true,
@@ -133,7 +133,7 @@ router.get('/market', (req, res) => {
 });
 
 // POST /api/homepage/market/trade - 添加交易记录（用于模拟）
-router.post('/market/trade', (req, res) => {
+router.post('/market/trade', async (req, res) => {
   try {
     const { price, amount, type, time } = req.body;
     if (!price || !amount || !type) {
@@ -142,7 +142,7 @@ router.post('/market/trade', (req, res) => {
         error: 'Price, amount, and type are required'
       });
     }
-    const trade = addMarketTrade({
+    const trade = await addMarketTrade({
       price: String(price),
       amount: String(amount),
       type,
@@ -194,7 +194,7 @@ router.get('/map', async (req, res) => {
 });
 
 // POST /api/homepage/map/node - 添加台湾节点连接（用于模拟）
-router.post('/map/node', (req, res) => {
+router.post('/map/node', async (req, res) => {
   try {
     const { message } = req.body;
     if (!message) {
@@ -203,7 +203,7 @@ router.post('/map/node', (req, res) => {
         error: 'Message is required'
       });
     }
-    const log = addTaiwanLog(message);
+    const log = await addTaiwanLog(message);
     if (log) {
       res.json({
         success: true,
@@ -226,7 +226,7 @@ router.post('/map/node', (req, res) => {
 });
 
 // POST /api/homepage/map/asset - 添加资产确认
-router.post('/map/asset', (req, res) => {
+router.post('/map/asset', async (req, res) => {
   try {
     const { lot, location, value } = req.body;
     if (!location || (!location.lat && !location.lng)) {
@@ -242,7 +242,7 @@ router.post('/map/asset', (req, res) => {
       value: value,
       timestamp: Date.now()
     };
-    const log = addAssetLog(logData);
+    const log = await addAssetLog(logData);
     if (log) {
       res.json({
         success: true,
@@ -393,7 +393,7 @@ router.get('/assets', async (req, res) => {
 router.get('/all', async (req, res) => {
   try {
     const omega = await getOmegaData();
-    const market = getMarketData();
+    const market = await getMarketData();
     const map = await getMapData();
     
     // 获取资产数据（使用与/assets相同的逻辑）

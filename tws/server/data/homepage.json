@@ -4,148 +4,164 @@
     "riskPremium": 142.5,
     "events": [
       {
-        "id": "5c8a3a3f-a962-4b55-a918-0de0227697f7",
-        "text": "涉及社會民生多個領域 一批新規今起正式施行",
+        "id": "ce965cfb-0ee8-49bc-b50b-cbac92d80710",
+        "text": "Asia Pacific",
         "impact": "NEUTRAL",
         "score": 50,
         "reason": "常规报道",
-        "timestamp": 1767258007105
+        "timestamp": 1767429455857
       },
       {
-        "id": "04f5c47e-270b-40ac-8fcd-1db7bfb03e53",
-        "text": "視頻堶中老鐵路開通運營滿四年 跨境果蔬運輸需求旺盛",
+        "id": "94595752-03dd-4681-8467-a52ce9b06a27",
+        "text": "Russia-Ukraine War",
         "impact": "NEUTRAL",
         "score": 50,
         "reason": "常规报道",
-        "timestamp": 1767258005978
+        "timestamp": 1767429454477
       },
       {
-        "id": "c1e4f5d7-90df-41e1-a417-5c48e5d8ae04",
-        "text": "多地多部門持續強化運能保障 確保民眾元旦假期出行順暢",
+        "id": "39a14fec-27ca-4625-a82c-59a8a09409a1",
+        "text": "Israel-Hamas War",
         "impact": "NEUTRAL",
         "score": 50,
         "reason": "常规报道",
-        "timestamp": 1767258002789
+        "timestamp": 1767429453078
       },
       {
-        "id": "dd01476d-2c5e-4ea1-a980-23cd68666223",
-        "text": "網絡安全法修訂： 為智能時代織就安全法治之網",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767164408276
-      },
-      {
-        "id": "1ea364ae-6057-49c6-8ac1-de3f8f7ac7e5",
-        "text": "從國博鳳冠到英歌舞，血脈里的國風DNA動了。一絲一線，織就千年風雅　一餐一飲，品味煙火人間",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767164406725
-      },
-      {
-        "id": "b1736457-c584-45a4-9d1f-9e8d323c2115",
-        "text": "2025→2026，接力向前！",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767164405499
-      },
-      {
-        "id": "acb121a4-c0eb-403f-bb6a-d0410fa8b095",
-        "text": "優化支持范圍！2026年“兩新”政策部署來了",
-        "impact": "NEUTRAL",
-        "score": 50,
-        "reason": "常规报道",
-        "timestamp": 1767106808652
-      },
-      {
-        "id": "a90d52bb-93c3-4887-88b7-474b9eeb1e32",
-        "text": "2026年農業強國建設，“施工圖”來了！",
+        "id": "4caef423-ddb0-4707-86b5-d5fb0ac22fb0",
+        "text": "第五届“携手圆梦——两岸同胞交流研讨活动”在四川举行",
         "impact": "+40h",
         "score": 0,
-        "reason": "该消息是关于中国农业发展的积极新闻，与台海局势无直接关联。",
-        "timestamp": 1767106807400
+        "reason": "该新闻标题反映了两岸同胞的交流研讨活动，有助于增进理解和信任，对台海局势产生积极影响。",
+        "timestamp": 1767429451752
       },
       {
-        "id": "75fdc3b8-a722-4fef-924b-9469792efcb9",
-        "text": "促進就業增收為消費添動力",
+        "id": "4989baaf-d162-4975-923e-55b6b72b5d59",
+        "text": "2025年全国台协会长座谈会在北京举行",
+        "impact": "NEUTRAL",
+        "score": 45,
+        "reason": "该消息是台海地区正常的交流活动，没有直接涉及敏感议题或冲突升级，因此对局势的影响偏中性。",
+        "timestamp": 1767429449930
+      },
+      {
+        "id": "838380fa-f07c-4b88-b459-2ca8029f8682",
+        "text": "中共中央台湾工作办公室、国务院台湾事务办公室",
+        "impact": "NEUTRAL",
+        "score": 40,
+        "reason": "该消息标题涉及台湾工作办公室和国务院台湾事务办公室，表明中央层面对台海局势的关注和积极作为，有助于维护两岸关系和平稳定，促进交流合作，降低紧张程度。",
+        "timestamp": 1767429447723
+      },
+      {
+        "id": "08fdf5eb-50b0-437b-9287-669b54d0b66e",
+        "text": "Press Products",
         "impact": "NEUTRAL",
         "score": 50,
         "reason": "常规报道",
-        "timestamp": 1767106805313
+        "timestamp": 1767428979275
       },
       {
-        "id": "7eeba8a3-4cde-4ef4-b9cc-bf0e7f3eaad3",
-        "text": "深耕中國堶2025，外資“不見外”，創新是錨點",
+        "id": "f8f3d4da-c9c4-4e37-a450-63a295c52840",
+        "text": "Place Holder",
         "impact": "NEUTRAL",
         "score": 50,
         "reason": "常规报道",
-        "timestamp": 1767103207536
+        "timestamp": 1767428977969
       },
       {
-        "id": "1cf8decf-5393-4a0a-a94b-032b0aa86588",
-        "text": "年終特稿堶2025，以中國方案作答“世界之問”",
+        "id": "1296123c-64ee-4e40-82fa-be1ac6d6a8a6",
+        "text": "U.S. DepartmentofWar",
         "impact": "NEUTRAL",
         "score": 50,
         "reason": "常规报道",
-        "timestamp": 1767103206196
+        "timestamp": 1767428976839
       },
       {
-        "id": "2c29915b-0b26-4033-802d-40f41e9953e0",
-        "text": "【社論】服務消費提質擴容，點燃消費新引擎",
+        "id": "495e7f41-f278-4fa0-b1df-bf7b7da49700",
+        "text": "微视频｜中国，加速向新",
+        "impact": "NEUTRAL",
+        "score": 45,
+        "reason": "该新闻标题主要表达的是中国在发展进步，没有直接涉及台海局势的紧张或缓和，因此打分为中性偏正面。",
+        "timestamp": 1767428975435
+      },
+      {
+        "id": "53548a7c-b759-4d30-87dc-5b8169c9089d",
+        "text": "习主席新年贺词展现欣欣向荣的中国",
         "impact": "NEUTRAL",
         "score": 50,
         "reason": "常规报道",
-        "timestamp": 1767103204900
+        "timestamp": 1767428973303
       },
       {
-        "id": "1766914328037-5uxb3ks",
-        "text": "[TRIGGER] Trade executed: 0.30 @ 12045532.78 by bot_user_kbdgzy",
+        "id": "3685e637-d435-4c8b-93fd-0df48336dd67",
+        "text": "很不平凡的2025，总书记带领我们乘势而上",
         "impact": "NEUTRAL",
-        "timestamp": 1766914328037
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767428971703
       },
       {
-        "id": "1766914324642-d5posne",
-        "text": "[TRIGGER] Trade executed: 10.14 @ 12045532.78 by bot_user_2vldam",
-        "impact": "NEUTRAL",
-        "timestamp": 1766914324642
+        "id": "93027d21-ab7d-4823-b254-839e04cb20ac",
+        "text": "台湾民意机构通过赖清德弹劾提案 明年1月将举办公听会",
+        "impact": "-35h",
+        "score": 95,
+        "reason": "该新闻涉及台湾内部政治操作，可能加剧两岸对立情绪，对台海和平稳定构成潜在风险。",
+        "timestamp": 1767426870064
       },
       {
-        "id": "1766914322858-lh093bi",
-        "text": "[TRIGGER] Trade executed: 76.71 @ 12045532.78 by bot_user_r6hzhs",
+        "id": "e69c8f4f-bcc3-4875-9d42-8eb93e813e98",
+        "text": "专题：东部战区开展“正义使命-2025”演习",
         "impact": "NEUTRAL",
-        "timestamp": 1766914322858
+        "score": 45,
+        "reason": "该消息表明东部战区进行了军事演习，这可能对台海局势产生一定影响。但具体影响程度难以确定，因此打分为45分，即中性/无明显波动。",
+        "timestamp": 1767418837042
       },
       {
-        "id": "1766914312464-tbohds7",
-        "text": "[TRIGGER] Trade executed: 56.49 @ 12045469.47 by bot_user_s8n0iv",
-        "impact": "NEUTRAL",
-        "timestamp": 1766914312464
+        "id": "0b1e7511-a11b-43d4-ad20-114cb7873895",
+        "text": "新华网独家直播回放：军事专家谈 “正义使命-2025”演习",
+        "impact": "+40h",
+        "score": 0,
+        "reason": "该新闻标题仅涉及军事演习的直播回放，没有直接提及台海局势或紧张程度，因此无法给出具体的打分。但是，根据常识和背景知识，军事演习通常会增加地区的紧张氛围，尤其是在敏感地区如台海。然而，由于缺乏具体信息，无法确定此消息对台海局势的具体影响。",
+        "timestamp": 1767418834453
       },
       {
-        "id": "1766914306021-urg31io",
-        "text": "[TRIGGER] Trade executed: 36.86 @ 12038472.39 by bot_user_n0m2zb",
+        "id": "595666d6-94a7-4bc7-b924-0e4970730811",
+        "text": "海报丨“小三通”航线开通25年 见证两岸交流不断深化",
         "impact": "NEUTRAL",
-        "timestamp": 1766914306021
+        "score": 45,
+        "reason": "该新闻标题主要反映了两岸交流的深化，没有直接体现紧张或冲突。但由于涉及政治和地缘情感分析，可能会间接影响台海局势。因此，评分为45分，代表中性/无明显波动。",
+        "timestamp": 1767418831253
       },
       {
-        "id": "1766914303665-m6vvsm1",
-        "text": "[TRIGGER] Asset submitted: CN-NW-BKR-2099 from 西安",
+        "id": "a4dc6813-28e6-4735-b098-028fd0e1d90a",
+        "text": "新年贺词，习近平为何再次提到“窑洞之问”？",
         "impact": "NEUTRAL",
-        "timestamp": 1766914303665
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767418828753
       },
       {
-        "id": "1766914301321-y2sp1ia",
-        "text": "[TRIGGER] Trade executed: 6.89 @ 12031406.79 by bot_user_p7wh2u",
+        "id": "de0ed1bb-848a-4c4b-b135-4392a83335c0",
+        "text": "这份“年度答卷”，我们共同署名",
         "impact": "NEUTRAL",
-        "timestamp": 1766914301321
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767418827409
       },
       {
-        "id": "1766914297697-2591qer",
-        "text": "[TRIGGER] Trade executed: 40.48 @ 12026195.35 by bot_user_9o3hv1",
+        "id": "803d693e-338e-4c3f-8406-fdbf6592a436",
+        "text": "时政微视频丨枝叶总关情",
         "impact": "NEUTRAL",
-        "timestamp": 1766914297697
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767418826044
+      },
+      {
+        "id": "17f0e393-e210-4a33-bdee-f1f39318148f",
+        "text": "Redistricting Tracker",
+        "impact": "NEUTRAL",
+        "score": 50,
+        "reason": "常规报道",
+        "timestamp": 1767418189481
       }
     ],
     "alertMessage": "⚠ SYSTEM ALERT: GEOPOLITICAL TENSION RISING"

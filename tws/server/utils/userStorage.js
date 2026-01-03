@@ -1,4 +1,14 @@
 import { put, get, getAll, NAMESPACES, initRocksDB } from './rocksdb.js';
+import { readFileSync, existsSync, renameSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const DATA_DIR = join(__dirname, '../data');
+const USERS_FILE = join(DATA_DIR, 'users.json');
+const USERS_BAK_FILE = join(DATA_DIR, 'users.json.bak');
 
 // 初始化RocksDB（如果尚未初始化）
 let dbInitialized = false;
@@ -9,10 +19,32 @@ const ensureDB = async () => {
   }
 };
 
-// 确保数据目录存在（兼容性函数）
-const initDataDir = async () => {
+// 初始化用户存储（迁移旧数据）
+export const initUserStorage = async () => {
   await ensureDB();
+  
+  try {
+    const users = await getAll(NAMESPACES.USERS);
+    if (users.length === 0 && existsSync(USERS_FILE)) {
+      console.log('🔄 Migrating users.json to RocksDB...');
+      const data = JSON.parse(readFileSync(USERS_FILE, 'utf8'));
+      if (Array.isArray(data)) {
+        for (const user of data) {
+          if (user.address) {
+            await put(NAMESPACES.USERS, user.address.toLowerCase(), user);
+          }
+        }
+      }
+      renameSync(USERS_FILE, USERS_BAK_FILE);
+      console.log('✅ Users migration completed');
+    }
+  } catch (error) {
+    console.error('❌ User storage migration failed:', error);
+  }
 };
+
+// 确保数据目录存在（兼容性函数）
+const initDataDir = initUserStorage;
 
 /**
  * 保存用户数据

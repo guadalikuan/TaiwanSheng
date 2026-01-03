@@ -7,14 +7,12 @@ import {
   createPaymentOrder, 
   verifyPaymentCallback 
 } from '../utils/payment.js';
+import { put, get, NAMESPACES } from '../utils/rocksdb.js';
 
 const router = express.Router();
 
-// 订单存储（实际应使用数据库）
-const orders = new Map();
-
 // POST /api/payment/create-order - 创建支付订单（需要认证）
-router.post('/create-order', authenticate, (req, res) => {
+router.post('/create-order', authenticate, async (req, res) => {
   try {
     const { assetId, amount, description } = req.body;
     
@@ -33,8 +31,8 @@ router.post('/create-order', authenticate, (req, res) => {
       description: description || `Purchase asset ${assetId}`
     });
     
-    // 保存订单
-    orders.set(order.orderId, order);
+    // 保存订单到 RocksDB
+    await put(NAMESPACES.PAYMENT_ORDERS, order.orderId, order);
     
     res.json({
       success: true,
@@ -63,8 +61,8 @@ router.post('/verify', authenticate, async (req, res) => {
       });
     }
     
-    // 获取订单
-    const order = orders.get(orderId);
+    // 从 RocksDB 获取订单
+    const order = await get(NAMESPACES.PAYMENT_ORDERS, orderId);
     if (!order) {
       return res.status(404).json({
         success: false,
@@ -96,7 +94,8 @@ router.post('/verify', authenticate, async (req, res) => {
       order.status = 'paid';
       order.paidAt = new Date().toISOString();
       order.txHash = result.txHash;
-      orders.set(orderId, order);
+      // 保存更新后的订单到 RocksDB
+      await put(NAMESPACES.PAYMENT_ORDERS, orderId, order);
     }
     
     res.json(result);

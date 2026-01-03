@@ -1,5 +1,6 @@
-import RocksDB from 'level-rocksdb';
-import { join, dirname } from 'path';
+import RocksDB from 'rocksdb';
+import levelup from 'levelup';
+import { join, dirname, relative } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync, mkdirSync } from 'fs';
 
@@ -25,13 +26,17 @@ export const initRocksDB = async () => {
   }
 
   try {
-    dbInstance = RocksDB(ROCKSDB_DIR, {
-      createIfMissing: true,
-      errorIfExists: false
-    });
-
+    // 使用 levelup + rocksdb 组合
+    // 关键修复：Windows下 RocksDB 原生绑定对含中文的绝对路径支持不佳
+    // 解决方案：计算相对于 CWD 的路径（只要相对路径中不含中文即可）
+    // 假设在 server 目录运行，relative path 为 'data\rocksdb'
+    const relativePath = relative(process.cwd(), ROCKSDB_DIR);
+    console.log(`[RocksDB] Opening database at relative path: ${relativePath}`);
+    
+    dbInstance = levelup(RocksDB(relativePath));
+    
     await dbInstance.open();
-    console.log('✅ RocksDB initialized successfully');
+    console.log('✅ RocksDB initialized successfully (Native RocksDB)');
     return dbInstance;
   } catch (error) {
     console.error('❌ Failed to initialize RocksDB:', error);
@@ -65,7 +70,8 @@ export const makeKey = (namespace, key) => {
  * @returns {{namespace: string, key: string}} 命名空间和键名
  */
 export const parseKey = (fullKey) => {
-  const parts = fullKey.split(':');
+  const keyStr = Buffer.isBuffer(fullKey) ? fullKey.toString() : String(fullKey);
+  const parts = keyStr.split(':');
   const namespace = parts[0];
   const key = parts.slice(1).join(':');
   return { namespace, key };
@@ -95,13 +101,48 @@ export const get = async (namespace, key) => {
     const db = await getDB();
     const fullKey = makeKey(namespace, key);
     const value = await db.get(fullKey);
-    return JSON.parse(value);
+    const valueStr = Buffer.isBuffer(value) ? value.toString() : String(value);
+    return JSON.parse(valueStr);
   } catch (error) {
     if (error.notFound || error.code === 'LEVEL_NOT_FOUND') {
       return null;
     }
     throw error;
   }
+};
+
+/**
+ * 获取指定前缀的所有数据
+ * @param {string} prefix - 键前缀 (e.g. "users")
+ * @returns {Promise<Array<any>>} 值数组
+ */
+export const getAllWithPrefix = async (prefix) => {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const items = [];
+    // 构造查询范围
+    // RocksDB的范围查询通常使用 gte (>=) 和 lt (<)
+    // prefix: "users" -> gte: "users:", lt: "users;" (ASCII码 : + 1 = ;)
+    // 或者使用 gt: "users:", lt: "users:\xff"
+    const start = `${prefix}:`;
+    const end = `${prefix}:\xff`;
+    
+    db.createReadStream({
+      gte: start,
+      lte: end,
+      keys: false, // 只需值
+      values: true
+    })
+      .on('data', (data) => {
+        try {
+          items.push(JSON.parse(data));
+        } catch (e) {
+          // 忽略解析错误
+        }
+      })
+      .on('error', (err) => reject(err))
+      .on('end', () => resolve(items));
+  });
 };
 
 /**
@@ -179,7 +220,8 @@ export const getAll = async (namespace) => {
 
     stream.on('data', (data) => {
       const { key } = parseKey(data.key);
-      const value = JSON.parse(data.value);
+      const valueStr = Buffer.isBuffer(data.value) ? data.value.toString() : String(data.value);
+      const value = JSON.parse(valueStr);
       results.push({ key, value });
     });
 
@@ -227,7 +269,12 @@ export const NAMESPACES = {
   TECH_PROJECTS: 'techProjects',
   INVESTMENTS: 'investments',
   USER_ACTIONS: 'userActions',
-  ASSETS_BY_TYPE: 'assetsByType' // 用于按类型索引资产
+  PAYMENT_ORDERS: 'paymentOrders', // 支付订单
+  ASSETS_BY_TYPE: 'assetsByType', // 用于按类型索引资产
+  PREDICTION_MARKETS: 'predictionMarkets', // 预测市场题目
+  PREDICTION_BETS: 'predictionBets', // 预测市场下注
+  ORDER_BOOK: 'orderBook', // 交易市场挂单
+  TRADES: 'trades' // 交易市场成交记录
 };
 
 export default {

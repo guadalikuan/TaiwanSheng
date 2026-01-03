@@ -41,76 +41,76 @@ let klineTaskInterval = null;
 const startMarketTask = () => {
   if (marketTaskInterval) return;
   
-  marketTaskInterval = setInterval(() => {
+  marketTaskInterval = setInterval(async () => {
     try {
       // 尝试撮合订单（机器人提交的订单会被撮合）
-      matchOrders();
+      await matchOrders();
       
       // 从订单撮合引擎获取当前价格
-      const currentPrice = getCurrentPrice();
+      const currentPrice = await getCurrentPrice();
       
       if (currentPrice !== null) {
         // 计算24小时价格变化和成交量
-        const priceChange24h = calculate24hPriceChange(currentPrice);
-        const volume24h = calculate24hVolume();
+        const priceChange24h = await calculate24hPriceChange(currentPrice);
+        const volume24h = await calculate24hVolume();
         
         // 更新市场数据
-        updateMarketData({
-          currentPrice: currentPrice,
-          priceChange24h: priceChange24h,
-          volume24h: volume24h
-        });
-        
-        // 推送 SSE 更新
-        pushUpdate('market', 'update', {
-          currentPrice,
-          priceChange24h,
-          volume24h
-        });
-      } else {
-        // 如果没有成交记录，使用默认价格（首次启动时）
-        const marketData = getMarketData();
-        if (marketData && !marketData.currentPrice) {
-          updateMarketData({
-            currentPrice: 142.85,
-            priceChange24h: 0,
-            volume24h: 0
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Market task error:', error);
-    }
-  }, 350);
-  
-  console.log('✅ Market background task started (350ms interval, ~3 updates/sec)');
-};
-
-/**
- * 启动订单簿更新任务（每2秒）
- * 现在直接从订单撮合引擎获取订单簿
- */
-const startOrderBookTask = () => {
-  if (orderBookTaskInterval) return;
-  
-  orderBookTaskInterval = setInterval(() => {
-    try {
-      // 从订单撮合引擎获取订单簿
-      const orderBook = getOrderBook(10);
-      
-      // 更新到存储（用于兼容性）
-      updateOrderBook(orderBook);
+      await updateMarketData({
+        currentPrice: currentPrice,
+        priceChange24h: priceChange24h,
+        volume24h: volume24h
+      });
       
       // 推送 SSE 更新
       pushUpdate('market', 'update', {
-        orderBook
+        currentPrice,
+        priceChange24h,
+        volume24h
       });
-    } catch (error) {
-      console.error('OrderBook task error:', error);
+    } else {
+      // 如果没有成交记录，使用默认价格（首次启动时）
+      const marketData = await getMarketData();
+      if (marketData && !marketData.currentPrice) {
+        await updateMarketData({
+          currentPrice: 142.85,
+          priceChange24h: 0,
+          volume24h: 0
+        });
+      }
     }
-  }, 2000);
-  
-  console.log('✅ OrderBook background task started (2s interval)');
+  } catch (error) {
+    console.error('Market task error:', error);
+  }
+}, 350);
+
+console.log('✅ Market background task started (350ms interval, ~3 updates/sec)');
+};
+
+/**
+* 启动订单簿更新任务（每2秒）
+* 现在直接从订单撮合引擎获取订单簿
+*/
+const startOrderBookTask = () => {
+if (orderBookTaskInterval) return;
+
+orderBookTaskInterval = setInterval(async () => {
+  try {
+    // 从订单撮合引擎获取订单簿
+    const orderBook = getOrderBook(10);
+    
+    // 更新到存储（用于兼容性）
+    await updateOrderBook(orderBook);
+    
+    // 推送 SSE 更新
+    pushUpdate('market', 'update', {
+      orderBook
+    });
+  } catch (error) {
+    console.error('OrderBook task error:', error);
+  }
+}, 2000);
+
+console.log('✅ OrderBook background task started (2s interval)');
 };
 
 /**
@@ -123,10 +123,10 @@ const startKlineTask = () => {
   let lastKlineTime = Date.now();
   let lastKlinePrice = null;
   
-  klineTaskInterval = setInterval(() => {
+  klineTaskInterval = setInterval(async () => {
     try {
       // 获取最近1.5秒内的成交记录
-      const recentTrades = getRecentTrades(100);
+      const recentTrades = await getRecentTrades(100);
       const now = Date.now();
       const timeWindow = 1500; // 1.5秒
       const windowStart = now - timeWindow;
@@ -165,7 +165,7 @@ const startKlineTask = () => {
             volume: volume
           };
           
-          addKlinePoint(klinePoint);
+          await addKlinePoint(klinePoint);
           lastKlinePrice = close;
           lastKlineTime = now;
           
@@ -186,7 +186,7 @@ const startKlineTask = () => {
             close: currentPrice,
             volume: 0
           };
-          addKlinePoint(klinePoint);
+          await addKlinePoint(klinePoint);
           lastKlinePrice = currentPrice;
           
           // 推送 SSE 更新（增量）
@@ -209,12 +209,12 @@ const startKlineTask = () => {
 const startTaiwanNodeTask = () => {
   if (taiwanNodeTaskInterval) return;
   
-  taiwanNodeTaskInterval = setInterval(() => {
+  taiwanNodeTaskInterval = setInterval(async () => {
     try {
       // 随机决定是否生成新连接（70%概率）
       if (Math.random() > 0.7) {
         const log = generateTaiwanNodeLog();
-        addTaiwanLog(log); // 传递完整日志对象
+        await addTaiwanLog(log); // 传递完整日志对象
         // addTaiwanLog 内部会推送 SSE 更新
       }
     } catch (error) {
@@ -236,7 +236,7 @@ const startAssetTask = () => {
       // 随机决定是否生成新资产确认（60%概率）
       if (Math.random() > 0.6) {
         const log = await generateAssetLog();
-        addAssetLog(log); // 传递完整日志对象
+        await addAssetLog(log); // 传递完整日志对象
         // addAssetLog 内部会推送 SSE 更新
       }
     } catch (error) {
