@@ -5,6 +5,7 @@ import BunkerApp from './components/BunkerApp';
 import DespairBunker from './components/DespairBunker';
 import BlackMarket from './components/BlackMarket';
 import MyLoadout from './components/MyLoadout';
+import MyAssets from './components/MyAssets';
 import AgentApp from './components/AgentApp';
 import TWSApp from './components/TWSApp';
 import ArsenalEntry from './components/ArsenalEntry';
@@ -37,6 +38,7 @@ const App = () => (
     <Route path="/bunker-old" element={<BunkerApp />} />
     <Route path="/market" element={<BlackMarket />} />
     <Route path="/loadout" element={<MyLoadout />} />
+    <Route path="/my-assets" element={<MyAssets />} />
     <Route path="/agent" element={<AgentApp />} />
     <Route path="/app" element={<TWSApp />} />
     <Route path="/arsenal" element={<ArsenalEntry />} />

@@ -309,8 +309,21 @@ router.get('/assets', async (req, res) => {
           financials: {
             totalTokens: project.targetAmount,
             yield: project.yield || '15% APY'
+          },
+          isPinned: project.isPinned || false,
+          priority: project.priority !== undefined ? project.priority : 999
+        }))
+        .sort((a, b) => {
+          // 置顶项目优先（isPinned = true）
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
+          // 如果都是置顶或都不是置顶，按 priority 排序（数字越小越靠前）
+          if (a.isPinned && b.isPinned) {
+            return (a.priority || 999) - (b.priority || 999);
           }
-        }));
+          // 非置顶项目按创建时间倒序（最新的在前）
+          return 0; // 保持原有顺序
+        });
     } else {
       // 其他类型从getAssetsByType获取
       availableAssets = await getAssetsByType(assetType);

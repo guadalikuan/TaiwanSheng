@@ -79,7 +79,7 @@ const AssetsSection = () => {
               </button>
             )}
             <button
-              onClick={() => navigate('/loadout')}
+              onClick={() => navigate('/my-assets')}
               className="ml-4 bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 hover:bg-emerald-600 hover:text-white px-6 py-3 rounded text-sm font-mono tracking-widest transition-all flex items-center gap-2 whitespace-nowrap"
             >
               <Key size={16} />
