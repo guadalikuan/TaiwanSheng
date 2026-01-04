@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { createAuction, getTaiOneTokenBalanceAPI } from '../utils/api';
 import { formatTaiOneTokenBalance } from '../utils/twscoin';
-import { Hammer } from 'lucide-react';
+import { Hammer, Wallet } from 'lucide-react';
 
 const AuctionCreatePage = () => {
   const navigate = useNavigate();
   const { publicKey, connected } = useWallet();
+  const { setVisible } = useWalletModal();
   const [formData, setFormData] = useState({
     assetName: '',
     description: '',
@@ -140,16 +142,40 @@ const AuctionCreatePage = () => {
       />
 
       <div className="relative z-10 max-w-4xl mx-auto p-8">
-        {/* 返回按钮 */}
-        <button
-          onClick={() => navigate('/auctions')}
-          className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          返回列表
-        </button>
+        {/* 顶部导航栏 */}
+        <div className="mb-6 flex items-center justify-between">
+          {/* 返回按钮 */}
+          <button
+            onClick={() => navigate('/auctions')}
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            返回列表
+          </button>
+
+          {/* 右上角钱包连接按钮/地址 */}
+          {connected && publicKey ? (
+            <div className="flex items-center gap-3 bg-gray-900/80 backdrop-blur-sm border-2 border-tws-red rounded-lg px-4 py-2">
+              <Wallet className="w-4 h-4 text-tws-gold" />
+              <div className="flex flex-col items-end">
+                <span className="text-xs text-gray-400 font-mono">已连接</span>
+                <span className="text-sm text-tws-gold font-mono font-bold">
+                  {publicKey.toString().slice(0, 6)}...{publicKey.toString().slice(-4)}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setVisible(true)}
+              className="flex items-center gap-2 bg-tws-red hover:bg-red-700 border-2 border-tws-red rounded-lg px-4 py-2 text-white font-bold transition-all"
+            >
+              <Wallet className="w-4 h-4" />
+              <span className="text-sm">连接钱包</span>
+            </button>
+          )}
+        </div>
 
         {/* 主表单区域 */}
         <div className="bg-black/80 backdrop-blur-sm border-2 border-tws-red rounded-lg p-8">
