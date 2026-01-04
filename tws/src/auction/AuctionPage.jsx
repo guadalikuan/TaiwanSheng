@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { getAuctionInfo, seizeAuctionAsset, getTaiOneTokenBalanceAPI, getTaiOneTokenBalanceAPI } from '../utils/api';
-import { TaiOneToken_MINT, formatTaiOneTokenBalance, calculateMinBid, TaiOneToken_MINT, formatTaiOneTokenBalance } from '../utils/twscoin';
+import { getAuctionInfo, seizeAuctionAsset, getTaiOneTokenBalanceAPI } from '../utils/api';
+import { TaiOneToken_MINT, formatTaiOneTokenBalance, calculateMinBid } from '../utils/twscoin';
 
 const AuctionPage = () => {
   const { assetId: assetIdParam } = useParams();

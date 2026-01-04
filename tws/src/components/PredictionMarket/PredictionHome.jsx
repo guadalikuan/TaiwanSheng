@@ -7,8 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSSE } from '../../contexts/SSEContext';
-import { TaiOneToken_MINT, TaiOneToken_MINT } from '../../utils/twscoin';
-import { getTaiOneTokenBalanceAPI, getTaiOneTokenBalanceAPI } from '../../utils/api';
+import { TaiOneToken_MINT } from '../../utils/twscoin';
+import { getTaiOneTokenBalanceAPI } from '../../utils/api';
 import { Home, Check, X, AlertTriangle, Smartphone, Globe, Clock } from 'lucide-react';
 
 // House Wallet for Predictions (Receives bets)
