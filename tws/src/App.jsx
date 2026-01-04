@@ -5,6 +5,7 @@ import BunkerApp from './components/BunkerApp';
 import DespairBunker from './components/DespairBunker';
 import BlackMarket from './components/BlackMarket';
 import MyLoadout from './components/MyLoadout';
+import MyAssets from './components/MyAssets';
 import AgentApp from './components/AgentApp';
 import TWSApp from './components/TWSApp';
 import ArsenalEntry from './components/ArsenalEntry';
@@ -26,6 +27,8 @@ import MyInvestments from './components/MyInvestments';
 import AdminDashboard from './components/AdminDashboard';
 import AuctionPage from './auction/AuctionPage';
 import EventListPage from './components/EventListPage';
+import AuctionListPage from './auction/AuctionListPage';
+import AuctionCreatePage from './auction/AuctionCreatePage';
 
 const App = () => (
   <Routes>
@@ -37,6 +40,7 @@ const App = () => (
     <Route path="/bunker-old" element={<BunkerApp />} />
     <Route path="/market" element={<BlackMarket />} />
     <Route path="/loadout" element={<MyLoadout />} />
+    <Route path="/my-assets" element={<MyAssets />} />
     <Route path="/agent" element={<AgentApp />} />
     <Route path="/app" element={<TWSApp />} />
     <Route path="/arsenal" element={<ArsenalEntry />} />
@@ -56,6 +60,8 @@ const App = () => (
     <Route path="/admin/dashboard" element={<AdminDashboard />} />
     <Route path="/auction" element={<AuctionPage />} />
     <Route path="/auction/:assetId" element={<AuctionPage />} />
+    <Route path="/auctions" element={<AuctionListPage />} />
+    <Route path="/auctions/create" element={<AuctionCreatePage />} />
   </Routes>
 );
 

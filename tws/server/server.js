@@ -22,6 +22,7 @@ import sseRoutes, { startSSEKeepalive } from './routes/sse.js';
 import techProjectRoutes from './routes/techProject.js';
 import adminRoutes from './routes/admin.js';
 import investmentRoutes from './routes/investments.js';
+import myAssetsRoutes from './routes/myAssets.js';
 import { startBackgroundTasks } from './utils/backgroundTasks.js';
 import { startScanning } from './utils/oracle.js';
 import { initTimeManager } from './utils/timeManager.js';
@@ -32,6 +33,7 @@ import { getBotUserStats, getActiveBotUsers, initBotUserManager } from './utils/
 import { initHomepageStorage } from './utils/homepageStorage.js';
 import { initUserStorage } from './utils/userStorage.js';
 import { initStorage } from './utils/storage.js';
+import { initTWSMainProject } from './utils/initTechProjects.js';
 import { getCurrentPrice, submitOrder, matchOrders } from './utils/orderMatchingEngine.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -168,6 +170,7 @@ app.use('/api/prediction', predictionRoutes);
 app.use('/api/tech-project', techProjectRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/investments', investmentRoutes);
+app.use('/api/my-assets', myAssetsRoutes);
 
 // 调试：列出所有注册的路由
 console.log('📋 已注册的路由:');
@@ -451,6 +454,9 @@ const startServer = async () => {
     await initUserStorage();
     await initStorage();
     await initTimeManager(); // initTimeManager now is async in my previous edit? let's check. Yes it is.
+    
+    // 初始化 TWS 主项目（预置科创项目）
+    await initTWSMainProject();
 
     // 初始化市场价格
     initializeMarketPrice();

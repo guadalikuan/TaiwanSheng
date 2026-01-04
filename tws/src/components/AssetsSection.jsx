@@ -10,6 +10,8 @@ const AssetsSection = () => {
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('房产'); // 当前选中的资产类型
+  const [showLineQR, setShowLineQR] = useState(false);
+  const [lineQrPosition, setLineQrPosition] = useState({ x: 0, y: 0 });
 
   // 资产类型配置
   const assetTypes = [
@@ -77,7 +79,7 @@ const AssetsSection = () => {
               </button>
             )}
             <button
-              onClick={() => navigate('/loadout')}
+              onClick={() => navigate('/my-assets')}
               className="ml-4 bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 hover:bg-emerald-600 hover:text-white px-6 py-3 rounded text-sm font-mono tracking-widest transition-all flex items-center gap-2 whitespace-nowrap"
             >
               <Key size={16} />
@@ -298,6 +300,48 @@ const AssetsSection = () => {
               >
                 GitHub
               </a>
+            </li>
+            {/* 👇 新增 LINE 链接 */}
+            <li className="hover:text-cyan-400 cursor-pointer flex items-center relative group">
+              <Globe size={10} className="mr-2" />
+              <a 
+                href="https://line.me/R/ti/g/5VfGyxKhyx"
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-full"
+                onMouseEnter={(e) => {
+                  setLineQrPosition({ x: e.clientX, y: e.clientY });
+                  setShowLineQR(true);
+                }}
+                onMouseLeave={() => {
+                  setShowLineQR(false);
+                }}
+                onMouseMove={(e) => {
+                  setLineQrPosition({ x: e.clientX, y: e.clientY });
+                }}
+              >
+                LINE
+              </a>
+              {/* QR码弹窗 */}
+              {showLineQR && (
+                <div 
+                  className="fixed z-50 bg-white p-4 rounded-lg shadow-2xl border-2 border-cyan-400 pointer-events-none"
+                  style={{
+                    left: `${lineQrPosition.x + 20}px`,
+                    top: `${lineQrPosition.y - 180}px`,
+                  }}
+                >
+                  <img 
+                    src="/line-qr-code.png" 
+                    alt="LINE QR Code" 
+                    className="w-48 h-48"
+                    onError={(e) => {
+                      // 如果图片不存在，显示占位符
+                      e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2ZmZiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiMwMDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5MSU5FIFEgUiBDb2RlPC90ZXh0Pjwvc3ZnPg==';
+                    }}
+                  />
+                </div>
+              )}
             </li>
           </ul>
         </div>

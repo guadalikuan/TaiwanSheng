@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ShieldCheck,
-  Activity,
-  Crosshair,
-  Radio,
   Key,
   Gavel,
   TrendingUp,
@@ -13,42 +9,55 @@ import {
   Wine,
   Palette,
   Database,
-  Calendar,
   ArrowRight,
   Clock,
   CheckCircle,
   XCircle,
-  Loader
+  Loader,
+  ArrowLeft,
+  Home,
+  Wallet,
+  User
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getMyAssetsAll, getMyPurchasedAssets, getMyAuctions, getMyBets, getMyInvestments, getPredictionMarkets } from '../utils/api';
+import { getMyAssetsAll, getPredictionMarkets } from '../utils/api';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
-const MyLoadout = () => {
+const MyAssets = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
-  const { publicKey } = useWallet();
-  const [activeTab, setActiveTab] = useState('assets'); // assets, auctions, bets, investments
+  const { user, isAuthenticated, loginWithWallet } = useAuth();
+  const { publicKey, connected } = useWallet();
+  const { setVisible } = useWalletModal();
+  const [activeTab, setActiveTab] = useState('assets');
   
   // 数据状态
   const [purchasedAssets, setPurchasedAssets] = useState([]);
   const [auctions, setAuctions] = useState([]);
   const [bets, setBets] = useState([]);
   const [investments, setInvestments] = useState([]);
-  const [markets, setMarkets] = useState([]); // 预测市场信息
+  const [markets, setMarkets] = useState([]);
   const [counts, setCounts] = useState({ assets: 0, auctions: 0, bets: 0, investments: 0 });
   
-  // 加载状态
   const [loading, setLoading] = useState(true);
-  const [loadingTab, setLoadingTab] = useState(false);
 
-  // 获取用户地址
   const getUserAddress = () => {
     return user?.address || publicKey?.toString() || null;
   };
 
-  // 加载所有数据
+  // 当钱包连接后，自动登录
+  useEffect(() => {
+    if (connected && publicKey && !isAuthenticated) {
+      const walletAddress = publicKey.toString();
+      loginWithWallet(walletAddress);
+    }
+  }, [connected, publicKey, isAuthenticated, loginWithWallet]);
+
+  const handleConnectWallet = () => {
+    setVisible(true);
+  };
+
   useEffect(() => {
     const loadAllData = async () => {
       const userAddress = getUserAddress();
@@ -59,7 +68,6 @@ const MyLoadout = () => {
 
       try {
         setLoading(true);
-        // 并行加载资产数据和预测市场信息
         const [assetsResult, marketsResult] = await Promise.all([
           getMyAssetsAll(userAddress),
           getPredictionMarkets()
@@ -90,7 +98,6 @@ const MyLoadout = () => {
     }
   }, [isAuthenticated, user, publicKey]);
 
-  // 标签页配置
   const tabs = [
     { id: 'assets', label: '资产', icon: Key, count: counts.assets },
     { id: 'auctions', label: '拍卖', icon: Gavel, count: counts.auctions },
@@ -98,7 +105,6 @@ const MyLoadout = () => {
     { id: 'investments', label: '投资', icon: FlaskConical, count: counts.investments },
   ];
 
-  // 获取资产类型图标
   const getAssetTypeIcon = (assetType) => {
     switch (assetType) {
       case '房产': return Building2;
@@ -110,7 +116,6 @@ const MyLoadout = () => {
     }
   };
 
-  // 获取资产类型颜色
   const getAssetTypeColor = (assetType) => {
     switch (assetType) {
       case '房产': return 'text-blue-400';
@@ -122,7 +127,6 @@ const MyLoadout = () => {
     }
   };
 
-  // 格式化时间
   const formatTime = (timestamp) => {
     if (!timestamp) return 'N/A';
     const date = new Date(timestamp);
@@ -135,7 +139,6 @@ const MyLoadout = () => {
     });
   };
 
-  // 格式化金额
   const formatAmount = (amount) => {
     if (!amount) return '0';
     return Number(amount).toLocaleString('zh-CN');
@@ -257,7 +260,6 @@ const MyLoadout = () => {
     };
     const status = statusConfig[bet.status] || statusConfig.PENDING;
     
-    // 查找对应的市场信息
     const market = markets.find(m => m.id === Number(bet.marketId) || m.id === bet.marketId);
     const marketQuestion = market?.question || `市場 #${bet.marketId}`;
 
@@ -365,7 +367,6 @@ const MyLoadout = () => {
     );
   };
 
-  // 获取当前标签的数据
   const getCurrentData = () => {
     switch (activeTab) {
       case 'assets': return purchasedAssets;
@@ -376,7 +377,6 @@ const MyLoadout = () => {
     }
   };
 
-  // 渲染当前标签的内容
   const renderCurrentContent = () => {
     const data = getCurrentData();
 
@@ -407,7 +407,6 @@ const MyLoadout = () => {
     );
   };
 
-  // 未登录状态
   if (!isAuthenticated && !publicKey) {
     return (
       <div className="min-h-screen bg-slate-950 text-white p-8 flex items-center justify-center">
@@ -426,107 +425,117 @@ const MyLoadout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-mono p-4 pb-24">
-      {/* 顶部标题 */}
-      <div className="mb-8">
-        <h1 className="text-4xl md:text-6xl font-black text-white mb-2 tracking-tighter">
-          MY <span className="text-gold">ASSETS</span>
-        </h1>
-        <p className="text-slate-400 font-mono text-sm">
-          查看您參與的拍賣、預測和各類資產購買記錄
-        </p>
-      </div>
+    <div className="min-h-screen bg-slate-950 text-white font-mono">
+      {/* 顶部导航栏 - 参考 Navbar 风格 */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* 左侧：返回首页按钮和标题 */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate('/')}
+                className="flex items-center gap-2 text-slate-300 hover:text-cyan-400 px-3 py-2 rounded-md text-sm font-medium transition-all hover:bg-white/5 group"
+              >
+                <Home size={18} className="opacity-50 group-hover:opacity-100" />
+                <span>返回首頁</span>
+              </button>
+              <div className="h-6 w-px bg-white/10" />
+              <div className="flex items-center">
+                <div className="w-2 h-6 bg-red-600 mr-3 animate-pulse" />
+                <div>
+                  <h1 className="text-xl font-bold text-white tracking-tighter">
+                    MY <span className="text-gold">ASSETS</span>
+                  </h1>
+                  <p className="text-[10px] text-slate-400 tracking-[0.3em] uppercase">資產管理</p>
+                </div>
+              </div>
+            </div>
 
-      {/* 标签页导航 */}
-      <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                flex items-center gap-2 px-4 py-2 rounded text-sm font-mono transition-all whitespace-nowrap
-                ${isActive
-                  ? 'bg-gold text-black font-bold'
-                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white'
-                }
-              `}
-            >
-              <Icon size={16} />
-              <span>{tab.label}</span>
-              {tab.count > 0 && (
-                <span className={`
-                  px-2 py-0.5 rounded text-xs
-                  ${isActive ? 'bg-black/20' : 'bg-slate-700'}
-                `}>
-                  {tab.count}
-                </span>
+            {/* 右侧：钱包连接状态 */}
+            <div className="flex items-center space-x-4">
+              {isAuthenticated || (connected && publicKey) ? (
+                <div className="flex items-center space-x-2 border border-white/10 rounded px-3 py-2 bg-slate-900/50">
+                  <User size={14} className="text-cyan-400" />
+                  <div className="flex flex-col">
+                    <span className="text-xs text-slate-300 font-mono">
+                      {user?.username || 'USER'}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      {publicKey ? `${publicKey.toString().slice(0, 6)}...${publicKey.toString().slice(-4)}` : (user?.address ? `${user.address.slice(0, 6)}...${user.address.slice(-4)}` : '')}
+                    </span>
+                  </div>
+                  {connected && publicKey && (
+                    <div className="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={handleConnectWallet}
+                  className="bg-indigo-900/20 border border-indigo-900/50 text-indigo-400 hover:bg-indigo-600 hover:text-white px-4 py-2 rounded text-xs font-mono tracking-widest transition-all flex items-center"
+                  type="button"
+                >
+                  <Wallet size={14} className="mr-2" />
+                  連接錢包 / CONNECT WALLET
+                </button>
               )}
-            </button>
-          );
-        })}
+            </div>
+          </div>
+        </div>
+        <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-cyan-900 to-transparent opacity-50" />
       </div>
 
-      {/* 内容区 */}
-      <div className="min-h-[400px]">
-        {renderCurrentContent()}
-      </div>
+      {/* 主内容区 - 添加顶部 padding 避免被导航栏遮挡 */}
+      <div className="pt-20 p-8">
+        {/* 顶部标题 */}
+        <div className="mb-8">
+          <h1 className="text-4xl md:text-6xl font-black text-white mb-2 tracking-tighter">
+            MY <span className="text-gold">ASSETS</span>
+          </h1>
+          <p className="text-slate-400 font-mono text-sm">
+            查看您參與的拍賣、預測和各類資產購買記錄
+          </p>
+        </div>
 
-      {/* 底部导航栏 */}
-      <div className="fixed bottom-0 left-0 right-0 w-full bg-slate-950/90 backdrop-blur border-t border-slate-800 pb-safe pt-2 z-40">
-        <div className="flex justify-around items-center pb-2">
-          {/* Tab 0: 首页 */}
-          <div 
-            onClick={() => navigate('/')}
-            className="flex flex-col items-center cursor-pointer text-slate-600 hover:text-slate-400 transition-colors"
-          >
-            <Radio className="w-6 h-6" />
-            <span className="text-[10px] mt-1 font-bold">HOME</span>
-          </div>
+        {/* 标签页导航 */}
+        <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded text-sm font-mono transition-all whitespace-nowrap
+                  ${isActive
+                    ? 'bg-gold text-black font-bold'
+                    : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-white'
+                  }
+                `}
+              >
+                <Icon size={16} />
+                <span>{tab.label}</span>
+                {tab.count > 0 && (
+                  <span className={`
+                    px-2 py-0.5 rounded text-xs
+                    ${isActive ? 'bg-black/20' : 'bg-slate-700'}
+                  `}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
-          {/* Tab 1: 地堡 */}
-          <div 
-            onClick={() => navigate('/bunker')}
-            className="flex flex-col items-center cursor-pointer text-slate-600 hover:text-slate-400 transition-colors"
-          >
-            <ShieldCheck className="w-6 h-6" />
-            <span className="text-[10px] mt-1 font-bold">BUNKER</span>
-          </div>
-
-          {/* Tab 2: 市场 */}
-          <div 
-            onClick={() => navigate('/market')}
-            className="flex flex-col items-center cursor-pointer text-slate-600 hover:text-slate-400 transition-colors"
-          >
-            <Activity className="w-6 h-6" />
-            <span className="text-[10px] mt-1 font-bold">MARKET</span>
-          </div>
-
-          {/* Tab 3: 任务 */}
-          <div 
-            onClick={() => navigate('/agent')}
-            className="flex flex-col items-center cursor-pointer text-slate-600 hover:text-slate-400 transition-colors"
-          >
-            <div className="relative">
-              <Crosshair className="w-6 h-6" />
-              <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-bounce"></div>
-            </div>
-            <span className="text-[10px] mt-1 font-bold">OPS</span>
-          </div>
-
-          {/* Tab 4: 身份 (确权) - 当前页面 */}
-          <div className="flex flex-col items-center cursor-pointer text-emerald-500">
-            <div className="w-6 h-6 rounded-full border-2 border-emerald-500 flex items-center justify-center">
-              <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-            </div>
-            <span className="text-[10px] mt-1 font-bold">ID</span>
-          </div>
+        {/* 内容区 */}
+        <div className="min-h-[400px]">
+          {renderCurrentContent()}
         </div>
       </div>
     </div>
   );
 };
 
-export default MyLoadout;
+export default MyAssets;
+

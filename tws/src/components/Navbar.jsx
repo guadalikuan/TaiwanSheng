@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Radio, BarChart3, Map, Database, ShieldAlert, LogIn, LogOut, User, Hammer, Wallet } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,6 +12,8 @@ const Navbar = () => {
   const { publicKey, connected } = useWallet();
   const { setVisible } = useWalletModal();
   const [scrolled, setScrolled] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
   const isHomePage = location.pathname === '/';
 
   // 当钱包连接后，自动登录
@@ -31,6 +33,29 @@ const Navbar = () => {
   const handleConnectWallet = () => {
     setVisible(true);
   };
+
+  const handleLogoutClick = () => {
+    logout();
+    navigate('/');
+    setShowDropdown(false);
+  };
+
+  // 点击外部关闭下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDropdown]);
 
   const navLinks = [
     { id: 'omega', label: '天機 | OMEGA', icon: <Radio size={16} /> },
@@ -74,7 +99,7 @@ const Navbar = () => {
               ))}
               {/* 处置按钮 */}
               <button
-                onClick={() => navigate('/auction')}
+                onClick={() => navigate('/auctions')}
                 className="flex items-center text-slate-300 hover:text-red-400 px-3 py-2 rounded-md text-sm font-medium transition-all hover:bg-white/5 group"
               >
                 <span className="mr-2 opacity-50 group-hover:opacity-100 group-hover:animate-bounce">
@@ -87,28 +112,35 @@ const Navbar = () => {
 
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
-              <>
-                <div className="flex items-center space-x-2 border-r border-white/10 pr-4">
+              <div className="relative" ref={dropdownRef}>
+                <div 
+                  className="flex items-center space-x-2 border-r border-white/10 pr-4 cursor-pointer hover:bg-white/5 rounded px-3 py-2 transition-all group"
+                  onClick={() => setShowDropdown(!showDropdown)}
+                >
                   <User size={14} className="text-cyan-400" />
                   <div className="flex flex-col">
-                    <span className="text-xs text-slate-300 font-mono">{user?.username || 'USER'}</span>
-                    <span className="text-[10px] text-slate-500 font-mono">
+                    <span className="text-xs text-slate-300 font-mono group-hover:text-cyan-400 transition-colors">
+                      {user?.username || 'USER'}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-mono group-hover:text-slate-400 transition-colors">
                       {publicKey ? `${publicKey.toString().slice(0, 6)}...${publicKey.toString().slice(-4)}` : (user?.address ? `${user.address.slice(0, 6)}...${user.address.slice(-4)}` : '')}
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    logout();
-                    navigate('/');
-                  }}
-                  className="bg-red-900/20 border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white px-4 py-1 rounded text-xs font-mono tracking-widest transition-all flex items-center"
-                  type="button"
-                >
-                  <LogOut size={14} className="mr-2" />
-                  登出 / LOGOUT
-                </button>
-              </>
+                
+                {/* 下拉菜单 */}
+                {showDropdown && (
+                  <div className="absolute right-0 top-full mt-2 bg-slate-950/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl min-w-[120px] overflow-hidden z-50">
+                    <button
+                      onClick={handleLogoutClick}
+                      className="w-full text-left px-4 py-2 text-xs font-mono text-red-500 hover:bg-red-900/20 hover:text-red-400 transition-all flex items-center gap-2"
+                    >
+                      <LogOut size={14} />
+                      登出 / LOGOUT
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <button
                 onClick={handleConnectWallet}

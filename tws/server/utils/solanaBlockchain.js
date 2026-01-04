@@ -24,8 +24,9 @@ const require = createRequire(import.meta.url);
 
 import config from '../solana.config.js';
 
-// TaiOneToken 铸造地址
-const TaiOneToken_MINT = new PublicKey('ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk');
+// TaiOneToken 铸造地址（从全局配置读取）
+const TaiOneToken_MINT = new PublicKey(config.TAI_ONE_TOKEN.MINT);
+const TAI_ONE_DECIMALS = config.TAI_ONE_TOKEN.DECIMALS;
 // 向后兼容
 const TWSCoin_MINT = TaiOneToken_MINT;
 
@@ -355,11 +356,11 @@ class SolanaBlockchainService {
         const account = await getAccount(this.connection, tokenAccount);
         return {
           balance: account.amount.toString(),
-          decimals: account.mint.toString() === TaiOneToken_MINT.toString() ? 9 : 0,
+          decimals: TAI_ONE_DECIMALS, // 使用全局配置的 decimals
         };
       } catch (error) {
         // 账户不存在，返回 0
-        return { balance: '0', decimals: 9 };
+        return { balance: '0', decimals: TAI_ONE_DECIMALS };
       }
     } catch (error) {
       console.error('❌ 查询余额失败:', error);

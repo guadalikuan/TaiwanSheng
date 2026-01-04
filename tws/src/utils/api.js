@@ -849,6 +849,59 @@ export const getAuctionInfo = async (assetId) => {
 };
 
 /**
+ * 获取拍卖列表
+ * @param {string} status - 状态筛选 (active|pending|completed)
+ * @returns {Promise<Object>}
+ */
+export const getAuctionList = async (status) => {
+  try {
+    const url = status 
+      ? `${API_BASE_URL}/api/auction/list?status=${status}`
+      : `${API_BASE_URL}/api/auction/list`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API getAuctionList error:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 创建新拍卖
+ * @param {Object} data - 拍卖数据
+ * @param {string} data.assetName - 资产名称
+ * @param {string} data.description - 资产描述
+ * @param {number} data.startPrice - 起拍价（TOT）
+ * @param {string} data.imageUrl - 图片URL
+ * @param {string} data.location - 位置
+ * @param {string} data.originalOwner - 原主信息
+ * @param {string} data.tauntMessage - 初始留言
+ * @param {string} data.creatorAddress - 创建者地址
+ * @param {string} data.txSignature - 交易签名（可选）
+ * @returns {Promise<Object>}
+ */
+export const createAuction = async (data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auction/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API createAuction error:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
  * 夺取资产（10%溢价机制）
  * @param {number} assetId - 资产ID
  * @param {string} bidMessage - 出价留言
@@ -1054,6 +1107,133 @@ export const getMyInvestments = async (walletAddress) => {
     );
   } catch (error) {
     console.error('API getMyInvestments error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取我的所有资产数据（聚合）
+ * @param {string} walletAddress - 钱包地址
+ * @returns {Promise<Object>}
+ */
+export const getMyAssetsAll = async (walletAddress) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/my-assets/all?walletAddress=${encodeURIComponent(walletAddress)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API getMyAssetsAll error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取我购买的资产
+ * @param {string} walletAddress - 钱包地址
+ * @returns {Promise<Object>}
+ */
+export const getMyPurchasedAssets = async (walletAddress) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/my-assets/purchased?walletAddress=${encodeURIComponent(walletAddress)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API getMyPurchasedAssets error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取我参与的拍卖
+ * @param {string} walletAddress - 钱包地址
+ * @returns {Promise<Object>}
+ */
+export const getMyAuctions = async (walletAddress) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/my-assets/auctions?walletAddress=${encodeURIComponent(walletAddress)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API getMyAuctions error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取我的预测下注记录
+ * @param {string} walletAddress - 钱包地址
+ * @returns {Promise<Object>}
+ */
+export const getMyBets = async (walletAddress) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/my-assets/bets?walletAddress=${encodeURIComponent(walletAddress)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API getMyBets error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取预测市场列表
+ * @returns {Promise<Object>}
+ */
+export const getPredictionMarkets = async () => {
+  try {
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/prediction/markets`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API getPredictionMarkets error:', error);
     return { success: false, message: error.message || '网络错误，请检查服务器连接' };
   }
 };
