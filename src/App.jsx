@@ -16,6 +16,10 @@ import AssetDetailPage from './components/AssetDetailPage';
 import MapAssetDetailPage from './components/MapAssetDetailPage';
 import ChanganLetter from './components/ChanganLetter';
 import ProtectedRoute from './components/ProtectedRoute';
+import ArsenalProtectedRoute from './components/ArsenalProtectedRoute';
+import UserManagement from './components/UserManagement';
+import MyAssets from './components/MyAssets';
+import { ArsenalAuthProvider } from './contexts/ArsenalAuthContext';
 
 const App = () => (
   <Routes>
@@ -27,13 +31,41 @@ const App = () => (
     <Route path="/loadout" element={<MyLoadout />} />
     <Route path="/agent" element={<AgentApp />} />
     <Route path="/app" element={<TWSApp />} />
-    <Route path="/arsenal" element={<ArsenalEntry />} />
-    {/* 审核端需要 REVIEWER 或 ADMIN 权限 */}
+    {/* 资产入库需要登录（SUBMITTER、DEVELOPER或ADMIN权限）- 使用独立认证系统 */}
+    <Route 
+      path="/arsenal" 
+      element={
+        <ArsenalAuthProvider>
+          <ArsenalProtectedRoute allowedRoles={['SUBMITTER', 'DEVELOPER', 'ADMIN']}>
+            <ArsenalEntry />
+          </ArsenalProtectedRoute>
+        </ArsenalAuthProvider>
+      } 
+    />
+    {/* 审核端需要 REVIEWER、DEVELOPER 或 ADMIN 权限 */}
     <Route 
       path="/command" 
       element={
-        <ProtectedRoute allowedRoles={['REVIEWER', 'ADMIN']}>
+        <ProtectedRoute allowedRoles={['REVIEWER', 'DEVELOPER', 'ADMIN']}>
           <CommandCenter />
+        </ProtectedRoute>
+      } 
+    />
+    {/* 用户管理页面（仅管理员） */}
+    <Route 
+      path="/admin/users" 
+      element={
+        <ProtectedRoute allowedRoles={['ADMIN']}>
+          <UserManagement />
+        </ProtectedRoute>
+      } 
+    />
+    {/* 我的资产页面（开发商和提交者） */}
+    <Route 
+      path="/my-assets" 
+      element={
+        <ProtectedRoute allowedRoles={['SUBMITTER', 'DEVELOPER', 'ADMIN']}>
+          <MyAssets />
         </ProtectedRoute>
       } 
     />

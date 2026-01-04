@@ -20,6 +20,7 @@ import { generateContractByAssetId } from '../utils/contractGenerator.js';
 import { getAssetById, updateRawAsset, getAssetReviewHistory } from '../utils/storage.js';
 import { readFileSync } from 'fs';
 import blockchainService from '../utils/blockchain.js';
+import { addAssetLog } from '../utils/homepageStorage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -61,13 +62,14 @@ const upload = multer({
 
 const router = express.Router();
 
-// POST /api/arsenal/submit - 提交资产数据
-router.post('/submit', async (req, res) => {
+// POST /api/arsenal/submit - 提交资产数据（需要SUBMITTER或DEVELOPER权限）
+router.post('/submit', authenticate, requireRole(ROLES.SUBMITTER, ROLES.DEVELOPER), async (req, res) => {
   try {
     const {
       ownerName,
       phone,
       projectName,
+      province = '', // 省份信息（可选，用于更准确的地理定位）
       city,
       area,
       debtPrice,
@@ -75,7 +77,10 @@ router.post('/submit', async (req, res) => {
       address = '',
       roomNumber = '',
       marketValuation = 0,
-      proofDocs = []
+      proofDocs = [],
+      latitude = null,
+      longitude = null,
+      locationAddress = ''
     } = req.body;
 
     // 验证必填字段
@@ -93,6 +98,7 @@ router.post('/submit', async (req, res) => {
       ownerId: '', // 身份证后四位，可选
       contactPhone: phone,
       projectName,
+      province: province || '', // 省份信息
       city,
       district,
       address,
@@ -101,7 +107,12 @@ router.post('/submit', async (req, res) => {
       marketValuation: Number(marketValuation) || Number(debtPrice) * 1.5,
       debtAmount: Number(debtPrice),
       proofDocs,
-      timestamp: Date.now()
+      // 位置信息（经纬度和地址）
+      latitude: latitude ? Number(latitude) : null,
+      longitude: longitude ? Number(longitude) : null,
+      locationAddress: locationAddress || address || (province ? `${province}${city}` : city) || '',
+      timestamp: Date.now(),
+      submittedBy: req.user?.address || req.user?.username || 'unknown' // 保存提交者信息
     };
 
     // 保存原始资产
@@ -167,10 +178,42 @@ router.get('/preview', (req, res) => {
   }
 });
 
-// GET /api/arsenal/pending - 获取所有待审核资产（需要审核员或管理员权限）
-router.get('/pending', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), (req, res) => {
+// GET /api/arsenal/pending - 获取待审核资产（需要审核员、房地产开发商或管理员权限）
+// - 管理员（ADMIN）和审核员（REVIEWER）：可以查看所有待审核资产
+// - 开发商（DEVELOPER）：查看自己提交的所有资产（所有状态）
+router.get('/pending', authenticate, requireRole(ROLES.REVIEWER, ROLES.DEVELOPER, ROLES.ADMIN), (req, res) => {
   try {
+    const userRole = req.user?.role;
+    const userAddress = req.user?.address || req.user?.username;
+    
+    // 如果是开发商，返回该开发商提交的所有资产（所有状态）
+    if (userRole === ROLES.DEVELOPER) {
+      const allAssets = getAllAssets();
+      
+      // 筛选出该开发商提交的所有资产
+      const developerAssets = allAssets.raw
+        .filter(rawAsset => rawAsset.submittedBy === userAddress)
+        .map(rawAsset => {
+          const sanitized = allAssets.sanitized.find(s => s.id === rawAsset.id);
+          return {
+            raw: rawAsset,
+            sanitized: sanitized || null
+          };
+        });
+      
+      // 按时间倒序排列（最新的在前）
+      developerAssets.sort((a, b) => (b.raw?.timestamp || 0) - (a.raw?.timestamp || 0));
+      
+      return res.json({
+        success: true,
+        count: developerAssets.length,
+        assets: developerAssets
+      });
+    }
+    
+    // 管理员和审核员：只返回待审核资产
     const pendingAssets = getPendingAssets();
+    
     res.json({
       success: true,
       count: pendingAssets.length,
@@ -185,14 +228,99 @@ router.get('/pending', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), (
   }
 });
 
+// GET /api/arsenal/my-assets - 获取当前用户提交的所有资产（需要SUBMITTER、DEVELOPER或ADMIN权限）
+// - 开发商（DEVELOPER）：只能查看自己提交的资产
+// - 管理员（ADMIN）：可以查看所有资产
+router.get('/my-assets', authenticate, requireRole(ROLES.SUBMITTER, ROLES.DEVELOPER, ROLES.ADMIN), (req, res) => {
+  try {
+    const userRole = req.user?.role;
+    const userAddress = req.user?.address || req.user?.username;
+    
+    const allAssets = getAllAssets();
+    
+    let myAssets = [];
+    
+    if (userRole === ROLES.ADMIN) {
+      // 管理员可以查看所有资产
+      myAssets = allAssets.raw.map(rawAsset => {
+        const sanitized = allAssets.sanitized.find(s => s.id === rawAsset.id);
+        return {
+          raw: rawAsset,
+          sanitized: sanitized || null
+        };
+      });
+    } else {
+      // 开发商和提交者只能查看自己提交的资产
+      myAssets = allAssets.raw
+        .filter(rawAsset => rawAsset.submittedBy === userAddress)
+        .map(rawAsset => {
+          const sanitized = allAssets.sanitized.find(s => s.id === rawAsset.id);
+          return {
+            raw: rawAsset,
+            sanitized: sanitized || null
+          };
+        });
+    }
+    
+    // 按时间倒序排列（最新的在前）
+    myAssets.sort((a, b) => (b.raw?.timestamp || 0) - (a.raw?.timestamp || 0));
+    
+    res.json({
+      success: true,
+      count: myAssets.length,
+      assets: myAssets
+    });
+  } catch (error) {
+    console.error('Error getting my assets:', error);
+    res.status(500).json({ 
+      error: 'Failed to get my assets',
+      message: error.message 
+    });
+  }
+});
+
 // GET /api/arsenal/assets - 获取所有已审核通过的资产（用于前端展示）
 router.get('/assets', (req, res) => {
   try {
     const approvedAssets = getApprovedAssets();
+    const allAssets = getAllAssets();
+    
+    // 为每个资产添加城市信息和原始资产数据
+    const assetsWithCity = approvedAssets.map(sanitized => {
+      // 查找对应的原始资产数据
+      let rawAsset = null;
+      if (sanitized.internalRef) {
+        rawAsset = allAssets.raw.find(r => r.id === sanitized.internalRef || r.id === sanitized.id);
+      }
+      
+      // 尝试从原始数据中获取城市信息
+      let city = 'UNKNOWN';
+      if (rawAsset && rawAsset.city) {
+        city = rawAsset.city;
+      }
+      
+      // 如果还是没有城市，尝试从locationTag中提取
+      if (city === 'UNKNOWN' && sanitized.locationTag) {
+        const locationMap = {
+          'CN-NW-CAPITAL': '西安',
+          'CN-NW-SUB': '咸阳',
+          'CN-IND-HUB': '宝鸡',
+          'CN-QINLING-MTN': '商洛',
+          'CN-INT-RES': '汉中'
+        };
+        city = locationMap[sanitized.locationTag] || sanitized.locationTag;
+      }
+      
+      return {
+        sanitized: sanitized,
+        raw: rawAsset // 包含原始资产数据，用于显示真实房地产信息
+      };
+    });
+    
     res.json({
       success: true,
-      count: approvedAssets.length,
-      assets: approvedAssets
+      count: assetsWithCity.length,
+      assets: assetsWithCity
     });
   } catch (error) {
     console.error('Error getting approved assets:', error);
@@ -279,7 +407,13 @@ router.get('/assets/:id', (req, res) => {
       price: `${price.toLocaleString()} USDT`,
       yield: `${yieldPercent.toFixed(0)}%`,
       status: sanitized.status === 'AVAILABLE' ? 'AVAILABLE' : (sanitized.status === 'MINTING' ? 'MINTING' : 'RESERVED'),
-      risk: risk
+      risk: risk,
+      // NFT 信息
+      nftMinted: sanitized.nftMinted || false,
+      nftTokenId: sanitized.nftTokenId || null,
+      nftTxHash: sanitized.nftTxHash || null,
+      nftMintedAt: sanitized.nftMintedAt || null,
+      mintedTo: sanitized.mintedTo || null
     };
     
     res.json({
@@ -296,8 +430,8 @@ router.get('/assets/:id', (req, res) => {
   }
 });
 
-// PUT /api/arsenal/approve/:id - 批准资产（需要审核员或管理员权限）
-router.put('/approve/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), async (req, res) => {
+// PUT /api/arsenal/approve/:id - 批准资产（需要审核员、房地产开发商或管理员权限）
+router.put('/approve/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.DEVELOPER, ROLES.ADMIN), async (req, res) => {
   try {
     const { id } = req.params;
     const { autoMint = true, mintToAddress } = req.body;
@@ -308,6 +442,54 @@ router.put('/approve/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN
       reviewedBy: req.user?.username || req.body.reviewedBy || 'system',
       reviewNotes: req.body.reviewNotes || ''
     });
+    
+    // 审核通过后，立即在地图上显示资产位置
+    try {
+      const rawAsset = assetData.raw;
+      const sanitizedAsset = assetData.sanitized;
+      
+      // 确定节点位置（优先使用资产的真实经纬度）
+      let nodeLocation = null;
+      if (rawAsset && rawAsset.latitude && rawAsset.longitude) {
+        // 使用真实经纬度（小幅随机偏移以避免完全重叠，约100米）
+        nodeLocation = {
+          lat: rawAsset.latitude + (Math.random() - 0.5) * 0.001,
+          lng: rawAsset.longitude + (Math.random() - 0.5) * 0.001
+        };
+      }
+      
+      // 确定节点名称
+      let nodeName = 'Unknown';
+      if (rawAsset && rawAsset.city) {
+        const cityNodeMap = {
+          '西安': "XI'AN (Urban Reserve)",
+          '咸阳': "XI'AN (Urban Reserve)",
+          '宝鸡': 'SHAANXI (Qinling Base)',
+          '商洛': 'SHAANXI (Qinling Base)',
+        };
+        nodeName = cityNodeMap[rawAsset.city] || `MAINLAND (${rawAsset.city})`;
+      }
+      
+      // 创建地图日志
+      const assetLog = {
+        id: `${Date.now()}-${id}`,
+        lot: sanitizedAsset.codeName || sanitizedAsset.id || `LOT-${id.slice(-6)}`,
+        location: rawAsset?.locationAddress || rawAsset?.city || 'Unknown',
+        timestamp: Date.now(),
+        assetId: id,
+        nodeName: nodeName,
+        nodeLocation: nodeLocation,
+        value: rawAsset?.debtAmount || sanitizedAsset?.tokenPrice || 0,
+        status: 'confirmed'
+      };
+      
+      // 添加到地图日志
+      addAssetLog(assetLog);
+      console.log(`✅ 资产审核通过，已添加到地图: ${sanitizedAsset.codeName}`);
+    } catch (logError) {
+      console.error('⚠️ 添加资产到地图失败（但审核已通过）:', logError);
+      // 日志添加失败不影响审核通过
+    }
     
     // 如果启用自动上链，则触发区块链铸造
     let mintResult = null;
@@ -342,8 +524,8 @@ router.put('/approve/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN
   }
 });
 
-// PUT /api/arsenal/reject/:id - 拒绝资产（需要审核员或管理员权限）
-router.put('/reject/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), (req, res) => {
+// PUT /api/arsenal/reject/:id - 拒绝资产（需要审核员、房地产开发商或管理员权限）
+router.put('/reject/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.DEVELOPER, ROLES.ADMIN), (req, res) => {
   try {
     const { id } = req.params;
     const updatedAsset = updateAssetStatus(id, 'REJECTED', {
@@ -365,8 +547,8 @@ router.put('/reject/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN)
   }
 });
 
-// GET /api/arsenal/stats - 获取统计信息（需要审核员或管理员权限）
-router.get('/stats', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), (req, res) => {
+// GET /api/arsenal/stats - 获取统计信息（需要审核员、房地产开发商或管理员权限）
+router.get('/stats', authenticate, requireRole(ROLES.REVIEWER, ROLES.DEVELOPER, ROLES.ADMIN), (req, res) => {
   try {
     const allAssets = getAllAssets();
     const pending = getAssetsByStatus('MINTING');
@@ -424,10 +606,11 @@ router.post('/upload', upload.single('file'), (req, res) => {
   }
 });
 
-// POST /api/arsenal/generate-contract/:id - 生成合同PDF（需要审核员或管理员权限）
-router.post('/generate-contract/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN, ROLES.SUBMITTER), async (req, res) => {
+// POST /api/arsenal/mint-nft/:id - 铸造 TWS Land NFT（需要审核员、房地产开发商或管理员权限）
+router.post('/mint-nft/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.DEVELOPER, ROLES.ADMIN), async (req, res) => {
   try {
     const { id } = req.params;
+    const { mintToAddress } = req.body;
     
     // 检查资产是否存在
     const assetData = getAssetById(id);
@@ -439,29 +622,77 @@ router.post('/generate-contract/:id', authenticate, requireRole(ROLES.REVIEWER, 
       });
     }
 
-    // 生成合同PDF
-    const pdfPath = await generateContractByAssetId(id);
-    
-    // 读取PDF文件并返回
-    const pdfBuffer = readFileSync(pdfPath);
-    const filename = pdfPath.split('/').pop();
-    
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(pdfBuffer);
+    // 检查资产状态，只有 AVAILABLE 状态的资产才能铸造 NFT
+    if (assetData.sanitized.status !== 'AVAILABLE') {
+      return res.status(400).json({
+        success: false,
+        error: 'Asset not available',
+        message: `Asset status is ${assetData.sanitized.status}, only AVAILABLE assets can be minted as NFT`
+      });
+    }
+
+    // 确定接收地址
+    const toAddress = mintToAddress || req.user?.address || process.env.PLATFORM_WALLET;
+    if (!toAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'No recipient address',
+        message: 'Please provide mintToAddress or configure PLATFORM_WALLET'
+      });
+    }
+
+    // 铸造 NFT
+    let mintResult = null;
+    if (process.env.CONTRACT_ADDRESS && blockchainService) {
+      try {
+        mintResult = await blockchainService.mintAsset(assetData, toAddress);
+        console.log('✅ NFT 铸造成功:', mintResult);
+      } catch (blockchainError) {
+        console.error('⚠️ NFT 铸造失败（但已进入资产池）:', blockchainError);
+        // NFT 铸造失败不影响资产进入资产池
+      }
+    }
+
+    // 更新资产状态为已铸造 NFT
+    const updatedAsset = updateAssetStatus(id, 'AVAILABLE', {
+      nftMinted: true,
+      nftTokenId: mintResult?.tokenId || null,
+      nftTxHash: mintResult?.txHash || null,
+      nftMintedAt: mintResult ? Date.now() : null,
+      mintedTo: toAddress
+    });
+
+    res.json({
+      success: true,
+      message: 'NFT minted successfully and added to asset pool',
+      asset: {
+        id: updatedAsset.id,
+        codeName: updatedAsset.codeName,
+        status: updatedAsset.status
+      },
+      nft: mintResult ? {
+        tokenId: mintResult.tokenId,
+        txHash: mintResult.txHash,
+        blockNumber: mintResult.blockNumber,
+        toAddress: toAddress
+      } : {
+        message: 'NFT minting skipped (blockchain not configured)',
+        status: 'added to asset pool'
+      }
+    });
     
   } catch (error) {
-    console.error('Error generating contract:', error);
+    console.error('Error minting NFT:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to generate contract',
+      error: 'Failed to mint NFT',
       message: error.message
     });
   }
 });
 
-// GET /api/arsenal/contract/:id - 获取合同PDF（预览，需要审核员或管理员权限）
-router.get('/contract/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN, ROLES.SUBMITTER), async (req, res) => {
+// GET /api/arsenal/contract/:id - 获取合同PDF（预览，需要审核员、房地产开发商或管理员权限，以及提交者）
+router.get('/contract/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.DEVELOPER, ROLES.ADMIN, ROLES.SUBMITTER), async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -482,8 +713,10 @@ router.get('/contract/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMI
     const pdfBuffer = readFileSync(pdfPath);
     const filename = pdfPath.split('/').pop();
     
+    // 设置正确的响应头，支持中文文件名
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
+    res.setHeader('Content-Length', pdfBuffer.length);
     res.send(pdfBuffer);
     
   } catch (error) {
@@ -496,8 +729,8 @@ router.get('/contract/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMI
   }
 });
 
-// POST /api/arsenal/batch-approve - 批量批准资产（需要审核员或管理员权限）
-router.post('/batch-approve', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), async (req, res) => {
+// POST /api/arsenal/batch-approve - 批量批准资产（需要审核员、房地产开发商或管理员权限）
+router.post('/batch-approve', authenticate, requireRole(ROLES.REVIEWER, ROLES.DEVELOPER, ROLES.ADMIN), async (req, res) => {
   try {
     const { ids, reviewNotes } = req.body;
     
@@ -540,8 +773,8 @@ router.post('/batch-approve', authenticate, requireRole(ROLES.REVIEWER, ROLES.AD
   }
 });
 
-// PUT /api/arsenal/edit/:id - 编辑资产（审核前可修改，需要提交者或管理员权限）
-router.put('/edit/:id', authenticate, requireRole(ROLES.SUBMITTER, ROLES.ADMIN), async (req, res) => {
+// PUT /api/arsenal/edit/:id - 编辑资产（审核前可修改，需要提交者、房地产开发商或管理员权限）
+router.put('/edit/:id', authenticate, requireRole(ROLES.SUBMITTER, ROLES.DEVELOPER, ROLES.ADMIN), async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -608,8 +841,8 @@ router.put('/edit/:id', authenticate, requireRole(ROLES.SUBMITTER, ROLES.ADMIN),
   }
 });
 
-// GET /api/arsenal/review-history/:id - 获取审核历史（需要审核员或管理员权限）
-router.get('/review-history/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), (req, res) => {
+// GET /api/arsenal/review-history/:id - 获取审核历史（需要审核员、房地产开发商或管理员权限）
+router.get('/review-history/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.DEVELOPER, ROLES.ADMIN), (req, res) => {
   try {
     const { id } = req.params;
     const history = getAssetReviewHistory(id);
