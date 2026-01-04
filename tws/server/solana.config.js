@@ -21,6 +21,18 @@ export default {
   // 钱包路径
   WALLET_PATH: process.env.SOLANA_WALLET_PATH || '~/.config/solana/id.json',
   
+  // TaiOneToken 配置（全局统一配置）
+  // ⚠️ 重要: 只需在此处修改一次，全系统都会使用
+  TAI_ONE_TOKEN: {
+    MINT: process.env.TAI_ONE_TOKEN_MINT || process.env.TWS_COIN_MINT || 'ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk',
+    DECIMALS: 6, // TaiOneToken 小数位数
+  },
+  
+  // 向后兼容（保持旧名称）
+  get TWSCoin_MINT() {
+    return this.TAI_ONE_TOKEN.MINT;
+  },
+  
   // 默认 RPC 端点
   DEFAULT_RPC: {
     'devnet': 'https://api.devnet.solana.com',

@@ -3,10 +3,10 @@ const { Connection, Keypair, PublicKey, SystemProgram } = require('@solana/web3.
 const { getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, getAccount } = require('@solana/spl-token');
 const fs = require('fs');
 const path = require('path');
-const config = require('../solana.config.js');
+const config = require('../solana.config.js').default || require('../solana.config.js');
 
-// TaiOneToken 铸造地址
-const TaiOneToken_MINT = new PublicKey('ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk');
+// TaiOneToken 铸造地址（从全局配置读取）
+const TaiOneToken_MINT = new PublicKey(config.TAI_ONE_TOKEN.MINT);
 // 向后兼容
 const TWSCoin_MINT = TaiOneToken_MINT;
 

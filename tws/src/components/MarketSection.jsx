@@ -5,6 +5,7 @@ import { generateUniqueId } from '../utils/uniqueId';
 import { getMarketData } from '../utils/api';
 import { useSSE } from '../contexts/SSEContext';
 import { useServerStatus } from '../contexts/ServerStatusContext';
+import { TaiOneToken_MINT } from '../utils/twscoin';
 
 const MarketSection = () => {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ const MarketSection = () => {
     const fetchRealPrice = async () => {
       try {
         // 使用 Token Address 获取数据，以找到流动性最好的交易对
-        const tokenAddress = 'ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk';
+        const tokenAddress = TaiOneToken_MINT;
         const response = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${tokenAddress}`);
         const data = await response.json();
         
@@ -621,7 +622,7 @@ const MarketSection = () => {
                 </div>
                 
                 <a 
-                    href="https://raydium.io/swap/?inputMint=sol&outputMint=ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk" 
+                    href={`https://raydium.io/swap/?inputMint=sol&outputMint=${TaiOneToken_MINT}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold rounded-lg text-center transition-all transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2"

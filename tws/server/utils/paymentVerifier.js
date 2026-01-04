@@ -1,8 +1,9 @@
 import { Connection, PublicKey } from '@solana/web3.js';
 import { getAccount, getAssociatedTokenAddress } from '@solana/spl-token';
+import config from '../solana.config.js';
 
-// TaiOneToken 铸造地址
-const TaiOneToken_MINT = new PublicKey(process.env.TWS_COIN_MINT || 'ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk');
+// TaiOneToken 铸造地址（从全局配置读取）
+const TaiOneToken_MINT = new PublicKey(config.TAI_ONE_TOKEN.MINT);
 // 向后兼容
 const TWSCoin_MINT = TaiOneToken_MINT;
 
