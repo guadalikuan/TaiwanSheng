@@ -23,7 +23,9 @@ import techProjectRoutes from './routes/techProject.js';
 import adminRoutes from './routes/admin.js';
 import investmentRoutes from './routes/investments.js';
 import myAssetsRoutes from './routes/myAssets.js';
+import marketRoutes from './routes/market.js';
 import { startBackgroundTasks } from './utils/backgroundTasks.js';
+import { startMarketDataTasks } from './utils/marketDataTasks.js';
 import { startScanning } from './utils/oracle.js';
 import { initTimeManager } from './utils/timeManager.js';
 import { initHistoryManager } from './utils/historyManager.js';
@@ -171,6 +173,7 @@ app.use('/api/tech-project', techProjectRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/investments', investmentRoutes);
 app.use('/api/my-assets', myAssetsRoutes);
+app.use('/api/market', marketRoutes);
 
 // 调试：列出所有注册的路由
 console.log('📋 已注册的路由:');
@@ -463,17 +466,23 @@ const startServer = async () => {
 
     // 启动后台任务
     startBackgroundTasks();
+    
+    // 启动市场数据任务
+    await startMarketDataTasks();
+    
     console.log('\n✅ 所有服务已启动：');
     console.log('   ✓ Express API 服务器');
     console.log('   ✓ SSE (Server-Sent Events) 实时推送');
     console.log('   ✓ 后台数据生成任务（市场、订单簿、K线、地图、资产）');
     console.log('   ✓ 机器人用户池和调度器');
     console.log('   ✓ 订单撮合引擎');
+    console.log('   ✓ 市场数据服务（价格、K线）');
   }).catch(async error => {
     console.error('⚠️  Error during initialization:', error);
     // 即使初始化失败，也初始化市场价格并启动后台任务
     await initializeMarketPrice();
     startBackgroundTasks();
+    await startMarketDataTasks();
     console.log('\n✅ 核心服务已启动（部分初始化失败）');
   });
   

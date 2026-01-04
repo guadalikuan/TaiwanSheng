@@ -333,7 +333,11 @@ export const NAMESPACES = {
   ORDER_BOOK: 'orderBook', // 交易市场挂单
   TRADES: 'trades', // 交易市场成交记录
   VISIT_LOGS: 'visitLogs', // 访问记录
-  AUCTIONS: 'auctions' // 拍卖数据
+  AUCTIONS: 'auctions', // 拍卖数据
+  MARKET_DATA: 'marketData', // K线数据
+  MARKET_PRICE: 'marketPrice', // 实时价格缓存
+  MARKET_TRANSACTIONS: 'marketTransactions', // 已处理的交易签名（用于增量更新）
+  MARKET_STATS: 'marketStats' // 市场统计信息
 };
 
 export default {

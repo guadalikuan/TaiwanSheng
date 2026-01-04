@@ -15,8 +15,9 @@ export default {
   CLUSTER: process.env.SOLANA_CLUSTER || 'mainnet-beta',
   
   // RPC 端点（如果使用自定义 RPC，设置此值）
+  // 优先使用 VITE_SOLANA_RPC_URL（与前端保持一致），如果没有则使用 SOLANA_RPC_URL
   // null 表示使用默认端点
-  RPC_URL: process.env.SOLANA_RPC_URL || null,
+  RPC_URL: process.env.VITE_SOLANA_RPC_URL || process.env.SOLANA_RPC_URL || null,
   
   // 钱包路径
   WALLET_PATH: process.env.SOLANA_WALLET_PATH || '~/.config/solana/id.json',

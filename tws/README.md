@@ -108,13 +108,20 @@ npm run preview
 
 ### 快速设置
 
-1. 复制环境变量模板：
+1. 创建 `.env.local` 文件（如果不存在）：
    ```bash
-   cp .env.example .env
-   cp .env.production.example .env.production
+   # 在 tws 目录下创建 .env.local
    ```
 
-2. 编辑 `.env` 文件，填入实际值。
+2. 添加必要的环境变量（如果需要）：
+   ```bash
+   # Solana RPC URL (使用 Helius 或其他 RPC 服务)
+   # 后端使用: SOLANA_RPC_URL
+   # 前端使用: VITE_SOLANA_RPC_URL
+   SOLANA_RPC_URL=https://mainnet.helius-rpc.com/?api-key=your_key
+   ```
+
+3. 详细的环境变量配置说明请参考 [docs/JUPITER_INTEGRATION.md](./docs/JUPITER_INTEGRATION.md)。
 
 ## 部署
 
@@ -160,6 +167,7 @@ npm run docker:compose
 
 - [部署指南](./docs/DEPLOYMENT.md) - 详细的部署说明
 - [环境变量说明](./docs/ENVIRONMENT.md) - 环境变量配置指南
+- [Jupiter & Helius RPC 集成](./docs/JUPITER_INTEGRATION.md) - Jupiter API 和 Helius RPC 市场数据集成说明
 - [部署检查清单](./docs/CHECKLIST.md) - 部署前的检查清单
 
 ## 页面路由

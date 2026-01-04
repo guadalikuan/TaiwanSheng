@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Navbar from './Navbar';
 import OmegaSection from './OmegaSection';
 import MarketSection from './MarketSection';
@@ -31,26 +31,55 @@ const ServerOfflineBanner = () => {
   );
 };
 
-const HomePageContent = () => (
-  <div className="bg-black min-h-screen text-white font-sans overflow-x-hidden">
-    <ServerOfflineBanner />
-    <Navbar />
-    <main className="h-screen w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth no-scrollbar">
-      <section id="omega" className="h-screen w-full snap-start shrink-0 relative">
-        <OmegaSection />
-      </section>
-      <section id="market" className="h-screen w-full snap-start shrink-0 relative">
-        <MarketSection />
-      </section>
-      <section id="map" className="h-screen w-full snap-start shrink-0 relative">
-        <MapSection />
-      </section>
-      <section id="assets" className="min-h-screen w-full snap-start shrink-0 relative">
-        <AssetsSection />
-      </section>
-    </main>
-  </div>
-);
+const HomePageContent = () => {
+  // 处理 hash 路由
+  useEffect(() => {
+    const handleHashScroll = () => {
+      const hash = window.location.hash;
+      if (hash) {
+        const elementId = hash.substring(1); // 去掉 # 号
+        const element = document.getElementById(elementId);
+        if (element) {
+          // 延迟一下确保页面已渲染
+          setTimeout(() => {
+            element.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        }
+      }
+    };
+
+    // 初始加载时检查 hash
+    handleHashScroll();
+
+    // 监听 hash 变化
+    window.addEventListener('hashchange', handleHashScroll);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashScroll);
+    };
+  }, []);
+
+  return (
+    <div className="bg-black min-h-screen text-white font-sans overflow-x-hidden">
+      <ServerOfflineBanner />
+      <Navbar />
+      <main className="h-screen w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth no-scrollbar">
+        <section id="omega" className="h-screen w-full snap-start shrink-0 relative">
+          <OmegaSection />
+        </section>
+        <section id="market" className="h-screen w-full snap-start shrink-0 relative">
+          <MarketSection />
+        </section>
+        <section id="map" className="h-screen w-full snap-start shrink-0 relative">
+          <MapSection />
+        </section>
+        <section id="assets" className="min-h-screen w-full snap-start shrink-0 relative">
+          <AssetsSection />
+        </section>
+      </main>
+    </div>
+  );
+};
 
 const HomePage = () => (
   <ServerStatusProvider>

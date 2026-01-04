@@ -383,8 +383,8 @@ const DespairBunker = () => {
       });
 
       setTimeout(() => {
-        // 跳转到首页第二屏（market section）
-        navigate('/#market');
+        // 直接跳转到首页
+        navigate('/');
       }, 2000);
     }, 1500);
   };

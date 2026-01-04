@@ -6,6 +6,7 @@ import { getMarketData } from '../utils/api';
 import { useSSE } from '../contexts/SSEContext';
 import { useServerStatus } from '../contexts/ServerStatusContext';
 import { TaiOneToken_MINT } from '../utils/twscoin';
+import KlineChart from './KlineChart';
 
 const MarketSection = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const MarketSection = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
-  const [realMarketData, setRealMarketData] = useState(null); // 存储来自 DexScreener 的真实数据
+  const [marketStats, setMarketStats] = useState(null); // 存储市场统计信息
   
   // 价格相关状态
   const [yesterdayClose, setYesterdayClose] = useState(null);
@@ -37,34 +38,108 @@ const MarketSection = () => {
   const [dragStartX, setDragStartX] = useState(0);
   const [dragStartOffset, setDragStartOffset] = useState(0);
 
-  // 获取 DexScreener 实时价格数据
+  // 从后端API获取价格数据
   useEffect(() => {
-    const fetchRealPrice = async () => {
+    const fetchPrice = async () => {
       try {
-        // 使用 Token Address 获取数据，以找到流动性最好的交易对
-        const tokenAddress = TaiOneToken_MINT;
-        const response = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${tokenAddress}`);
-        const data = await response.json();
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}/api/market/price`);
+        const result = await response.json();
         
-        if (data.pairs && data.pairs.length > 0) {
-          // 按流动性排序，取最大的
-          const bestPair = data.pairs.sort((a, b) => b.liquidity.usd - a.liquidity.usd)[0];
-          
-          console.log('DexScreener Data Fetched:', bestPair);
-          setRealMarketData(bestPair);
-          setCurrentPrice(parseFloat(bestPair.priceUsd));
-          setPriceChange24h(parseFloat(bestPair.priceChange.h24));
-          setVolume24h(parseFloat(bestPair.volume.h24));
-        } else {
-            console.warn('No pairs found for token:', tokenAddress);
+        if (result.success && result.data) {
+          setCurrentPrice(result.data.price);
+          setPriceChange24h(result.data.priceChange24h || 0);
         }
       } catch (err) {
-        console.error('Failed to fetch DexScreener data:', err);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('获取价格数据失败:', err);
+        }
       }
     };
 
-    fetchRealPrice();
-    const interval = setInterval(fetchRealPrice, 5000); // 加快更新频率到5秒
+    fetchPrice();
+    const interval = setInterval(fetchPrice, 30000); // 30秒更新一次
+    return () => clearInterval(interval);
+  }, []);
+
+  // 从后端API获取K线数据
+  useEffect(() => {
+    const fetchKline = async () => {
+      try {
+        // 根据视图模式确定时间间隔
+        let interval = '1H';
+        switch (viewMode) {
+          case '分时':
+            interval = '5m';
+            break;
+          case '日K':
+            interval = '1H';
+            break;
+          case '周K':
+            interval = '4H';
+            break;
+          case '月K':
+            interval = '1D';
+            break;
+        }
+
+        // 计算时间范围
+        const now = Date.now();
+        let timeFrom = now - 7 * 24 * 3600 * 1000; // 默认7天
+        switch (viewMode) {
+          case '分时':
+            timeFrom = now - 24 * 3600 * 1000; // 最近24小时
+            break;
+          case '日K':
+            timeFrom = now - 30 * 24 * 3600 * 1000; // 最近30天
+            break;
+          case '周K':
+            timeFrom = now - 52 * 7 * 24 * 3600 * 1000; // 最近52周
+            break;
+          case '月K':
+            timeFrom = now - 12 * 30 * 24 * 3600 * 1000; // 最近12个月
+            break;
+        }
+
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}/api/market/kline?interval=${interval}&from=${timeFrom}&to=${now}`
+        );
+        const result = await response.json();
+        
+        if (result.success && result.data && result.data.klineData) {
+          setRawData(result.data.klineData);
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('获取K线数据失败:', err);
+        }
+      }
+    };
+
+    fetchKline();
+    const interval = setInterval(fetchKline, 60000); // 60秒更新一次
+    return () => clearInterval(interval);
+  }, [viewMode]);
+
+  // 从后端API获取市场统计
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}/api/market/stats`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          setMarketStats(result.data);
+          setVolume24h(result.data.volume24h || 0);
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('获取市场统计失败:', err);
+        }
+      }
+    };
+
+    fetchStats();
+    const interval = setInterval(fetchStats, 30000); // 30秒更新一次
     return () => clearInterval(interval);
   }, []);
 
@@ -77,12 +152,24 @@ const MarketSection = () => {
     setTrades([]); // 清空虚拟交易记录
   }, []);
 
-  // 这里的 SSE 订阅逻辑也应该移除对虚拟数据的处理
+  // SSE 订阅实时市场数据更新
   useEffect(() => {
-    // 仅保留对真实数据事件的监听（如果后端有真实数据源接入）
-    // 目前后端已禁用模拟数据，所以这里实际上不会收到 update
     const unsubscribe = subscribe('market', (message) => {
-      // 忽略模拟数据更新
+      if (message && message.data) {
+        // 处理价格更新
+        if (message.data.type === 'price' && message.data.price) {
+          setCurrentPrice(message.data.price);
+          setPriceChange24h(message.data.priceChange24h || 0);
+        }
+        
+        // 处理市场统计更新
+        if (message.data.type === 'stats') {
+          setMarketStats(message.data);
+          if (message.data.volume24h !== undefined) {
+            setVolume24h(message.data.volume24h);
+          }
+        }
+      }
     });
     
     return unsubscribe;
@@ -528,21 +615,15 @@ const MarketSection = () => {
             {/* 流动性 & 市值 */}
             <div className="hidden md:flex items-center space-x-4 text-xs font-mono border-l border-slate-800 pl-6">
               <div>
-                <span className="text-slate-500 block text-[8px] uppercase">Liquidity</span>
-                <span className="text-cyan-400 font-bold">
-                  {realMarketData?.liquidity?.usd ? `$${realMarketData.liquidity.usd.toLocaleString()}` : '--'}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-500 block text-[8px] uppercase">FDV</span>
-                <span className="text-white">
-                  {realMarketData?.fdv ? `$${realMarketData.fdv.toLocaleString()}` : '--'}
-                </span>
-              </div>
-              <div>
                 <span className="text-slate-500 block text-[8px] uppercase">24H Volume</span>
-                <span className="text-white">
-                  {realMarketData?.volume?.h24 ? `$${realMarketData.volume.h24.toLocaleString()}` : '--'}
+                <span className="text-cyan-400 font-bold">
+                  {volume24h > 0 ? `$${volume24h.toLocaleString()}` : '--'}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[8px] uppercase">Price Change</span>
+                <span className={`font-bold ${priceChange24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {priceChange24h >= 0 ? '+' : ''}{priceChange24h.toFixed(2)}%
                 </span>
               </div>
             </div>
@@ -551,8 +632,26 @@ const MarketSection = () => {
 
         {/* 选项卡栏 */}
         <div className="h-10 border-b border-slate-800 bg-slate-900/30 flex items-center justify-between px-4">
-          <div className="flex bg-slate-900/50 rounded p-1 border border-slate-800">
-            <div className="px-3 py-1 text-xs font-mono text-slate-400">REAL-TIME DATA VIA DEXSCREENER</div>
+          <div className="flex items-center space-x-2">
+            <div className="flex bg-slate-900/50 rounded p-1 border border-slate-800">
+              <div className="px-3 py-1 text-xs font-mono text-slate-400">REAL-TIME DATA VIA JUPITER & HELIUS RPC</div>
+            </div>
+            {/* 视图模式切换 */}
+            <div className="flex bg-slate-900/50 rounded p-1 border border-slate-800">
+              {['分时', '日K', '周K', '月K'].map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`px-3 py-1 text-xs font-mono transition-all ${
+                    viewMode === mode
+                      ? 'bg-cyan-600 text-white'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                  }`}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
           </div>
           
           {/* 缩放控制（仅在K线图模式下显示） */}
@@ -589,16 +688,17 @@ const MarketSection = () => {
           )}
         </div>
 
-        {/* 图表区域 (DexScreener Embed) */}
+        {/* 图表区域 (自定义 K 线图) */}
         <div className="flex-1 relative flex overflow-hidden rounded-lg border border-slate-800 bg-black m-2">
-          <iframe 
-            src={`https://dexscreener.com/solana/${realMarketData?.pairAddress || '6q88jmgqs5kikkjjvh7xgpy2rv3c2jps9yqsgqfvkrgt'}?embed=1&theme=dark&trades=1&info=0`}
-            style={{
-              width: '100%',
-              height: '100%',
-              border: 0
+          <KlineChart
+            data={data}
+            viewMode={viewMode}
+            currentPrice={currentPrice || 0}
+            onHover={(candle, index) => {
+              // 可以在这里处理悬停事件
             }}
-            title="DexScreener Chart"
+            width={800}
+            height={400}
           />
         </div>
 
@@ -644,28 +744,28 @@ const MarketSection = () => {
             <span className="text-green-500">REAL-TIME</span>
           </div>
           <div className="space-y-2 overflow-y-auto flex-1 text-xs">
-             {realMarketData ? (
+             {marketStats || currentPrice ? (
                 <>
                     <div className="flex justify-between">
-                        <span className="text-slate-500">TXNS (24H)</span>
+                        <span className="text-slate-500">PRICE (USD)</span>
                         <span className="text-slate-300">
-                            <span className="text-green-500">{realMarketData.txns.h24.buys}</span> / <span className="text-red-500">{realMarketData.txns.h24.sells}</span>
+                            ${currentPrice > 0 ? currentPrice.toFixed(6) : '--'}
                         </span>
                     </div>
                     <div className="flex justify-between">
                         <span className="text-slate-500">VOLUME (24H)</span>
-                        <span className="text-slate-300">${realMarketData.volume.h24.toLocaleString()}</span>
+                        <span className="text-slate-300">
+                            {volume24h > 0 ? `$${volume24h.toLocaleString()}` : '--'}
+                        </span>
                     </div>
                      <div className="flex justify-between">
-                        <span className="text-slate-500">LIQUIDITY</span>
-                        <span className="text-slate-300">${realMarketData.liquidity.usd.toLocaleString()}</span>
-                    </div>
-                     <div className="flex justify-between">
-                        <span className="text-slate-500">PRICE (SOL)</span>
-                        <span className="text-slate-300">{realMarketData.priceNative} SOL</span>
+                        <span className="text-slate-500">PRICE CHANGE (24H)</span>
+                        <span className={`${priceChange24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {priceChange24h >= 0 ? '+' : ''}{priceChange24h.toFixed(2)}%
+                        </span>
                     </div>
                      <div className="mt-2 text-[10px] text-slate-600 text-center">
-                        Individual trades list available in main chart
+                        Data via Helius RPC & Jupiter API
                     </div>
                 </>
              ) : (
