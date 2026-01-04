@@ -4,8 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../solana.config.js');
 
-// TWSCoin 铸造地址
-const TWSCoin_MINT = new PublicKey('ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk');
+// TaiOneToken 铸造地址
+const TaiOneToken_MINT = new PublicKey('ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk');
+// 向后兼容
+const TWSCoin_MINT = TaiOneToken_MINT;
 
 async function initializeAuction() {
   console.log('🚀 初始化拍卖资产账户...\n');
@@ -50,13 +52,13 @@ async function initializeAuction() {
 
   // 初始化参数
   const assetId = process.env.ASSET_ID ? parseInt(process.env.ASSET_ID) : 1;
-  const startPrice = process.env.START_PRICE ? parseInt(process.env.START_PRICE) : 1000; // 1000 TWSCoin (最小单位)
+  const startPrice = process.env.START_PRICE ? parseInt(process.env.START_PRICE) : 1000; // 1000 TaiOneToken (最小单位)
   const tauntMessage = process.env.TAUNT_MESSAGE || '此房产已被TWS接管';
   const treasuryAddress = process.env.TREASURY_ADDRESS || walletKeypair.publicKey.toString();
 
   console.log('📝 初始化参数:');
   console.log('  资产 ID:', assetId);
-  console.log('  起拍价:', startPrice, 'TWSCoin');
+  console.log('  起拍价:', startPrice, 'TaiOneToken');
   console.log('  留言:', tauntMessage);
   console.log('  财库地址:', treasuryAddress);
 
@@ -78,7 +80,7 @@ async function initializeAuction() {
       )
       .accounts({
         auction: auctionPda,
-        twscoinMint: TWSCoin_MINT,
+        twscoinMint: TaiOneToken_MINT,
         treasury: new PublicKey(treasuryAddress),
         authority: walletKeypair.publicKey,
         systemProgram: anchor.web3.SystemProgram.programId,
@@ -93,16 +95,16 @@ async function initializeAuction() {
     const auctionAccount = await program.account.auctionAsset.fetch(auctionPda);
     console.log('\n📊 拍卖信息:');
     console.log('  当前房主:', auctionAccount.owner.toString());
-    console.log('  当前价格:', auctionAccount.price.toString(), 'TWSCoin');
+    console.log('  当前价格:', auctionAccount.price.toString(), 'TaiOneToken');
     console.log('  留言:', auctionAccount.tauntMessage);
     console.log('  资产 ID:', auctionAccount.assetId.toString());
-    console.log('  TWSCoin Mint:', auctionAccount.twscoinMint.toString());
+    console.log('  TaiOneToken Mint:', auctionAccount.twscoinMint.toString());
     console.log('  财库地址:', auctionAccount.treasury.toString());
 
     // 计算最低出价
     const currentPrice = BigInt(auctionAccount.price.toString());
     const minRequired = currentPrice * BigInt(110) / BigInt(100);
-    console.log('\n💰 最低出价:', minRequired.toString(), 'TWSCoin (当前价格 + 10%)');
+    console.log('\n💰 最低出价:', minRequired.toString(), 'TaiOneToken (当前价格 + 10%)');
 
   } catch (error) {
     console.error('\n❌ 初始化失败:', error);

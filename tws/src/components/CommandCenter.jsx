@@ -435,11 +435,11 @@ const CommandCenter = () => {
                       </div>
                       <div>
                         <span className="text-sm text-slate-600">目标金额：</span>
-                        <span className="font-mono text-cyan-600">{selectedProject.targetAmount.toLocaleString()} TWSCoin</span>
+                        <span className="font-mono text-cyan-600">{selectedProject.targetAmount.toLocaleString()} TaiOneToken</span>
                       </div>
                       <div>
                         <span className="text-sm text-slate-600">最小投资：</span>
-                        <span className="font-mono">{selectedProject.minInvestment.toLocaleString()} TWSCoin</span>
+                        <span className="font-mono">{selectedProject.minInvestment.toLocaleString()} TaiOneToken</span>
                       </div>
                     </div>
                     <div className="flex gap-3">

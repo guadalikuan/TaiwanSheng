@@ -144,7 +144,7 @@ const TechProjectCreate = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-mono text-slate-400 mb-2">目标金额（TWSCoin） *</label>
+                <label className="block text-sm font-mono text-slate-400 mb-2">目标金额（TaiOneToken） *</label>
                 <input
                   type="number"
                   name="targetAmount"
@@ -157,7 +157,7 @@ const TechProjectCreate = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-mono text-slate-400 mb-2">最小投资额（TWSCoin） *</label>
+                <label className="block text-sm font-mono text-slate-400 mb-2">最小投资额（TaiOneToken） *</label>
                 <input
                   type="number"
                   name="minInvestment"

@@ -1,8 +1,10 @@
 import { Connection, PublicKey } from '@solana/web3.js';
 import { getAccount, getAssociatedTokenAddress } from '@solana/spl-token';
 
-// TWSCoin 铸造地址
-const TWSCoin_MINT = new PublicKey(process.env.TWS_COIN_MINT || 'ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk');
+// TaiOneToken 铸造地址
+const TaiOneToken_MINT = new PublicKey(process.env.TWS_COIN_MINT || 'ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk');
+// 向后兼容
+const TWSCoin_MINT = TaiOneToken_MINT;
 
 // Solana RPC端点
 const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
@@ -53,7 +55,7 @@ export const verifyPayment = async (txSignature, expectedPayment) => {
     const tokenTransfers = tx.meta?.postTokenBalances || [];
     const preTokenBalances = tx.meta?.preTokenBalances || [];
 
-    // 查找TWSCoin转账
+    // 查找TaiOneToken转账
     let foundTransfer = false;
     let transferAmount = 0;
     let fromAddress = null;
@@ -65,7 +67,7 @@ export const verifyPayment = async (txSignature, expectedPayment) => {
         b => b.accountIndex === postBalance.accountIndex
       );
 
-      if (postBalance.mint === TWSCoin_MINT) {
+      if (postBalance.mint === TaiOneToken_MINT) {
         const postAmount = parseInt(postBalance.uiTokenAmount.amount);
         const preAmount = preBalance ? parseInt(preBalance.uiTokenAmount.amount) : 0;
         const diff = postAmount - preAmount;
@@ -89,12 +91,12 @@ export const verifyPayment = async (txSignature, expectedPayment) => {
     if (!foundTransfer) {
       return {
         valid: false,
-        message: 'No TWSCoin transfer found in transaction'
+        message: 'No TaiOneToken transfer found in transaction'
       };
     }
 
     // 验证金额
-    const expectedAmount = BigInt(Math.floor(expectedPayment.amount * 1e6)); // TWSCoin有6位小数
+    const expectedAmount = BigInt(Math.floor(expectedPayment.amount * 1e6)); // TaiOneToken有6位小数
     if (BigInt(transferAmount) !== expectedAmount) {
       return {
         valid: false,

@@ -5,8 +5,10 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../solana.config.js');
 
-// TWSCoin 铸造地址
-const TWSCoin_MINT = new PublicKey('ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk');
+// TaiOneToken 铸造地址
+const TaiOneToken_MINT = new PublicKey('ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk');
+// 向后兼容
+const TWSCoin_MINT = TaiOneToken_MINT;
 
 async function main() {
   console.log('🚀 开始部署 TWS Asset 程序到 Solana...\n');
@@ -85,7 +87,7 @@ async function main() {
 
   console.log('\n✅ 程序加载成功!');
   console.log('程序 ID:', programId.toString());
-  console.log('TWSCoin 地址:', TWSCoin_MINT.toString());
+  console.log('TaiOneToken 地址:', TaiOneToken_MINT.toString());
 
   // 保存部署信息
   const deploymentInfo = {
@@ -93,7 +95,7 @@ async function main() {
     deployedAt: new Date().toISOString(),
     deployer: walletKeypair.publicKey.toString(),
     programId: programId.toString(),
-    twscoinMint: TWSCoin_MINT.toString(),
+    twscoinMint: TaiOneToken_MINT.toString(),
     rpcUrl: rpcUrl,
   };
 

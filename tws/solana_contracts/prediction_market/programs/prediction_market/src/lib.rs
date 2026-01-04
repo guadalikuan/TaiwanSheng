@@ -290,7 +290,7 @@ pub enum Outcome {
 pub enum ErrorCode {
     #[msg("Market has ended")]
     MarketEnded,
-    #[msg("Insufficient TWSCoin holdings (Need > 10,000)")]
+    #[msg("Insufficient TaiOneToken holdings (Need > 10,000)")]
     InsufficientHolding,
     #[msg("Invalid outcome")]
     InvalidOutcome,

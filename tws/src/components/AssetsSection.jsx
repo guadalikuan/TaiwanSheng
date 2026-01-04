@@ -208,9 +208,9 @@ const AssetsSection = () => {
     <div className="w-full bg-black border-t border-slate-800 p-8 md:px-20">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
-          <div className="text-2xl font-black text-white tracking-tighter mb-4">TWS</div>
+          <div className="text-2xl font-black text-white tracking-tighter mb-4">TaiOne</div>
           <div className="text-xs text-slate-500 font-mono">
-            项目：TWS
+            项目：TaiOne
             <br />
             行动：新型和平统一
             <br />
@@ -304,7 +304,7 @@ const AssetsSection = () => {
 
         <div className="border-l border-slate-800 pl-6">
           <p className="text-[10px] text-slate-600 leading-relaxed font-mono mb-4">
-            免責聲明：參與TWS即表示同意歷史趨勢的必然性。資產由中國大陸的實物抵押品支持。不構成財務建議。歷史偏愛有準備的人。
+            免責聲明：參與TaiOne即表示同意歷史趨勢的必然性。資產由中國大陸的實物抵押品支持。不構成財務建議。歷史偏愛有準備的人。
           </p>
           <button
             onClick={() => navigate('/arsenal')}
@@ -316,7 +316,7 @@ const AssetsSection = () => {
         </div>
       </div>
       <div className="text-center text-[10px] text-slate-800 mt-8 font-mono">
-        版權 © 2025 TWS 基金會。保留所有權利。
+        版權 © 2025 TaiOne 基金會。保留所有權利。
         <br />
         <span className="text-[8px] opacity-50">這是一個遊戲化的資產模擬。不構成財務建議。</span>
       </div>

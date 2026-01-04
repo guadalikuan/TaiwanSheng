@@ -105,7 +105,7 @@ const TechProjectDetail = () => {
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm text-slate-400">筹款进度</span>
               <span className="text-sm font-mono text-gold">
-                {project.currentAmount.toLocaleString()} / {project.targetAmount.toLocaleString()} TWSCoin
+                {project.currentAmount.toLocaleString()} / {project.targetAmount.toLocaleString()} TaiOneToken
               </span>
             </div>
             <div className="w-full bg-slate-800 rounded-full h-4">
@@ -124,12 +124,12 @@ const TechProjectDetail = () => {
             <div className="bg-slate-800/50 p-4 rounded">
               <div className="text-xs text-slate-500 mb-1">目标金额</div>
               <div className="text-xl font-mono text-cyan-400">{project.targetAmount.toLocaleString()}</div>
-              <div className="text-xs text-slate-500">TWSCoin</div>
+              <div className="text-xs text-slate-500">TaiOneToken</div>
             </div>
             <div className="bg-slate-800/50 p-4 rounded">
               <div className="text-xs text-slate-500 mb-1">最小投资</div>
               <div className="text-xl font-mono text-gold">{project.minInvestment.toLocaleString()}</div>
-              <div className="text-xs text-slate-500">TWSCoin</div>
+              <div className="text-xs text-slate-500">TaiOneToken</div>
             </div>
             <div className="bg-slate-800/50 p-4 rounded">
               <div className="text-xs text-slate-500 mb-1">预估收益</div>
@@ -195,7 +195,7 @@ const TechProjectDetail = () => {
                     {investor.investorAddress?.slice(0, 8)}...{investor.investorAddress?.slice(-6)}
                   </span>
                   <span className="text-sm font-mono text-cyan-400">
-                    {investor.amount.toLocaleString()} TWSCoin
+                    {investor.amount.toLocaleString()} TaiOneToken
                   </span>
                 </div>
               ))}

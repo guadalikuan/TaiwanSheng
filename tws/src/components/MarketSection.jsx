@@ -484,7 +484,7 @@ const MarketSection = () => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
                 <Globe className="text-cyan-500 mr-2 animate-pulse" size={20} />
-                <h3 className="text-xl font-bold text-white font-mono tracking-wider">TWS/SOL</h3>
+                <h3 className="text-xl font-bold text-white font-mono tracking-wider">TaiOne/SOL</h3>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -612,12 +612,12 @@ const MarketSection = () => {
         {/* Buy Channel Section */}
         <div className="h-2/3 flex flex-col border-b border-slate-800">
             <div className="h-10 border-b border-slate-800 flex items-center px-4 text-xs text-slate-400 uppercase tracking-wider bg-slate-900">
-              <ShoppingBag size={14} className="mr-2" /> Buy TWSCoin
+              <ShoppingBag size={14} className="mr-2" /> Buy TaiOneToken
             </div>
             <div className="flex-1 p-4 flex flex-col justify-center items-center space-y-4 bg-slate-900/20">
                 <div className="text-center">
                     <h3 className="text-lg font-bold text-white mb-1">Trade on Raydium</h3>
-                    <p className="text-xs text-slate-400">Best liquidity for TWSCoin</p>
+                    <p className="text-xs text-slate-400">Best liquidity for TaiOneToken</p>
                 </div>
                 
                 <a 

@@ -93,7 +93,7 @@ const BettingHistory = () => {
                   </h3>
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-400">Amount</span>
-                    <span className="font-mono font-bold text-yellow-500">{bet.amount} TWS</span>
+                    <span className="font-mono font-bold text-yellow-500">{bet.amount} TaiOneToken</span>
                   </div>
                 </div>
                );

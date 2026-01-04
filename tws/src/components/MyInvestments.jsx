@@ -105,7 +105,7 @@ const MyInvestments = () => {
                   <div>
                     <div className="text-xs text-slate-500 mb-1">投资金额</div>
                     <div className="text-lg font-mono text-cyan-400">
-                      {investment.amount.toLocaleString()} TWSCoin
+                      {investment.amount.toLocaleString()} TaiOneToken
                     </div>
                   </div>
                   <div>

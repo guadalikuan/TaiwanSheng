@@ -24,8 +24,10 @@ const require = createRequire(import.meta.url);
 
 import config from '../solana.config.js';
 
-// TWSCoin 铸造地址
-const TWSCoin_MINT = new PublicKey('ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk');
+// TaiOneToken 铸造地址
+const TaiOneToken_MINT = new PublicKey('ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk');
+// 向后兼容
+const TWSCoin_MINT = TaiOneToken_MINT;
 
 /**
  * Solana 区块链服务类
@@ -187,12 +189,12 @@ class SolanaBlockchainService {
 
       // 获取关联代币账户地址
       const userTokenAccount = await getAssociatedTokenAddress(
-        TWSCoin_MINT,
+        TaiOneToken_MINT,
         userPubkey
       );
 
       const bunkerTokenAccount = await getAssociatedTokenAddress(
-        TWSCoin_MINT,
+        TaiOneToken_MINT,
         bunkerPda,
         true // allowOwnerOffCurve
       );
@@ -268,12 +270,12 @@ class SolanaBlockchainService {
       );
 
       const userTokenAccount = await getAssociatedTokenAddress(
-        TWSCoin_MINT,
+        TaiOneToken_MINT,
         userPubkey
       );
 
       const bunkerTokenAccount = await getAssociatedTokenAddress(
-        TWSCoin_MINT,
+        TaiOneToken_MINT,
         bunkerPda,
         true
       );
@@ -345,7 +347,7 @@ class SolanaBlockchainService {
 
       const userPubkey = new PublicKey(userAddress);
       const tokenAccount = await getAssociatedTokenAddress(
-        TWSCoin_MINT,
+        TaiOneToken_MINT,
         userPubkey
       );
 
@@ -396,13 +398,13 @@ class SolanaBlockchainService {
 
       // 获取投资者的TWSCoin关联代币账户
       const investorTokenAccount = await getAssociatedTokenAddress(
-        TWSCoin_MINT,
+        TaiOneToken_MINT,
         investorPubkey
       );
 
       // 获取项目收款账户（如果不存在需要创建）
       const treasuryTokenAccount = await getAssociatedTokenAddress(
-        TWSCoin_MINT,
+        TaiOneToken_MINT,
         treasuryPubkey
       );
 
@@ -418,7 +420,7 @@ class SolanaBlockchainService {
       }
 
       // 添加转账指令
-      const amountRaw = BigInt(Math.floor(amount * Math.pow(10, 6))); // TWSCoin有6位小数
+      const amountRaw = BigInt(Math.floor(amount * Math.pow(10, 6))); // TaiOneToken有6位小数
       const transferInstruction = createTransferInstruction(
         investorTokenAccount, // 发送方
         treasuryTokenAccount, // 接收方
@@ -463,7 +465,7 @@ class SolanaBlockchainService {
 
       // 获取关联代币账户地址
       const tokenAccount = await getAssociatedTokenAddress(
-        TWSCoin_MINT,
+        TaiOneToken_MINT,
         projectPda
       );
 
@@ -532,8 +534,8 @@ class SolanaBlockchainService {
       }
 
       const userPubkey = new PublicKey(userAddress);
-      // TWS财库地址就是TWSCoin的铸造地址
-      const treasuryPubkey = treasuryAddress ? new PublicKey(treasuryAddress) : TWSCoin_MINT;
+      // TaiOne财库地址就是TaiOneToken的铸造地址
+      const treasuryPubkey = treasuryAddress ? new PublicKey(treasuryAddress) : TaiOneToken_MINT;
       
       // 计算 PDA
       const [auctionPda] = PublicKey.findProgramAddressSync(
@@ -551,17 +553,17 @@ class SolanaBlockchainService {
 
       // 获取关联代币账户地址
       const userTokenAccount = await getAssociatedTokenAddress(
-        TWSCoin_MINT,
+        TaiOneToken_MINT,
         userPubkey
       );
 
       const oldOwnerTokenAccount = await getAssociatedTokenAddress(
-        TWSCoin_MINT,
+        TaiOneToken_MINT,
         oldOwner
       );
 
       const treasuryTokenAccount = await getAssociatedTokenAddress(
-        TWSCoin_MINT,
+        TaiOneToken_MINT,
         treasuryPubkey
       );
 
@@ -652,7 +654,7 @@ class SolanaBlockchainService {
         
         // 获取接收者的 TWS 代币账户
         const destinationTokenAccount = await getAssociatedTokenAddress(
-          TWSCoin_MINT,
+          TaiOneToken_MINT,
           recipientPubkey
         );
 

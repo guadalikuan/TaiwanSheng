@@ -853,7 +853,7 @@ export const getAuctionInfo = async (assetId) => {
  * @param {number} assetId - 资产ID
  * @param {string} bidMessage - 出价留言
  * @param {string} userAddress - 用户钱包地址
- * @param {string} treasuryAddress - TWS财库地址（可选，默认使用TWSCoin铸造地址）
+ * @param {string} treasuryAddress - TaiOne财库地址（可选，默认使用TaiOneToken铸造地址）
  * @returns {Promise<Object>}
  */
 export const seizeAuctionAsset = async (assetId, bidMessage, userAddress, treasuryAddress = null) => {
@@ -884,11 +884,11 @@ export const seizeAuctionAsset = async (assetId, bidMessage, userAddress, treasu
 };
 
 /**
- * 获取用户 TWSCoin 余额
+ * 获取用户 TaiOneToken 余额
  * @param {string} userAddress - 用户钱包地址
  * @returns {Promise<Object>}
  */
-export const getTWSCoinBalanceAPI = async (userAddress) => {
+export const getTaiOneTokenBalanceAPI = async (userAddress) => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/auction/balance/${userAddress}`, {
       method: 'GET',
@@ -898,7 +898,7 @@ export const getTWSCoinBalanceAPI = async (userAddress) => {
     });
     return handleResponse(response);
   } catch (error) {
-    console.error('API getTWSCoinBalance error:', error);
+    console.error('API getTaiOneTokenBalance error:', error);
     return { success: false, message: 'Network error' };
   }
 };
@@ -984,7 +984,7 @@ export const getTechProjects = async (filters = {}) => {
 /**
  * 投资科技项目
  * @param {string} projectId - 项目ID
- * @param {number} amount - 投资金额（TWSCoin）
+ * @param {number} amount - 投资金额（TaiOneToken）
  * @param {string} txSignature - 交易签名
  * @returns {Promise<Object>}
  */

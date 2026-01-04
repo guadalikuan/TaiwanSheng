@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { getAuctionInfo, seizeAuctionAsset, getTWSCoinBalanceAPI } from '../utils/api';
-import { TWSCoin_MINT, formatTWSCoinBalance, calculateMinBid } from '../utils/twscoin';
+import { getAuctionInfo, seizeAuctionAsset, getTaiOneTokenBalanceAPI, getTaiOneTokenBalanceAPI } from '../utils/api';
+import { TaiOneToken_MINT, formatTaiOneTokenBalance, calculateMinBid, TaiOneToken_MINT, formatTaiOneTokenBalance } from '../utils/twscoin';
 
 const AuctionPage = () => {
   const { assetId: assetIdParam } = useParams();
@@ -42,9 +42,9 @@ const AuctionPage = () => {
   // 加载钱包余额
   const loadWalletBalance = async (address) => {
     try {
-      const result = await getTWSCoinBalanceAPI(address);
+      const result = await getTaiOneTokenBalanceAPI(address);
       if (result.success) {
-        const formattedBalance = formatTWSCoinBalance(result.data.balance || '0', result.data.decimals || 6);
+        const formattedBalance = formatTaiOneTokenBalance(result.data.balance || '0', result.data.decimals || 6);
         setWalletBalance(formattedBalance);
       }
     } catch (err) {
@@ -107,18 +107,18 @@ const AuctionPage = () => {
       const userBalanceNum = parseFloat(walletBalance);
       const minRequiredNum = parseFloat(minRequiredFormatted);
       if (userBalanceNum < minRequiredNum) {
-        setError(`余额不足！最低出价: ${minRequiredFormatted} TWSCoin，当前余额: ${walletBalance} TWSCoin`);
+        setError(`余额不足！最低出价: ${minRequiredFormatted} TaiOneToken，当前余额: ${walletBalance} TaiOneToken`);
         setIsSeizing(false);
         return;
       }
 
       // 调用夺取资产 API
-      // treasuryAddress 可以不传，后端会使用 TWSCoin 铸造地址
+      // treasuryAddress 可以不传，后端会使用 TaiOneToken 铸造地址
       const result = await seizeAuctionAsset(
         assetId,
         bidMessage,
         walletAddress,
-        null // 使用默认的 TWSCoin 铸造地址作为财库
+        null // 使用默认的 TaiOneToken 铸造地址作为财库
       );
 
       if (result.success) {
@@ -160,7 +160,7 @@ const AuctionPage = () => {
 
   // 格式化价格显示
   const formatPrice = (price) => {
-    return formatTWSCoinBalance(price);
+    return formatTaiOneTokenBalance(price);
   };
 
   // 计算最低出价
@@ -186,7 +186,7 @@ const AuctionPage = () => {
               {isWalletConnected ? (
                 <div>
                   <p className="text-green-400">已连接: {formatAddress(walletAddress)}</p>
-                  <p className="text-sm text-gray-300">TWSCoin 余额: {walletBalance} TWS</p>
+                  <p className="text-sm text-gray-300">TaiOneToken 余额: {walletBalance} TWS</p>
                 </div>
               ) : (
                 <p className="text-yellow-400">未连接钱包</p>
@@ -317,7 +317,7 @@ const AuctionPage = () => {
             <li>出价成功后，5% 转给 TWS 财库，95% 转给上一任房主</li>
             <li>上一任房主会获得本金 + 约 4.5% 的利润</li>
             <li>价格只能上涨，不能下跌</li>
-            <li>TWSCoin 铸造地址（财库）: {TWSCoin_MINT}</li>
+            <li>TaiOneToken 铸造地址（财库）: {TaiOneToken_MINT}</li>
           </ul>
         </div>
       </div>

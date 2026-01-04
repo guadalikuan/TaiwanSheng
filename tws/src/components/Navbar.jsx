@@ -54,7 +54,7 @@ const Navbar = () => {
             <div className="w-2 h-8 bg-red-600 mr-3 animate-pulse" />
             <div>
               <h1 className={`text-2xl font-bold text-white tracking-tighter transition-colors ${!isHomePage ? 'group-hover:text-red-500' : ''}`}>
-                TWS<span className="text-xs align-top opacity-50">.OSCN</span>
+                TaiOne<span className="text-xs align-top opacity-50">.OSCN</span>
               </h1>
               <p className="text-[10px] text-slate-400 tracking-[0.3em] uppercase">Strait-X Protocol</p>
             </div>

@@ -44,12 +44,6 @@ export const toTaiOneTokenUnits = (amount, decimals = 9) => {
   return (amount * Math.pow(10, decimals)).toString();
 };
 
-// 向后兼容：导出旧名称
-export const TWSCoin_MINT = TaiOneToken_MINT;
-export const TWS_DECIMALS = TAI_ONE_DECIMALS;
-export const formatTWSCoinBalance = formatTaiOneTokenBalance;
-export const toTWSCoinUnits = toTaiOneTokenUnits;
-
 /**
  * 计算最低出价（当前价格 + 10%）
  * @param {string|number} currentPrice - 当前价格（最小单位）
@@ -75,5 +69,9 @@ export const calculateMinBidRaw = (currentPrice) => {
   return minRequired.toString();
 };
 
-
+// 向后兼容：导出旧名称
+export const TWSCoin_MINT = TaiOneToken_MINT;
+export const TWS_DECIMALS = TAI_ONE_DECIMALS;
+export const formatTWSCoinBalance = formatTaiOneTokenBalance;
+export const toTWSCoinUnits = toTaiOneTokenUnits;
 

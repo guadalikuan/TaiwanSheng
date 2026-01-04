@@ -1,7 +1,7 @@
 [package]
 name = "tws-asset"
 version = "0.1.0"
-description = "TWS Asset Program for Solana - Manages bunker assets with TWSCoin integration"
+description = "TWS Asset Program for Solana - Manages bunker assets with TaiOneToken integration"
 edition = "2021"
 
 [lib]

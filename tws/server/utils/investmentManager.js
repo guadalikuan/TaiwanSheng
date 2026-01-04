@@ -23,7 +23,7 @@ export const recordInvestment = async (investmentData) => {
 };
 
 /**
- * 验证链上TWSCoin转账
+ * 验证链上TaiOneToken转账
  * @param {string} txSignature - 交易签名
  * @param {Object} expectedPayment - 期望的支付信息
  * @returns {Promise<Object>} 验证结果

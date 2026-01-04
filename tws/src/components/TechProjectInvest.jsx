@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { ArrowRight, Wallet } from 'lucide-react';
-import { investTechProject, getTWSCoinBalanceAPI } from '../utils/api';
+import { investTechProject, getTaiOneTokenBalanceAPI } from '../utils/api';
 import { investInTechProject } from '../utils/web3';
 
 const TechProjectInvest = ({ project }) => {
@@ -17,7 +17,7 @@ const TechProjectInvest = ({ project }) => {
       if (publicKey) {
         try {
           setLoadingBalance(true);
-          const result = await getTWSCoinBalanceAPI(publicKey.toString());
+          const result = await getTaiOneTokenBalanceAPI(publicKey.toString());
           if (result.success && result.balance) {
             setBalance(parseFloat(result.balance) / 1e6); // 转换为可读格式
           }
@@ -44,7 +44,7 @@ const TechProjectInvest = ({ project }) => {
     }
 
     if (investAmount < project.minInvestment) {
-      alert(`最小投资额为 ${project.minInvestment} TWSCoin`);
+      alert(`最小投资额为 ${project.minInvestment} TaiOneToken`);
       return;
     }
 
@@ -104,7 +104,7 @@ const TechProjectInvest = ({ project }) => {
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-mono text-slate-400 mb-2">
-            投资金额 (TWSCoin)
+            投资金额 (TaiOneToken)
           </label>
           <input
             type="number"
@@ -114,22 +114,22 @@ const TechProjectInvest = ({ project }) => {
             max={balance}
             step="0.01"
             className="w-full bg-slate-800 border border-slate-700 rounded px-4 py-3 text-white focus:border-purple-500 focus:outline-none"
-            placeholder={`最小: ${project.minInvestment} TWSCoin`}
+            placeholder={`最小: ${project.minInvestment} TaiOneToken`}
           />
           <div className="mt-2 text-xs text-slate-500">
-            可用余额: {loadingBalance ? '加载中...' : `${balance.toLocaleString()} TWSCoin`}
+            可用余额: {loadingBalance ? '加载中...' : `${balance.toLocaleString()} TaiOneToken`}
           </div>
         </div>
 
         <div className="bg-slate-800/50 p-4 rounded">
           <div className="flex justify-between text-sm mb-2">
             <span className="text-slate-400">投资金额</span>
-            <span className="font-mono text-white">{amount || '0'} TWSCoin</span>
+            <span className="font-mono text-white">{amount || '0'} TaiOneToken</span>
           </div>
           <div className="flex justify-between text-sm mb-2">
             <span className="text-slate-400">预估收益</span>
             <span className="font-mono text-gold">
-              {amount ? ((parseFloat(amount) * parseFloat(project.yield.replace('%', '')) / 100).toFixed(2)) : '0'} TWSCoin/年
+              {amount ? ((parseFloat(amount) * parseFloat(project.yield.replace('%', '')) / 100).toFixed(2)) : '0'} TaiOneToken/年
             </span>
           </div>
         </div>

@@ -37,14 +37,14 @@ pub mod tws_asset {
         Ok(())
     }
 
-    /// 铸造资产份额（使用TWSCoin支付）
+        /// 铸造资产份额（使用TaiOneToken支付）
     pub fn mint_bunker_shares(
         ctx: Context<MintBunkerShares>,
         amount: u64,
     ) -> Result<()> {
         let bunker = &mut ctx.accounts.bunker;
         
-        // 验证 TWSCoin mint 地址
+        // 验证 TaiOneToken mint 地址
         require!(
             ctx.accounts.twscoin_mint.key() == bunker.twscoin_mint,
             ErrorCode::InvalidTokenMint
@@ -56,7 +56,7 @@ pub mod tws_asset {
             ErrorCode::InsufficientShares
         );
         
-        // 从用户账户转移TWSCoin到资产池
+        // 从用户账户转移TaiOneToken到资产池
         let cpi_accounts = Transfer {
             from: ctx.accounts.user_token_account.to_account_info(),
             to: ctx.accounts.bunker_token_account.to_account_info(),
@@ -130,7 +130,7 @@ pub mod tws_asset {
         require!(bunker.unification_achieved, ErrorCode::UnificationNotAchieved);
         require!(!bunker.is_redeemed, ErrorCode::PropertyAlreadyRedeemed);
 
-        // 从资产池转移TWSCoin回用户
+        // 从资产池转移TaiOneToken回用户
         let seeds = &[
             b"bunker",
             bunker.bunker_id.to_le_bytes().as_ref(),
@@ -326,13 +326,13 @@ impl Bunker {
 #[account]
 pub struct AuctionAsset {
     pub owner: Pubkey,              // 当前持有者
-    pub price: u64,                 // 当前价格 (TWSCoin, 9 decimals)
+    pub price: u64,                 // 当前价格 (TaiOneToken, 9 decimals)
     pub taunt_message: String,      // 嘲讽留言 (最大 100 字符)
     pub asset_id: u64,              // 资产ID（关联到 bunker_id）
     pub created_at: i64,            // 创建时间
     pub last_seized_at: i64,        // 最后被夺取时间
     pub bump: u8,                   // PDA bump
-    pub twscoin_mint: Pubkey,       // TWSCoin 铸造地址
+    pub twscoin_mint: Pubkey,       // TaiOneToken 铸造地址
     pub treasury: Pubkey,           // TWS 财库地址
 }
 
@@ -361,8 +361,8 @@ pub struct InitializeBunker<'info> {
     )]
     pub bunker: Account<'info, Bunker>,
     
-    /// CHECK: 验证这是正确的 TWSCoin mint 地址
-    /// TWSCoin Mint: ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk
+    /// CHECK: 验证这是正确的 TaiOneToken mint 地址
+    /// TaiOneToken Mint: ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk
     pub twscoin_mint: AccountInfo<'info>,
     
     #[account(mut)]
@@ -376,7 +376,7 @@ pub struct MintBunkerShares<'info> {
     #[account(mut)]
     pub bunker: Account<'info, Bunker>,
     
-    /// CHECK: TWSCoin mint 账户
+    /// CHECK: TaiOneToken mint 账户
     pub twscoin_mint: AccountInfo<'info>,
     
     #[account(mut)]
@@ -411,7 +411,7 @@ pub struct RedeemProperty<'info> {
     #[account(mut)]
     pub bunker: Account<'info, Bunker>,
     
-    /// CHECK: TWSCoin mint 账户
+    /// CHECK: TaiOneToken mint 账户
     pub twscoin_mint: AccountInfo<'info>,
     
     #[account(mut)]
@@ -437,7 +437,7 @@ pub struct InitializeAuction<'info> {
     )]
     pub auction: Account<'info, AuctionAsset>,
     
-    /// CHECK: TWSCoin mint 地址
+    /// CHECK: TaiOneToken mint 地址
     pub twscoin_mint: AccountInfo<'info>,
     
     /// CHECK: TWS 财库地址
@@ -455,18 +455,18 @@ pub struct SeizeAsset<'info> {
     #[account(mut)]
     pub auction: Account<'info, AuctionAsset>,
     
-    /// CHECK: TWSCoin mint 账户
+    /// CHECK: TaiOneToken mint 账户
     pub twscoin_mint: AccountInfo<'info>,
     
     /// CHECK: 旧房主的 TWSCoin 账户
     #[account(mut)]
     pub old_owner_token_account: Account<'info, TokenAccount>,
     
-    /// CHECK: TWS 财库的 TWSCoin 账户
+    /// CHECK: TaiOne 财库的 TaiOneToken 账户
     #[account(mut)]
     pub treasury_token_account: Account<'info, TokenAccount>,
     
-    /// CHECK: 新房主的 TWSCoin 账户（出价者）
+    /// CHECK: 新房主的 TaiOneToken 账户（出价者）
     #[account(mut)]
     pub new_owner_token_account: Account<'info, TokenAccount>,
     

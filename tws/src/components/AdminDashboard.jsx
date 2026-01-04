@@ -155,7 +155,7 @@ const AdminDashboard = () => {
                   <div key={inv.id} className="bg-slate-800/50 p-4 rounded">
                     <div className="flex justify-between">
                       <span className="font-mono text-sm">{inv.investorAddress?.slice(0, 10)}...</span>
-                      <span className="text-cyan-400 font-mono">{inv.amount.toLocaleString()} TWSCoin</span>
+                      <span className="text-cyan-400 font-mono">{inv.amount.toLocaleString()} TaiOneToken</span>
                     </div>
                     <div className="text-xs text-slate-500 mt-1">
                       {new Date(inv.timestamp).toLocaleString()}

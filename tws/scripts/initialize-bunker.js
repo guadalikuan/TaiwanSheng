@@ -4,8 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../solana.config.js');
 
-// TWSCoin 铸造地址
-const TWSCoin_MINT = new PublicKey('ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk');
+// TaiOneToken 铸造地址
+const TaiOneToken_MINT = new PublicKey('ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk');
+// 向后兼容
+const TWSCoin_MINT = TaiOneToken_MINT;
 
 async function initializeBunker() {
   console.log('🚀 初始化地堡资产账户...\n');
@@ -76,7 +78,7 @@ async function initializeBunker() {
       )
       .accounts({
         bunker: bunkerPda,
-        twscoinMint: TWSCoin_MINT,
+        twscoinMint: TaiOneToken_MINT,
         authority: walletKeypair.publicKey,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
@@ -94,7 +96,7 @@ async function initializeBunker() {
     console.log('  战区代码:', bunkerAccount.sectorCode);
     console.log('  总份额:', bunkerAccount.totalShares.toString());
     console.log('  已铸造份额:', bunkerAccount.mintedShares.toString());
-    console.log('  TWSCoin Mint:', bunkerAccount.twscoinMint.toString());
+    console.log('  TaiOneToken Mint:', bunkerAccount.twscoinMint.toString());
 
   } catch (error) {
     console.error('\n❌ 初始化失败:', error);

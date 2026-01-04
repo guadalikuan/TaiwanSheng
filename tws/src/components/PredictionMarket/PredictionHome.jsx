@@ -7,8 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSSE } from '../../contexts/SSEContext';
-import { TWSCoin_MINT } from '../../utils/twscoin';
-import { getTWSCoinBalanceAPI } from '../../utils/api';
+import { TaiOneToken_MINT, TaiOneToken_MINT } from '../../utils/twscoin';
+import { getTaiOneTokenBalanceAPI, getTaiOneTokenBalanceAPI } from '../../utils/api';
 import { Home, Check, X, AlertTriangle, Smartphone, Globe, Clock } from 'lucide-react';
 
 // House Wallet for Predictions (Receives bets)
@@ -608,7 +608,7 @@ export const PREDICTION_MARKETS = [
   { 
     "id": 50, 
     "category": "Humor", 
-    "question": "本周五收盘，TWS Coin 能否突破 $10 美元？", 
+    "question": "本周五收盘，TaiOneToken 能否突破 $10 美元？", 
     "poolYes": 10000000, 
     "poolNo": 100000, 
     "onlineTime": "2025-05-18T00:00:00",
@@ -823,7 +823,7 @@ const PredictionHome = () => {
   const [showConnectTypeModal, setShowConnectTypeModal] = useState(false);
   const navigate = useNavigate();
 
-  const [balance, setBalance] = useState(0); // TWSCoin Balance
+  const [balance, setBalance] = useState(0); // TaiOneToken Balance
   const [manualAddress, setManualAddress] = useState(null); // From Auction-style connection
   
   // Display State
@@ -986,7 +986,7 @@ const PredictionHome = () => {
     }
   }, [connected, publicKey, isAuthenticated, manualAddress]);
 
-  // 格式化 TWSCoin 余额（6 decimals）
+  // 格式化 TaiOneToken 余额（6 decimals）
   const formatBalance = (rawBalance) => {
     if (!rawBalance) return 0;
     return Number(rawBalance) / Math.pow(10, 6);
@@ -1003,8 +1003,8 @@ const PredictionHome = () => {
 
     // 1. Try API first (Server-side check)
     try {
-        console.log(`[Balance_Debug] Calling API: getTWSCoinBalanceAPI...`);
-        const res = await getTWSCoinBalanceAPI(publicKeyStr);
+        console.log(`[Balance_Debug] Calling API: getTaiOneTokenBalanceAPI...`);
+        const res = await getTaiOneTokenBalanceAPI(publicKeyStr);
         console.log(`[Balance_Debug] API Response:`, res);
 
         if (res.success) {
@@ -1024,9 +1024,9 @@ const PredictionHome = () => {
     if (finalBalanceRaw === 0) {
         try {
           const publicKey = new PublicKey(publicKeyStr);
-          const mint = new PublicKey(TWSCoin_MINT);
+          const mint = new PublicKey(TaiOneToken_MINT);
           
-          console.log(`[Balance_Debug] Fetching from RPC for ${publicKeyStr} (Mint: ${TWSCoin_MINT})...`);
+          console.log(`[Balance_Debug] Fetching from RPC for ${publicKeyStr} (Mint: ${TaiOneToken_MINT})...`);
           
           // Use connection from useConnection() which is already configured with custom RPC
           const tokenAccounts = await connection.getParsedTokenAccountsByOwner(publicKey, { 
@@ -1055,7 +1055,7 @@ const PredictionHome = () => {
           }
         } catch (e) {
           if (e.message && e.message.includes("could not find mint")) {
-             console.warn("[Balance_Debug] TWSCoin mint not found on Devnet.");
+             console.warn("[Balance_Debug] TaiOneToken mint not found on Devnet.");
           } else {
              console.error("[Balance_Debug] Failed to fetch balance via RPC:", e);
           }
@@ -1130,14 +1130,14 @@ const PredictionHome = () => {
     setConfirmBet(null); // Close modal
 
     if (balance < amount) {
-      alert(`余额不足：你需要 ${amount} TWSCoin 才能下注！`);
+      alert(`余额不足：你需要 ${amount} TaiOneToken 才能下注！`);
       return;
     }
     
     try {
       const fromPublicKey = publicKey;
       const toPublicKey = HOUSE_WALLET_PUBKEY;
-      const mint = new PublicKey(TWSCoin_MINT);
+      const mint = new PublicKey(TaiOneToken_MINT);
       
       const sourceTokenAccount = await splToken.getAssociatedTokenAddress(mint, fromPublicKey);
       const destTokenAccount = await splToken.getAssociatedTokenAddress(mint, toPublicKey);
@@ -1292,7 +1292,7 @@ const PredictionHome = () => {
       // Simulate retrieving winners from "Contract" or "Database"
       // In this frontend-only demo, we just pretend.
       setTimeout(() => {
-          alert(`✅ Prize Distribution Simulated!\n\nMarket: ${market.question}\nTotal Pool: ${totalPool} TWS\n\nWinners have received their airdrops (Console Logged).`);
+          alert(`✅ Prize Distribution Simulated!\n\nMarket: ${market.question}\nTotal Pool: ${totalPool} TaiOneToken\n\nWinners have received their airdrops (Console Logged).`);
           console.log(`[Treasury] Distribution Complete.`);
       }, 1000);
   };
@@ -1498,7 +1498,7 @@ const PredictionHome = () => {
                     </div>
                     <div className="flex justify-between items-center">
                         <span className="text-gray-400 text-xs">COST</span>
-                        <span className="font-mono font-bold text-yellow-500">{confirmBet.amount} TWSCoin</span>
+                        <span className="font-mono font-bold text-yellow-500">{confirmBet.amount} TaiOneToken</span>
                     </div>
                 </div>
 

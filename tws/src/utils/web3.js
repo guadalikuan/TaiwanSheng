@@ -75,7 +75,7 @@ export const formatAddress = (address) => {
 /**
  * 投资科技项目（Solana）
  * @param {string} projectId - 项目ID
- * @param {number} amount - 投资金额（TWSCoin）
+ * @param {number} amount - 投资金额（TaiOneToken）
  * @param {string} investorAddress - 投资者钱包地址
  * @param {Function} sendTransaction - Solana钱包发送交易函数
  * @param {Connection} connection - Solana连接对象

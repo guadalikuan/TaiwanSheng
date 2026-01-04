@@ -27,9 +27,9 @@ async function main() {
   console.log("🚀 开始部署预测市场合约...");
   console.log("Wallet:", provider.wallet.publicKey.toString());
 
-  // 2. 创建测试代币 (TWSCoin Mock)
-  // 在实际部署中，这里应该是真实的 TWSCoin Mint Address
-  console.log("Creating Mock TWSCoin...");
+  // 2. 创建测试代币 (TaiOneToken Mock)
+  // 在实际部署中，这里应该是真实的 TaiOneToken Mint Address
+  console.log("Creating Mock TaiOneToken...");
   const mint = await createMint(
     provider.connection,
     (provider.wallet as any).payer, // Payer
@@ -37,7 +37,7 @@ async function main() {
     null, // Freeze Authority
     6 // Decimals
   );
-  console.log("Mock TWSCoin Mint:", mint.toString());
+  console.log("Mock TaiOneToken Mint:", mint.toString());
 
   // 3. 初始化市场
   for (const m of MARKETS) {

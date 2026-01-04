@@ -246,7 +246,7 @@ router.post('/:id/invest', authenticate, async (req, res) => {
     if (amount < project.minInvestment) {
       return res.status(400).json({
         success: false,
-        error: `Minimum investment is ${project.minInvestment} TWSCoin`
+        error: `Minimum investment is ${project.minInvestment} TaiOneToken`
       });
     }
 
