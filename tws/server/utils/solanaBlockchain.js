@@ -337,9 +337,9 @@ class SolanaBlockchainService {
   }
 
   /**
-   * 查询用户 TWSCoin 余额
+   * 查询用户 TaiOneToken 余额
    */
-  async getTWSCoinBalance(userAddress) {
+  async getTaiOneTokenBalance(userAddress) {
     try {
       if (!this.connection) {
         throw new Error('Connection not initialized');
@@ -355,7 +355,7 @@ class SolanaBlockchainService {
         const account = await getAccount(this.connection, tokenAccount);
         return {
           balance: account.amount.toString(),
-          decimals: account.mint.toString() === TWSCoin_MINT.toString() ? 9 : 0,
+          decimals: account.mint.toString() === TaiOneToken_MINT.toString() ? 9 : 0,
         };
       } catch (error) {
         // 账户不存在，返回 0
@@ -733,8 +733,11 @@ export const redeemProperty = (bunkerId, amount, userAddress) =>
 export const getBunkerInfo = (bunkerId) =>
   solanaBlockchainService.getBunkerInfo(bunkerId);
 
-export const getTWSCoinBalance = (userAddress) =>
-  solanaBlockchainService.getTWSCoinBalance(userAddress);
+export const getTaiOneTokenBalance = (userAddress) =>
+  solanaBlockchainService.getTaiOneTokenBalance(userAddress);
+
+// 向后兼容：导出旧函数名
+export const getTWSCoinBalance = getTaiOneTokenBalance;
 
 export const initializeAuction = (assetId, startPrice, tauntMessage, authority, treasury) =>
   solanaBlockchainService.initializeAuction(assetId, startPrice, tauntMessage, authority, treasury);

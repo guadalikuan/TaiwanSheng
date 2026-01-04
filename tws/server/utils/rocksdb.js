@@ -2,7 +2,7 @@ import RocksDB from 'rocksdb';
 import levelup from 'levelup';
 import { join, dirname, relative } from 'path';
 import { fileURLToPath } from 'url';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, rmSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -39,6 +39,63 @@ export const initRocksDB = async () => {
     console.log('✅ RocksDB initialized successfully (Native RocksDB)');
     return dbInstance;
   } catch (error) {
+    // 检查是否是数据库损坏错误（可能在 error.message 或 error.cause 中）
+    const errorMessage = error.message || '';
+    const causeMessage = error.cause?.message || '';
+    const isCorruptionError = 
+      errorMessage.includes('Corruption') || 
+      errorMessage.includes('CURRENT file corrupted') ||
+      causeMessage.includes('Corruption') ||
+      causeMessage.includes('CURRENT file corrupted') ||
+      error.name === 'OpenError';
+    
+    if (isCorruptionError) {
+      console.error('❌ RocksDB database corrupted. Attempting to repair...');
+      console.log('🗑️  Removing corrupted database files...');
+      
+      try {
+        // 关闭现有连接（如果存在）
+        if (dbInstance) {
+          try {
+            await dbInstance.close();
+          } catch (e) {
+            // 忽略关闭错误
+          }
+          dbInstance = null;
+        }
+        
+        // 删除损坏的数据库目录
+        if (existsSync(ROCKSDB_DIR)) {
+          try {
+            rmSync(ROCKSDB_DIR, { recursive: true, force: true });
+            console.log('✅ Corrupted database files removed');
+          } catch (rmError) {
+            console.warn('⚠️  Failed to remove some files, trying again after delay...');
+            // 如果删除失败，可能是文件被锁定，等待后重试
+            await new Promise(resolve => setTimeout(resolve, 500));
+            rmSync(ROCKSDB_DIR, { recursive: true, force: true });
+            console.log('✅ Corrupted database files removed (retry)');
+          }
+        }
+        
+        // 重新创建目录
+        mkdirSync(ROCKSDB_DIR, { recursive: true });
+        console.log('✅ Database directory recreated');
+        
+        // 重试初始化
+        console.log('🔄 Retrying database initialization...');
+        const relativePath = relative(process.cwd(), ROCKSDB_DIR);
+        dbInstance = levelup(RocksDB(relativePath));
+        await dbInstance.open();
+        console.log('✅ RocksDB initialized successfully after repair');
+        return dbInstance;
+      } catch (repairError) {
+        console.error('❌ Failed to repair RocksDB:', repairError);
+        console.error('💡 Please run: node scripts/fix-rocksdb.js to manually fix the database');
+        throw repairError;
+      }
+    }
+    
     console.error('❌ Failed to initialize RocksDB:', error);
     throw error;
   }
