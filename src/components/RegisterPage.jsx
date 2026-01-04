@@ -14,17 +14,18 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { generateMnemonic, validateMnemonic, getAddressFromMnemonic, formatAddress } from '../utils/web3';
 import { generateNewMnemonic } from '../utils/api';
+import { connectWallet, signMessage, isWalletInstalled } from '../utils/wallet';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const { register, isAuthenticated } = useAuth();
+  const { register, registerWithWallet, isAuthenticated } = useAuth();
   
   const [formData, setFormData] = useState({
     username: '',
     password: '',
     confirmPassword: '',
     mnemonic: '',
-    mnemonicMode: 'auto' // 'auto' or 'manual'
+    mnemonicMode: 'auto' // 'auto', 'manual', or 'wallet'
   });
   
   const [errors, setErrors] = useState({});
@@ -36,6 +37,8 @@ const RegisterPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [generatedMnemonic, setGeneratedMnemonic] = useState('');
+  const [walletConnecting, setWalletConnecting] = useState(false);
+  const [connectedWalletAddress, setConnectedWalletAddress] = useState('');
 
   // 如果已登录，重定向
   useEffect(() => {
@@ -50,12 +53,19 @@ const RegisterPage = () => {
       const newMnemonic = generateMnemonic();
       setGeneratedMnemonic(newMnemonic);
       setFormData(prev => ({ ...prev, mnemonic: newMnemonic }));
+    } else if (formData.mnemonicMode === 'wallet') {
+      // 钱包模式：清空助记符，使用连接的钱包地址
+      setFormData(prev => ({ ...prev, mnemonic: '' }));
+      setGeneratedMnemonic('');
     }
   }, [formData.mnemonicMode]);
 
   // 当助记符改变时，计算钱包地址
   useEffect(() => {
-    if (formData.mnemonic && validateMnemonic(formData.mnemonic)) {
+    if (formData.mnemonicMode === 'wallet' && connectedWalletAddress) {
+      // 使用连接的钱包地址
+      setWalletAddress(connectedWalletAddress);
+    } else if (formData.mnemonic && validateMnemonic(formData.mnemonic)) {
       try {
         const address = getAddressFromMnemonic(formData.mnemonic);
         setWalletAddress(address);
@@ -65,7 +75,7 @@ const RegisterPage = () => {
     } else {
       setWalletAddress('');
     }
-  }, [formData.mnemonic]);
+  }, [formData.mnemonic, formData.mnemonicMode, connectedWalletAddress]);
 
   // 验证表单
   const validateForm = () => {
@@ -92,11 +102,15 @@ const RegisterPage = () => {
       newErrors.confirmPassword = '两次输入的密码不一致';
     }
 
-    // 助记符验证
-    if (!formData.mnemonic.trim()) {
-      newErrors.mnemonic = '助记符不能为空';
-    } else if (!validateMnemonic(formData.mnemonic)) {
-      newErrors.mnemonic = '无效的助记符格式（需要12个单词）';
+    // 助记符验证（钱包模式不需要助记符）
+    if (formData.mnemonicMode !== 'wallet') {
+      if (!formData.mnemonic.trim()) {
+        newErrors.mnemonic = '助记符不能为空';
+      } else if (!validateMnemonic(formData.mnemonic)) {
+        newErrors.mnemonic = '无效的助记符格式（需要12个单词）';
+      }
+    } else if (!connectedWalletAddress) {
+      newErrors.mnemonic = '请先连接钱包';
     }
 
     setErrors(newErrors);
@@ -118,6 +132,33 @@ const RegisterPage = () => {
     setFormData(prev => ({ ...prev, mnemonicMode: mode, mnemonic: '' }));
     setGeneratedMnemonic('');
     setWalletAddress('');
+    setConnectedWalletAddress('');
+  };
+
+  // 连接钱包
+  const handleConnectWallet = async () => {
+    if (!isWalletInstalled()) {
+      setErrors({ mnemonic: '请安装Phantom钱包。访问 https://phantom.app 下载安装。' });
+      return;
+    }
+
+    setWalletConnecting(true);
+    setErrors({});
+
+    try {
+      const { address } = await connectWallet();
+      setConnectedWalletAddress(address);
+      setWalletAddress(address);
+      // 清除之前的错误
+      if (errors.mnemonic) {
+        setErrors(prev => ({ ...prev, mnemonic: '' }));
+      }
+    } catch (error) {
+      console.error('钱包连接错误:', error);
+      setErrors({ mnemonic: error.message || '连接钱包失败，请重试' });
+    } finally {
+      setWalletConnecting(false);
+    }
   };
 
   // 重新生成助记符
@@ -149,11 +190,38 @@ const RegisterPage = () => {
 
     setSubmitting(true);
     try {
-      const result = await register(
-        formData.username,
-        formData.password,
-        formData.mnemonic
-      );
+      let result;
+      
+      // 如果使用钱包模式，使用钱包注册
+      if (formData.mnemonicMode === 'wallet') {
+        if (!connectedWalletAddress) {
+          setErrors({ submit: '请先连接钱包' });
+          setSubmitting(false);
+          return;
+        }
+
+        // 生成注册消息
+        const message = `TWS Protocol 注册验证\n\n地址: ${connectedWalletAddress}\n用户名: ${formData.username}\n时间: ${new Date().toISOString()}\n\n点击签名以完成注册。`;
+        
+        // 请求签名
+        const signature = await signMessage(message);
+        
+        // 使用钱包注册（通过AuthContext）
+        result = await registerWithWallet(
+          connectedWalletAddress,
+          signature,
+          message,
+          formData.username,
+          formData.password
+        );
+      } else {
+        // 使用助记符注册
+        result = await register(
+          formData.username,
+          formData.password,
+          formData.mnemonic
+        );
+      }
 
       if (result.success) {
         setRegistrationSuccess(true);
@@ -297,10 +365,10 @@ const RegisterPage = () => {
               )}
             </div>
 
-            {/* 助记符模式选择 */}
+            {/* 助记符/钱包模式选择 */}
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">
-                助记符 / MNEMONIC PHRASE
+                账户创建方式 / ACCOUNT CREATION
               </label>
               <div className="flex gap-2 mb-3">
                 <button
@@ -311,7 +379,7 @@ const RegisterPage = () => {
                       ? 'bg-cyan-600 text-white'
                       : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                   }`}
-                  disabled={submitting}
+                  disabled={submitting || walletConnecting}
                 >
                   自动生成
                 </button>
@@ -323,14 +391,98 @@ const RegisterPage = () => {
                       ? 'bg-cyan-600 text-white'
                       : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                   }`}
-                  disabled={submitting}
+                  disabled={submitting || walletConnecting}
                 >
                   手动输入
                 </button>
+                <button
+                  type="button"
+                  onClick={() => handleMnemonicModeChange('wallet')}
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    formData.mnemonicMode === 'wallet'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  }`}
+                  disabled={submitting || walletConnecting}
+                >
+                  连接钱包
+                </button>
               </div>
 
-              {/* 助记符输入/显示区域 */}
-              {formData.mnemonicMode === 'auto' ? (
+              {/* 钱包模式 */}
+              {formData.mnemonicMode === 'wallet' ? (
+                <div className="bg-slate-950 border border-blue-500/30 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Wallet className="w-4 h-4 text-blue-400" />
+                    <span className="text-xs text-slate-400">使用已有Solana钱包注册</span>
+                  </div>
+                  
+                  {!connectedWalletAddress ? (
+                    <>
+                      {!isWalletInstalled() && (
+                        <div className="mb-3 p-3 bg-yellow-900/20 border border-yellow-800/50 rounded-lg text-sm text-yellow-400">
+                          <p>未检测到Phantom钱包</p>
+                          <a 
+                            href="https://phantom.app" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-cyan-400 hover:text-cyan-300 underline"
+                          >
+                            点击下载安装
+                          </a>
+                        </div>
+                      )}
+                      {errors.mnemonic && (
+                        <div className="mb-3 p-3 bg-red-900/20 border border-red-900/50 rounded-lg text-sm text-red-400 flex items-center gap-2">
+                          <AlertCircle size={16} />
+                          {errors.mnemonic}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleConnectWallet}
+                        disabled={walletConnecting || !isWalletInstalled() || submitting}
+                        className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {walletConnecting ? (
+                          <>
+                            <Loader className="w-5 h-5 animate-spin" />
+                            连接中...
+                          </>
+                        ) : (
+                          <>
+                            <Wallet size={18} />
+                            连接钱包 / CONNECT WALLET
+                          </>
+                        )}
+                      </button>
+                    </>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="p-3 bg-emerald-900/20 border border-emerald-800/50 rounded-lg">
+                        <div className="flex items-center gap-2 text-xs text-emerald-400 mb-1">
+                          <CheckCircle size={16} />
+                          <span>钱包已连接</span>
+                        </div>
+                        <p className="text-cyan-400 font-mono text-sm break-all mt-2">
+                          {connectedWalletAddress}
+                        </p>
+                        <p className="text-slate-500 text-xs mt-1">
+                          格式化: {formatAddress(connectedWalletAddress)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleConnectWallet}
+                        disabled={walletConnecting || submitting}
+                        className="w-full px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        重新连接钱包
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : formData.mnemonicMode === 'auto' ? (
                 <div className="bg-slate-950 border border-cyan-500/30 rounded-lg p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">

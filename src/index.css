@@ -227,6 +227,27 @@ body::before {
 .map-tooltip {
   background: transparent !important;
   border: none !important;
+}
+
+/* 资产入库表单地图标记样式 */
+.custom-map-marker {
+  background: transparent;
+  border: none;
+}
+
+.custom-map-marker > div {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.custom-map-marker > div:hover {
+  transform: rotate(-45deg) scale(1.1);
+}
+
+/* 地图容器样式（用于表单中的地图） */
+.leaflet-wrapper {
+  width: 100%;
+  height: 100%;
   box-shadow: none !important;
   color: #fbbf24 !important;
   font-family: 'Courier New', Courier, monospace;

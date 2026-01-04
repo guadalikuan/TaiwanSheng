@@ -17,7 +17,7 @@ import { connectWallet, signMessage, isWalletInstalled } from '../utils/wallet';
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loginWithMnemonic, loginWithWallet, registerWithWallet, isAuthenticated } = useAuth();
+  const { login, loginWithMnemonic, loginWithWallet, registerWithWallet, isAuthenticated, user } = useAuth();
   
   const [loginMode, setLoginMode] = useState('username'); // 'username', 'mnemonic', or 'wallet'
   const [formData, setFormData] = useState({
@@ -33,13 +33,24 @@ const LoginPage = () => {
   const [walletConnecting, setWalletConnecting] = useState(false);
   const [needsRegistration, setNeedsRegistration] = useState(false);
 
+  // 根据角色获取默认跳转路径
+  const getDefaultPathByRole = (userRole) => {
+    if (userRole === 'ADMIN') {
+      return '/command'; // 管理员跳转到审核界面
+    } else if (userRole === 'DEVELOPER') {
+      return '/my-assets'; // 开发商跳转到我的资产界面
+    }
+    return '/bunker'; // 其他角色默认跳转到地堡
+  };
+
   // 如果已登录，重定向
   useEffect(() => {
     if (isAuthenticated) {
-      const from = location.state?.from?.pathname || '/bunker';
-      navigate(from, { replace: true });
+      const from = location.state?.from?.pathname;
+      const defaultPath = getDefaultPathByRole(user?.role);
+      navigate(from || defaultPath, { replace: true });
     }
-  }, [isAuthenticated, navigate, location]);
+  }, [isAuthenticated, navigate, location, user]);
 
   // 验证表单
   const validateForm = () => {
@@ -110,8 +121,20 @@ const LoginPage = () => {
       const result = await loginWithWallet(address, signature, message);
       
       if (result.success) {
-        const from = location.state?.from?.pathname || '/bunker';
-        navigate(from, { replace: true });
+        // 等待用户状态更新后跳转
+        setTimeout(() => {
+          const from = location.state?.from?.pathname;
+          const token = localStorage.getItem('tws_token');
+          let userRole = null;
+          if (token) {
+            try {
+              const payload = JSON.parse(atob(token.split('.')[1] || '{}'));
+              userRole = payload.role;
+            } catch (e) {}
+          }
+          const defaultPath = getDefaultPathByRole(userRole);
+          navigate(from || defaultPath, { replace: true });
+        }, 100);
       } else if (result.needsRegistration || result.message?.includes('未注册')) {
         // 需要注册
         setNeedsRegistration(true);
@@ -172,8 +195,20 @@ const LoginPage = () => {
       );
       
       if (result.success) {
-        const from = location.state?.from?.pathname || '/bunker';
-        navigate(from, { replace: true });
+        // 等待用户状态更新后跳转
+        setTimeout(() => {
+          const from = location.state?.from?.pathname;
+          const token = localStorage.getItem('tws_token');
+          let userRole = null;
+          if (token) {
+            try {
+              const payload = JSON.parse(atob(token.split('.')[1] || '{}'));
+              userRole = payload.role;
+            } catch (e) {}
+          }
+          const defaultPath = getDefaultPathByRole(userRole);
+          navigate(from || defaultPath, { replace: true });
+        }, 100);
       } else {
         setErrors({ submit: result.message || '注册失败' });
       }
@@ -203,9 +238,23 @@ const LoginPage = () => {
       }
 
       if (result.success) {
-        // 登录成功，跳转到目标页面或默认页面
-        const from = location.state?.from?.pathname || '/bunker';
-        navigate(from, { replace: true });
+        // 登录成功，等待用户状态更新后跳转
+        setTimeout(() => {
+          const from = location.state?.from?.pathname;
+          // 尝试从 token 中获取角色
+          const token = localStorage.getItem('tws_token');
+          let userRole = null;
+          if (token) {
+            try {
+              const payload = JSON.parse(atob(token.split('.')[1] || '{}'));
+              userRole = payload.role;
+            } catch (e) {
+              // 如果解析失败，使用默认路径
+            }
+          }
+          const defaultPath = getDefaultPathByRole(userRole);
+          navigate(from || defaultPath, { replace: true });
+        }, 100);
       } else {
         setErrors({ submit: result.message || '登录失败，请检查您的凭据' });
       }
@@ -283,7 +332,7 @@ const LoginPage = () => {
                   <div className="text-center py-4">
                     <Wallet className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
                     <p className="text-slate-400 text-sm mb-6">
-                      连接您的Web3钱包以登录
+                      连接您的Solana钱包以登录
                     </p>
                     {!isWalletInstalled() && (
                       <div className="mb-4 p-3 bg-yellow-900/20 border border-yellow-800/50 rounded-lg text-sm text-yellow-400">
@@ -430,7 +479,8 @@ const LoginPage = () => {
               )}
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
+            /* 登录表单 */
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* 用户名或助记符输入 */}
             {loginMode === 'username' ? (
               <div>

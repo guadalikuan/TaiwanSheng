@@ -6,8 +6,9 @@
 export const ROLES = {
   USER: 'USER',           // 普通用户（台湾用户）
   SUBMITTER: 'SUBMITTER', // 资产提交者（大陆老板）
+  DEVELOPER: 'DEVELOPER', // 房地产开发商（可以提交和审核资产，但不能管理账户）
   REVIEWER: 'REVIEWER',   // 审核员
-  ADMIN: 'ADMIN'          // 管理员
+  ADMIN: 'ADMIN'          // 管理员（所有权限）
 };
 
 /**
@@ -26,6 +27,18 @@ export const ROLE_PERMISSIONS = {
     'view_own_submissions',
     'generate_contract'
   ],
+  [ROLES.DEVELOPER]: [
+    'view_assets',
+    'submit_assets',
+    'view_own_submissions',
+    'review_assets',
+    'approve_assets',
+    'reject_assets',
+    'view_pending_assets',
+    'generate_contract',
+    'edit_own_assets'
+    // 注意：不包含用户账户管理权限
+  ],
   [ROLES.REVIEWER]: [
     'view_assets',
     'review_assets',
@@ -35,7 +48,7 @@ export const ROLE_PERMISSIONS = {
     'generate_contract'
   ],
   [ROLES.ADMIN]: [
-    'all' // 管理员拥有所有权限
+    'all' // 管理员拥有所有权限（包括用户账户管理）
   ]
 };
 
@@ -75,6 +88,7 @@ export const getRoleDisplayName = (role) => {
   const displayNames = {
     [ROLES.USER]: '普通用户',
     [ROLES.SUBMITTER]: '资产提交者',
+    [ROLES.DEVELOPER]: '房地产开发商',
     [ROLES.REVIEWER]: '审核员',
     [ROLES.ADMIN]: '管理员'
   };

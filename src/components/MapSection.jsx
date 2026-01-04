@@ -390,15 +390,24 @@ const MapSection = () => {
     const handleAssetLogUpdate = (log) => {
       if (!mainlandMapRef.current) return;
       
-      // 使用日志中的位置信息，偏移从 0.8 度减少到 0.05 度（约5.5公里）
+      // 使用日志中的位置信息
+      // 如果使用真实经纬度，只做极小偏移（约50米）以避免完全重叠
+      // 如果是城市中心点，则做较大偏移（约5.5公里）以分散显示
       let lat, lng;
       if (log.nodeLocation && log.nodeLocation.lat && log.nodeLocation.lng) {
-        const rawLat = log.nodeLocation.lat + (Math.random() - 0.5) * 0.05;
-        const rawLng = log.nodeLocation.lng + (Math.random() - 0.5) * 0.05;
+        // 判断是否是精确位置（通过检查偏移量，如果偏移很小说明是真实位置）
+        // 我们假设真实位置不会完全重叠，所以偏移应该在0.001度以内
+        // 如果是城市中心点，偏移会更大（0.1度左右）
+        const isPreciseLocation = true; // 假设所有nodeLocation都是相对精确的
+        const offset = isPreciseLocation ? 0.0005 : 0.05; // 精确位置约50米偏移，中心点约5.5公里
+        
+        const rawLat = log.nodeLocation.lat + (Math.random() - 0.5) * offset;
+        const rawLng = log.nodeLocation.lng + (Math.random() - 0.5) * offset;
         const validated = validateAndFixCoordinates(rawLat, rawLng, 'mainland');
         lat = validated.lat;
         lng = validated.lng;
       } else {
+        // 没有位置信息，使用随机城市中心点
         const baseNode = mainlandNodes[Math.floor(Math.random() * mainlandNodes.length)];
         const rawLat = baseNode.lat + (Math.random() - 0.5) * 0.05;
         const rawLng = baseNode.lng + (Math.random() - 0.5) * 0.05;

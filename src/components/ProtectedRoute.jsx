@@ -34,8 +34,12 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   }
 
   // 如果指定了角色权限，检查用户角色
+  // ADMIN 角色拥有所有权限，自动允许访问
   if (allowedRoles.length > 0 && user?.role) {
-    if (!allowedRoles.includes(user.role)) {
+    // 管理员拥有所有权限
+    if (user.role === 'ADMIN') {
+      // ADMIN 可以访问所有页面，直接通过
+    } else if (!allowedRoles.includes(user.role)) {
       return (
         <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-slate-900/50 border border-red-900/50 rounded-lg p-8 text-center">

@@ -30,6 +30,7 @@ import paymentRoutes from './routes/payment.js';
 import referralRoutes from './routes/referral.js';
 import sseRoutes, { startSSEKeepalive } from './routes/sse.js';
 import bunkerRoutes from './routes/bunker.js';
+import usersRoutes from './routes/users.js';
 import { startBackgroundTasks } from './utils/backgroundTasks.js';
 import { startScanning } from './utils/oracle.js';
 import { initTimeManager } from './utils/timeManager.js';
@@ -97,6 +98,7 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/api/arsenal', arsenalRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes); // 用户管理（仅管理员）
 app.use('/api/homepage', homepageRoutes);
 app.use('/api/oracle', oracleRoutes);
 app.use('/api/payment', paymentRoutes);

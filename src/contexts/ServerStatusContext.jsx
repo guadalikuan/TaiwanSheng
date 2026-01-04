@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:10000';
 
 const ServerStatusContext = createContext(null);
 
@@ -16,7 +16,9 @@ export const ServerStatusProvider = ({ children }) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2000); // 2秒超时
 
-      const response = await fetch(`${API_BASE_URL}/health`, {
+      // 健康检查端点不在 /api 下，直接在根路径
+      const healthUrl = API_BASE_URL.replace('/api', '') + '/health';
+      const response = await fetch(healthUrl, {
         method: 'GET',
         signal: controller.signal,
         cache: 'no-cache'

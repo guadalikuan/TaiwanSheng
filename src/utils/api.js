@@ -1,5 +1,5 @@
 // API 调用工具
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:10000';
 
 // 请求去重缓存（避免短时间内重复请求）
 const requestCache = new Map();
@@ -197,10 +197,17 @@ const fetchWithRetry = async (url, options = {}, maxRetries = 3, baseDelay = 100
  */
 export const submitAsset = async (formData) => {
   try {
+    // 使用资产入库独立的 token
+    const token = localStorage.getItem('arsenal_token');
+    if (!token) {
+      return { success: false, message: '未登录，请先登录资产入库系统' };
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/arsenal/submit`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify(formData),
     });
@@ -242,21 +249,128 @@ export const getPreview = async (city, area) => {
 };
 
 /**
+ * 获取我的资产列表（当前用户提交的所有资产）
+ * @returns {Promise<Object>}
+ */
+export const getMyAssets = async () => {
+  try {
+    // 使用资产入库独立的 token（如果存在），否则使用主站点 token
+    const token = localStorage.getItem('arsenal_token') || localStorage.getItem('tws_token');
+    if (!token) {
+      return {
+        success: false,
+        message: '未登录，请先登录',
+        error: 'NoToken'
+      };
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/arsenal/my-assets`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+      
+      // 如果是认证错误，返回更友好的错误信息
+      if (response.status === 401) {
+        return {
+          success: false,
+          message: '登录已过期，请重新登录',
+          error: 'Unauthorized'
+        };
+      }
+      
+      return {
+        success: false,
+        message: errorMessage,
+        error: errorData.error || 'RequestFailed'
+      };
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting my assets:', error);
+    // 如果是网络错误，返回友好的错误信息
+    if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+      return {
+        success: false,
+        message: `无法连接到服务器 ${API_BASE_URL}，请确保后端服务正在运行`,
+        error: 'NetworkError'
+      };
+    }
+    
+    return {
+      success: false,
+      message: error.message || '加载资产列表失败',
+      error: error.name || 'UnknownError'
+    };
+  }
+};
+
+/**
  * 获取待审核资产列表
  * @returns {Promise<Object>}
  */
 export const getPendingAssets = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/arsenal/pending`);
+    // 使用资产入库独立的 token（如果存在），否则使用主站点 token
+    const token = localStorage.getItem('arsenal_token') || localStorage.getItem('tws_token');
+    if (!token) {
+      return {
+        success: false,
+        message: '未登录，请先登录',
+        error: 'NoToken'
+      };
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/arsenal/pending`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     
     if (!response.ok) {
-      throw new Error('Failed to get pending assets');
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+      
+      if (response.status === 401) {
+        return {
+          success: false,
+          message: '登录已过期，请重新登录',
+          error: 'Unauthorized'
+        };
+      }
+      
+      return {
+        success: false,
+        message: errorMessage,
+        error: errorData.error || 'RequestFailed'
+      };
     }
     
     return await response.json();
   } catch (error) {
     console.error('Error getting pending assets:', error);
-    throw error;
+    
+    // 如果是网络错误，返回友好的错误信息
+    if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+      return {
+        success: false,
+        message: `无法连接到服务器 ${API_BASE_URL}，请确保后端服务正在运行 (npm run dev:backend)`,
+        error: 'NetworkError'
+      };
+    }
+    
+    return {
+      success: false,
+      message: error.message || '加载数据失败，请检查后端服务是否运行',
+      error: error.name || 'UnknownError'
+    };
   }
 };
 
@@ -287,17 +401,20 @@ export const getApprovedAssets = async () => {
  */
 export const approveAsset = async (id, reviewData = {}) => {
   try {
+    // 使用资产入库独立的 token（如果存在），否则使用主站点 token
+    const token = localStorage.getItem('arsenal_token') || localStorage.getItem('tws_token');
     const response = await fetch(`${API_BASE_URL}/api/arsenal/approve/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify(reviewData),
     });
     
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to approve asset');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
     }
     
     return await response.json();
@@ -315,17 +432,20 @@ export const approveAsset = async (id, reviewData = {}) => {
  */
 export const rejectAsset = async (id, reviewData = {}) => {
   try {
+    // 使用资产入库独立的 token（如果存在），否则使用主站点 token
+    const token = localStorage.getItem('arsenal_token') || localStorage.getItem('tws_token');
     const response = await fetch(`${API_BASE_URL}/api/arsenal/reject/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify(reviewData),
     });
     
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to reject asset');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
     }
     
     return await response.json();
@@ -341,7 +461,8 @@ export const rejectAsset = async (id, reviewData = {}) => {
  */
 export const getAssetStats = async () => {
   try {
-    const token = localStorage.getItem('tws_token');
+    // 使用资产入库独立的 token（如果存在），否则使用主站点 token
+    const token = localStorage.getItem('arsenal_token') || localStorage.getItem('tws_token');
     const response = await fetch(`${API_BASE_URL}/api/arsenal/stats`, {
       headers: {
         'Authorization': `Bearer ${token}`
@@ -349,64 +470,47 @@ export const getAssetStats = async () => {
     });
     
     if (!response.ok) {
-      throw new Error('Failed to get stats');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
     }
     
     return await response.json();
   } catch (error) {
     console.error('Error getting stats:', error);
-    throw error;
+    return { success: false, message: error.message || '加载数据失败，请检查后端服务是否运行' };
   }
 };
 
 /**
- * 生成合同PDF
+ * 铸造 TWS Land NFT
  * @param {string} id - 资产ID
- * @param {boolean} download - 是否下载（true）或预览（false）
- * @returns {Promise<void>}
+ * @param {string} mintToAddress - NFT 接收地址（可选）
+ * @returns {Promise<Object>}
  */
-export const generateContract = async (id, download = true) => {
+export const mintNFT = async (id, mintToAddress = null) => {
   try {
-    const token = localStorage.getItem('tws_token');
-    const endpoint = download 
-      ? `${API_BASE_URL}/api/arsenal/generate-contract/${id}`
-      : `${API_BASE_URL}/api/arsenal/contract/${id}`;
-    
-    const response = await fetch(endpoint, {
-      method: download ? 'POST' : 'GET',
+    // 使用资产入库独立的 token（如果存在），否则使用主站点 token
+    const token = localStorage.getItem('arsenal_token') || localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/arsenal/mint-nft/${id}`, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
-      }
+      },
+      body: JSON.stringify({
+        mintToAddress: mintToAddress
+      })
     });
     
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Failed to generate contract');
+      throw new Error(error.message || 'Failed to mint NFT');
     }
     
-    // 获取PDF blob
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    
-    if (download) {
-      // 下载PDF
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `contract_${id}_${Date.now()}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } else {
-      // 在新窗口预览
-      window.open(url, '_blank');
-    }
-    
-    // 清理URL
-    setTimeout(() => window.URL.revokeObjectURL(url), 100);
-    
-    return { success: true };
+    const result = await response.json();
+    return result;
   } catch (error) {
-    console.error('Error generating contract:', error);
+    console.error('Error minting NFT:', error);
     throw error;
   }
 };
@@ -418,11 +522,17 @@ export const generateContract = async (id, download = true) => {
  */
 export const uploadFile = async (file) => {
   try {
+    // 使用资产入库独立的 token（如果存在），否则使用主站点 token
+    const token = localStorage.getItem('arsenal_token') || localStorage.getItem('tws_token');
+    
     const formData = new FormData();
     formData.append('file', file); // 'file' 必须与 multer 配置的字段名一致 (upload.single('file'))
 
     const response = await fetch(`${API_BASE_URL}/api/arsenal/upload`, {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
       body: formData,
       // 当使用 FormData 时，浏览器会自动设置 Content-Type: multipart/form-data，无需手动设置
     });
@@ -471,15 +581,29 @@ export const registerUser = async (username, password, mnemonic = null, role = '
  */
 export const loginUser = async (username, password) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    const url = `${API_BASE_URL}/api/auth/login`;
+    console.log('[loginUser] 请求 URL:', url);
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     });
+    
+    console.log('[loginUser] 响应状态:', response.status);
     return await handleResponse(response);
   } catch (error) {
     console.error('API loginUser error:', error);
-    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+    console.error('[loginUser] API_BASE_URL:', API_BASE_URL);
+    
+    // 提供更详细的错误信息
+    let errorMessage = error.message || '网络错误，请检查服务器连接';
+    
+    if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
+      errorMessage = `无法连接到服务器 ${API_BASE_URL}。请检查：\n1. 后端服务是否正在运行\n2. 服务器地址是否正确\n3. 网络连接是否正常`;
+    }
+    
+    return { success: false, message: errorMessage, error: error.name || 'NetworkError' };
   }
 };
 
@@ -543,6 +667,137 @@ export const registerWithWallet = async (address, signature, message, username, 
     return await handleResponse(response);
   } catch (error) {
     console.error('API registerWithWallet error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+// ==================== 用户管理 API（仅管理员）====================
+
+/**
+ * 获取所有用户（仅管理员）
+ * @returns {Promise<Object>}
+ */
+export const getAllUsers = async () => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/users`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getAllUsers error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取所有房地产开发商账户（仅管理员）
+ * @returns {Promise<Object>}
+ */
+export const getDevelopers = async () => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    if (!token) {
+      return { success: false, message: '未登录，请先登录' };
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/users/developers`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 404) {
+        return { success: false, message: 'API路径不存在，请检查后端路由配置' };
+      }
+      return { 
+        success: false, 
+        message: errorData.message || `HTTP ${response.status}: ${response.statusText}` 
+      };
+    }
+    
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getDevelopers error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 创建房地产开发商账户（仅管理员）
+ * @param {string} username - 用户名
+ * @param {string} password - 密码
+ * @param {string} mnemonic - 助记符（可选，不提供则自动生成）
+ * @returns {Promise<Object>}
+ */
+export const createDeveloper = async (username, password, mnemonic = null) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/users/developers`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ username, password, mnemonic }),
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API createDeveloper error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 更新房地产开发商账户（仅管理员）
+ * @param {string} address - 钱包地址
+ * @param {Object} updates - 更新数据
+ * @returns {Promise<Object>}
+ */
+export const updateDeveloper = async (address, updates) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/users/developers/${address}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(updates),
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API updateDeveloper error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 删除房地产开发商账户（仅管理员）
+ * @param {string} address - 钱包地址
+ * @returns {Promise<Object>}
+ */
+export const deleteDeveloper = async (address) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/users/developers/${address}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API deleteDeveloper error:', error);
     return { success: false, message: error.message || '网络错误，请检查服务器连接' };
   }
 };
@@ -717,17 +972,35 @@ export const getAllHomepageData = async () => {
  */
 export const getCurrentUser = async (token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+    if (!token) {
+      return { success: false, message: 'No token provided' };
+    }
+    
+    const url = `${API_BASE_URL}/api/auth/me`;
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
     });
-    return response.json();
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ 
+        success: false, 
+        message: `HTTP ${response.status}` 
+      }));
+      return errorData;
+    }
+    
+    return await response.json();
   } catch (error) {
     console.error('API getCurrentUser error:', error);
-    return { success: false, message: 'Network error' };
+    return { 
+      success: false, 
+      message: error.message || 'Network error',
+      error: 'NetworkError'
+    };
   }
 };
 

@@ -196,44 +196,51 @@ export const generateAssetLog = async () => {
       selectedAsset = recentAssets[Math.floor(Math.random() * recentAssets.length)];
     }
     
-    // 如果找到了真实资产，使用真实数据
-    if (selectedAsset) {
-      const rawAsset = allAssets.raw.find(r => r.id === selectedAsset.id || r.id === selectedAsset.internalRef);
-      
-      // 确定节点位置（基于资产城市）
-      let baseNode = mainlandNodes[0]; // 默认节点
-      if (rawAsset && rawAsset.city) {
-        // 根据城市选择对应的节点
-        const cityNodeMap = {
-          '西安': mainlandNodes.find(n => n.name.includes('XI\'AN')),
-          '咸阳': mainlandNodes.find(n => n.name.includes('XI\'AN')),
-          '宝鸡': mainlandNodes.find(n => n.name.includes('SHAANXI')),
-          '商洛': mainlandNodes.find(n => n.name.includes('SHAANXI')),
-          '汉中': mainlandNodes.find(n => n.name.includes('SHAANXI')),
-          '安康': mainlandNodes.find(n => n.name.includes('SHAANXI')),
-          '延安': mainlandNodes.find(n => n.name.includes('SHAANXI')),
-          '榆林': mainlandNodes.find(n => n.name.includes('SHAANXI'))
-        };
-        baseNode = cityNodeMap[rawAsset.city] || baseNode;
-      }
-      
-      // 尝试关联机器人用户
-      let botUser = null;
-      try {
-        botUser = getRandomBotUser({ role: ROLES.SUBMITTER }) || getRandomBotUser({ role: ROLES.USER });
-      } catch (error) {
-        // 忽略错误
-      }
-      
-      // 生成坐标，偏移从 0.8 度减少到 0.1 度（约11公里）
-      const rawLat = baseNode.lat + (Math.random() - 0.5) * 0.1;
-      const rawLng = baseNode.lng + (Math.random() - 0.5) * 0.1;
-      const validatedCoords = validateAndFixCoordinates(rawLat, rawLng, 'mainland');
+      // 如果找到了真实资产，使用真实数据
+      if (selectedAsset) {
+        const rawAsset = allAssets.raw.find(r => r.id === selectedAsset.id || r.id === selectedAsset.internalRef);
+        
+        // 确定节点位置（优先使用资产的真实经纬度）
+        let nodeLat, nodeLng;
+        if (rawAsset && rawAsset.latitude && rawAsset.longitude) {
+          // 使用资产的真实经纬度（小幅随机偏移以避免完全重叠）
+          nodeLat = rawAsset.latitude + (Math.random() - 0.5) * 0.001; // 约100米偏移
+          nodeLng = rawAsset.longitude + (Math.random() - 0.5) * 0.001;
+        } else {
+          // 如果没有真实经纬度，使用城市中心点
+          let baseNode = mainlandNodes[0]; // 默认节点
+          if (rawAsset && rawAsset.city) {
+            // 根据城市选择对应的节点
+            const cityNodeMap = {
+              '西安': mainlandNodes.find(n => n.name.includes('XI\'AN')),
+              '咸阳': mainlandNodes.find(n => n.name.includes('XI\'AN')),
+              '宝鸡': mainlandNodes.find(n => n.name.includes('SHAANXI')),
+              '商洛': mainlandNodes.find(n => n.name.includes('SHAANXI')),
+              '汉中': mainlandNodes.find(n => n.name.includes('SHAANXI')),
+              '安康': mainlandNodes.find(n => n.name.includes('SHAANXI')),
+              '延安': mainlandNodes.find(n => n.name.includes('SHAANXI')),
+              '榆林': mainlandNodes.find(n => n.name.includes('SHAANXI'))
+            };
+            baseNode = cityNodeMap[rawAsset.city] || baseNode;
+          }
+          // 生成坐标，偏移从 0.8 度减少到 0.1 度（约11公里）
+          nodeLat = baseNode.lat + (Math.random() - 0.5) * 0.1;
+          nodeLng = baseNode.lng + (Math.random() - 0.5) * 0.1;
+        }
+        const validatedCoords = validateAndFixCoordinates(nodeLat, nodeLng, 'mainland');
+        
+        // 尝试关联机器人用户
+        let botUser = null;
+        try {
+          botUser = getRandomBotUser({ role: ROLES.SUBMITTER }) || getRandomBotUser({ role: ROLES.USER });
+        } catch (error) {
+          // 忽略错误
+        }
       
       const log = {
         id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         lot: selectedAsset.codeName || selectedAsset.id || `LOT-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
-        location: rawAsset ? rawAsset.city : baseNode.name.split(' ')[0],
+        location: rawAsset ? (rawAsset.locationAddress || rawAsset.city) : baseNode.name.split(' ')[0],
         timestamp: Date.now(),
         assetId: selectedAsset.id,
         nodeName: baseNode.name,

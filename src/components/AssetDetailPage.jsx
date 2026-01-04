@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, DollarSign, TrendingUp, Lock, Unlock, FileText, Calendar } from 'lucide-react';
+import { ArrowLeft, MapPin, DollarSign, TrendingUp, Lock, Unlock, FileText, Calendar, Image, ExternalLink } from 'lucide-react';
 import { getAssetById } from '../utils/api';
 
 const AssetDetailPage = () => {
@@ -141,6 +141,57 @@ const AssetDetailPage = () => {
             </div>
           </div>
         </div>
+
+        {/* NFT 信息 */}
+        {asset.nftMinted && (
+          <div className="bg-purple-900/20 border border-purple-700 rounded-lg p-6 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Image className="text-purple-400" size={24} />
+              <div>
+                <div className="text-purple-300 text-xs font-mono uppercase">TWS Land NFT</div>
+                <div className="text-xl font-bold text-white font-mono">已铸造</div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {asset.nftTokenId && (
+                <div className="bg-slate-900/50 border border-slate-800 rounded p-3">
+                  <div className="text-slate-500 text-xs font-mono uppercase mb-1">Token ID</div>
+                  <div className="text-white font-mono text-sm break-all">{asset.nftTokenId}</div>
+                </div>
+              )}
+              {asset.nftTxHash && (
+                <div className="bg-slate-900/50 border border-slate-800 rounded p-3">
+                  <div className="text-slate-500 text-xs font-mono uppercase mb-1">交易哈希</div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-white font-mono text-sm break-all">{asset.nftTxHash}</div>
+                    <a
+                      href={`https://bscscan.com/tx/${asset.nftTxHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-purple-400 hover:text-purple-300"
+                    >
+                      <ExternalLink size={16} />
+                    </a>
+                  </div>
+                </div>
+              )}
+              {asset.nftMintedAt && (
+                <div className="bg-slate-900/50 border border-slate-800 rounded p-3">
+                  <div className="text-slate-500 text-xs font-mono uppercase mb-1">铸造时间</div>
+                  <div className="text-white font-mono text-sm">
+                    {new Date(asset.nftMintedAt).toLocaleString('zh-CN')}
+                  </div>
+                </div>
+              )}
+              {asset.mintedTo && (
+                <div className="bg-slate-900/50 border border-slate-800 rounded p-3">
+                  <div className="text-slate-500 text-xs font-mono uppercase mb-1">接收地址</div>
+                  <div className="text-white font-mono text-sm break-all">{asset.mintedTo}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Risk Level */}
         <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6 mb-6">

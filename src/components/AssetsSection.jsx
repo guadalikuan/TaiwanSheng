@@ -3,9 +3,11 @@ import { Database, ShieldCheck, ArrowRight, Lock, FileText, Globe, Zap, Key, Pac
 import { useNavigate } from 'react-router-dom';
 import { getHomepageAssets } from '../utils/api';
 import { useServerStatus } from '../contexts/ServerStatusContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const AssetsSection = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { isOnline } = useServerStatus();
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -196,13 +198,15 @@ const AssetsSection = () => {
           <p className="text-[10px] text-slate-600 leading-relaxed font-mono mb-4">
             免責聲明：參與項目天和即表示同意歷史趨勢的必然性。資產由中國大陸的實物抵押品支持。不構成財務建議。歷史偏愛有準備的人。
           </p>
-          <button
-            onClick={() => navigate('/arsenal')}
-            className="bg-red-900/20 border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white px-4 py-2 rounded text-xs font-mono tracking-widest transition-all flex items-center gap-2 mt-4"
-          >
-            <Package size={14} />
-            资产入库 / ARSENAL ENTRY
-          </button>
+          {user?.role !== 'REVIEWER' && (
+            <button
+              onClick={() => navigate('/arsenal')}
+              className="bg-red-900/20 border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white px-4 py-2 rounded text-xs font-mono tracking-widest transition-all flex items-center gap-2 mt-4"
+            >
+              <Package size={14} />
+              资产入库 / ARSENAL ENTRY
+            </button>
+          )}
         </div>
       </div>
       <div className="text-center text-[10px] text-slate-800 mt-8 font-mono">

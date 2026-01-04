@@ -33,6 +33,7 @@ export default defineConfig({
   // 服务器配置
   server: {
     port: 5173,
+    host: '0.0.0.0', // 监听所有网络接口（IPv4 和 IPv6）
     open: true,
     cors: true,
   },

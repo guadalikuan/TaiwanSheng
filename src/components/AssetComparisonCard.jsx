@@ -1,7 +1,9 @@
 import React from 'react';
-import { CheckCircle, XCircle, AlertTriangle, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { CheckCircle, XCircle, AlertTriangle, Image, Package } from 'lucide-react';
 
-const AssetComparisonCard = ({ asset, onApprove, onReject, onGenerateContract, isProcessing }) => {
+const AssetComparisonCard = ({ asset, onApprove, onReject, onMintNFT, isProcessing, canReview = true, isDeveloper = false }) => {
+  const navigate = useNavigate();
   const { raw, sanitized } = asset;
 
   return (
@@ -10,39 +12,65 @@ const AssetComparisonCard = ({ asset, onApprove, onReject, onGenerateContract, i
       <div className="bg-slate-50 border-b border-slate-200 px-4 py-3 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono text-slate-600">ID: {sanitized?.id || raw?.id}</span>
-          <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded">
-            MINTING
-          </span>
+          {(() => {
+            const status = sanitized?.status || raw?.status || 'UNKNOWN';
+            const statusColors = {
+              'MINTING': 'bg-yellow-100 text-yellow-800',
+              'AVAILABLE': 'bg-green-100 text-green-800',
+              'RESERVED': 'bg-blue-100 text-blue-800',
+              'LOCKED': 'bg-red-100 text-red-800',
+              'REJECTED': 'bg-gray-100 text-gray-800',
+            };
+            const statusLabels = {
+              'MINTING': '审核中',
+              'AVAILABLE': '已上架',
+              'RESERVED': '已预订',
+              'LOCKED': '已锁定',
+              'REJECTED': '已拒绝',
+            };
+            return (
+              <span className={`px-2 py-0.5 ${statusColors[status] || 'bg-gray-100 text-gray-800'} text-xs font-semibold rounded`}>
+                {statusLabels[status] || status}
+              </span>
+            );
+          })()}
         </div>
-        <div className="flex gap-2">
-          {onGenerateContract && (
-            <button
-              onClick={() => onGenerateContract(sanitized?.id || raw?.id)}
-              disabled={isProcessing}
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs font-semibold rounded flex items-center gap-1 transition-colors"
-              title="生成合同PDF"
-            >
-              <FileText size={14} />
-              生成合同
-            </button>
-          )}
-          <button
-            onClick={() => onApprove(sanitized?.id || raw?.id)}
-            disabled={isProcessing}
-            className="px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-xs font-semibold rounded flex items-center gap-1 transition-colors"
-          >
-            <CheckCircle size={14} />
-            批准
-          </button>
-          <button
-            onClick={() => onReject(sanitized?.id || raw?.id)}
-            disabled={isProcessing}
-            className="px-3 py-1 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-xs font-semibold rounded flex items-center gap-1 transition-colors"
-          >
-            <XCircle size={14} />
-            拒绝
-          </button>
-        </div>
+        {/* 只有有审核权限的用户才显示操作按钮 */}
+        {canReview && (
+          <div className="flex gap-2">
+            {onMintNFT && sanitized?.status === 'AVAILABLE' && (
+              <button
+                onClick={() => onMintNFT(sanitized?.id || raw?.id)}
+                disabled={isProcessing || sanitized?.nftMinted}
+                className="px-3 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 disabled:cursor-not-allowed text-white text-xs font-semibold rounded flex items-center gap-1 transition-colors"
+                title={sanitized?.nftMinted ? "NFT 已铸造" : "铸造 TWS Land NFT"}
+              >
+                <Image size={14} />
+                {sanitized?.nftMinted ? '已铸造NFT' : '铸造NFT'}
+              </button>
+            )}
+            {onApprove && (
+              <button
+                onClick={() => onApprove(sanitized?.id || raw?.id)}
+                disabled={isProcessing}
+                className="px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-xs font-semibold rounded flex items-center gap-1 transition-colors"
+              >
+                <CheckCircle size={14} />
+                批准
+              </button>
+            )}
+            {onReject && (
+              <button
+                onClick={() => onReject(sanitized?.id || raw?.id)}
+                disabled={isProcessing}
+                className="px-3 py-1 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-xs font-semibold rounded flex items-center gap-1 transition-colors"
+              >
+                <XCircle size={14} />
+                拒绝
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 内容：左右对比 */}
@@ -87,6 +115,33 @@ const AssetComparisonCard = ({ asset, onApprove, onReject, onGenerateContract, i
               <p><span className="font-semibold">容量：</span>{sanitized.specs?.capacity || 'N/A'}</p>
               <p><span className="font-semibold">Token数量：</span>{sanitized.financials?.totalTokens?.toLocaleString() || 'N/A'}</p>
               <p><span className="font-semibold">状态：</span>{sanitized.status || 'MINTING'}</p>
+              {/* NFT 信息 */}
+              {sanitized.nftMinted && (
+                <div className="mt-3 pt-3 border-t border-green-300">
+                  <p className="font-semibold text-purple-700 mb-1 flex items-center gap-1">
+                    <Image size={12} />
+                    TWS Land NFT
+                  </p>
+                  {sanitized.nftTokenId && (
+                    <p className="text-xs">
+                      <span className="font-semibold">Token ID:</span> 
+                      <span className="ml-1 font-mono">{sanitized.nftTokenId}</span>
+                    </p>
+                  )}
+                  {sanitized.nftTxHash && (
+                    <p className="text-xs truncate">
+                      <span className="font-semibold">Tx Hash:</span> 
+                      <span className="ml-1 font-mono">{sanitized.nftTxHash.slice(0, 16)}...</span>
+                    </p>
+                  )}
+                  {sanitized.nftMintedAt && (
+                    <p className="text-xs">
+                      <span className="font-semibold">铸造时间:</span> 
+                      <span className="ml-1">{new Date(sanitized.nftMintedAt).toLocaleString('zh-CN')}</span>
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <p className="text-xs text-green-600">脱敏数据缺失</p>
@@ -94,12 +149,24 @@ const AssetComparisonCard = ({ asset, onApprove, onReject, onGenerateContract, i
         </div>
       </div>
 
-      {/* 底部：提交时间 */}
-      {raw?.timestamp && (
-        <div className="bg-slate-50 border-t border-slate-200 px-4 py-2 text-xs text-slate-500">
-          提交时间：{new Date(raw.timestamp).toLocaleString('zh-CN')}
-        </div>
-      )}
+      {/* 底部：提交时间和操作按钮 */}
+      <div className="bg-slate-50 border-t border-slate-200 px-4 py-3 flex justify-between items-center">
+        {raw?.timestamp && (
+          <div className="text-xs text-slate-500">
+            提交时间：{new Date(raw.timestamp).toLocaleString('zh-CN')}
+          </div>
+        )}
+        {/* 开发商账户显示资产入库按钮 */}
+        {isDeveloper && (
+          <button
+            onClick={() => navigate('/arsenal')}
+            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-md"
+          >
+            <Package size={16} />
+            资产入库
+          </button>
+        )}
+      </div>
     </div>
   );
 };
