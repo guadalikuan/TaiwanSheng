@@ -26,12 +26,14 @@ import TechProjectDetail from './components/TechProjectDetail';
 import MyInvestments from './components/MyInvestments';
 import AdminDashboard from './components/AdminDashboard';
 import AuctionPage from './auction/AuctionPage';
+import EventListPage from './components/EventListPage';
 import AuctionListPage from './auction/AuctionListPage';
 import AuctionCreatePage from './auction/AuctionCreatePage';
 
 const App = () => (
   <Routes>
     <Route path="/" element={<HomePage />} />
+    <Route path="/events" element={<EventListPage />} />
     <Route path="/register" element={<RegisterPage />} />
     <Route path="/login" element={<LoginPage />} />
     <Route path="/bunker" element={<DespairBunker />} />

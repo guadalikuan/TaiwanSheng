@@ -376,6 +376,8 @@ export const scanNewsSources = async () => {
     const newEvent = {
       id: uuidv4(),
       text: news.title, // 只保留标题，时间在 impact 显示
+      url: news.url,    // 新增：保存新闻链接
+      source: news.source, // 新增：保存来源
       impact: impactStr,
       score: score,
       reason: reason,

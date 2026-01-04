@@ -234,7 +234,13 @@ const OmegaSection = () => {
 
             <div className="mt-4 md:mt-5 h-14 md:h-16 flex gap-4 border-t border-red-900/40 pt-2 md:pt-3 relative">
               {/* 左侧：重大事件 (60%) */}
-              <div className="flex-[3] overflow-hidden text-left relative border-r border-red-900/20 pr-2">
+              <div 
+                className="flex-[3] overflow-hidden text-left relative border-r border-red-900/20 pr-2 cursor-pointer group hover:bg-white/5 transition-colors rounded-l px-2 -ml-2"
+                onClick={() => navigate('/events')}
+              >
+                <div className="absolute top-0 right-2 px-1.5 py-0.5 bg-red-900/30 text-[8px] text-red-300/70 uppercase font-bold tracking-wider rounded-bl border-b border-l border-red-900/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                  View All &rarr;
+                </div>
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black pointer-events-none z-20" />
                 <div className="space-y-0.5 text-[10px] md:text-xs text-red-400/80 font-mono pr-2 leading-relaxed">
                   {logs.length === 0 ? (
