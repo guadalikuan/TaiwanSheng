@@ -49112,5 +49112,41 @@
     "reviewNotes": "Purchased by bot user bot_user_1pgz0o",
     "purchasedBy": "0x3Ed1F9B96c914f7CC2E8ebba4F95899EDaE3c0B8",
     "purchasedAt": 1767530840276
+  },
+  {
+    "id": "bot_asset_1767530961353_ucp9eaf",
+    "codeName": "CN-NW-CMD-6812",
+    "displayId": "CN-NW-DEEP-474",
+    "title": "Deep Inland Reserve Zone (深度内陆储备区) - BUNKER (加固地堡)",
+    "locationTag": "CN-NW-DEEP",
+    "region": "Deep Inland Reserve Zone (深度内陆储备区)",
+    "zoneClass": "BUNKER (加固地堡)",
+    "securityLevel": 3,
+    "specs": {
+      "area": "130 m²",
+      "capacity": "6 Personnel",
+      "type": "BUNKER (加固地堡)"
+    },
+    "financials": {
+      "totalTokens": 152777,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Deep Inland Reserve Zone (深度内陆储备区). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "AVAILABLE",
+    "tokenPrice": 152777,
+    "imageUrl": "/assets/blueprints/bunker.png",
+    "internalRef": "bot_asset_1767530961353_ucp9eaf",
+    "reviewedAt": 1767530968050,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1767530968063
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Auto-approved by bot system"
   }
 ]
