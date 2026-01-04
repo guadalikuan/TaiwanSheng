@@ -849,6 +849,59 @@ export const getAuctionInfo = async (assetId) => {
 };
 
 /**
+ * 获取拍卖列表
+ * @param {string} status - 状态筛选 (active|pending|completed)
+ * @returns {Promise<Object>}
+ */
+export const getAuctionList = async (status) => {
+  try {
+    const url = status 
+      ? `${API_BASE_URL}/api/auction/list?status=${status}`
+      : `${API_BASE_URL}/api/auction/list`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API getAuctionList error:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 创建新拍卖
+ * @param {Object} data - 拍卖数据
+ * @param {string} data.assetName - 资产名称
+ * @param {string} data.description - 资产描述
+ * @param {number} data.startPrice - 起拍价（TOT）
+ * @param {string} data.imageUrl - 图片URL
+ * @param {string} data.location - 位置
+ * @param {string} data.originalOwner - 原主信息
+ * @param {string} data.tauntMessage - 初始留言
+ * @param {string} data.creatorAddress - 创建者地址
+ * @param {string} data.txSignature - 交易签名（可选）
+ * @returns {Promise<Object>}
+ */
+export const createAuction = async (data) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auction/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API createAuction error:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
  * 夺取资产（10%溢价机制）
  * @param {number} assetId - 资产ID
  * @param {string} bidMessage - 出价留言

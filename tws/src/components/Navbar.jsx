@@ -74,7 +74,7 @@ const Navbar = () => {
               ))}
               {/* 处置按钮 */}
               <button
-                onClick={() => navigate('/auction')}
+                onClick={() => navigate('/auctions')}
                 className="flex items-center text-slate-300 hover:text-red-400 px-3 py-2 rounded-md text-sm font-medium transition-all hover:bg-white/5 group"
               >
                 <span className="mr-2 opacity-50 group-hover:opacity-100 group-hover:animate-bounce">

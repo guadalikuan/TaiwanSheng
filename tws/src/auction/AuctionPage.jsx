@@ -359,22 +359,54 @@ const AuctionPage = () => {
         }}
       />
 
-      {/* 左上角返回首页按钮 */}
-      <button
-        onClick={() => navigate('/')}
-        className="fixed top-4 left-4 z-50 bg-gray-900/80 backdrop-blur-sm border-2 border-tws-red rounded-lg px-4 py-2 text-white hover:bg-gray-800 hover:border-tws-gold transition-all duration-200 flex items-center gap-2 group"
-        title="返回首页"
-      >
-        <svg 
-          className="w-5 h-5 group-hover:translate-x-[-2px] transition-transform" 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
+      {/* 左上角导航按钮组 */}
+      <div className="fixed top-4 left-4 z-50 flex flex-col gap-2">
+        <button
+          onClick={() => navigate('/')}
+          className="bg-gray-900/80 backdrop-blur-sm border-2 border-tws-red rounded-lg px-4 py-2 text-white hover:bg-gray-800 hover:border-tws-gold transition-all duration-200 flex items-center gap-2 group"
+          title="返回首页"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        <span className="font-bold text-sm uppercase tracking-wider">返回</span>
-      </button>
+          <svg 
+            className="w-5 h-5 group-hover:translate-x-[-2px] transition-transform" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span className="font-bold text-sm uppercase tracking-wider">返回</span>
+        </button>
+        <button
+          onClick={() => navigate('/auctions')}
+          className="bg-gray-900/80 backdrop-blur-sm border-2 border-tws-red rounded-lg px-4 py-2 text-white hover:bg-gray-800 hover:border-tws-gold transition-all duration-200 flex items-center gap-2 group"
+          title="拍卖列表"
+        >
+          <svg 
+            className="w-5 h-5" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+          </svg>
+          <span className="font-bold text-sm uppercase tracking-wider">列表</span>
+        </button>
+        <button
+          onClick={() => navigate('/auctions/create')}
+          className="bg-tws-red hover:bg-red-700 border-2 border-tws-red rounded-lg px-4 py-2 text-white hover:border-tws-gold transition-all duration-200 flex items-center gap-2 group"
+          title="创建拍卖"
+        >
+          <svg 
+            className="w-5 h-5" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          <span className="font-bold text-sm uppercase tracking-wider">创建</span>
+        </button>
+      </div>
 
       {/* 左侧：弹幕系统 - 加宽 */}
       <div className="fixed left-0 top-0 h-screen z-10 pointer-events-none w-80 overflow-hidden">
