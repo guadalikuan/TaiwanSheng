@@ -1,0 +1,12 @@
+[
+  {
+    "id": "1767163311298",
+    "walletAddress": "TestWallet1767163311138",
+    "marketId": "test-market-1767163311138",
+    "direction": "YES",
+    "amount": 100,
+    "signature": "mock-sig",
+    "timestamp": "2025-12-31T06:41:51.298Z",
+    "status": "WON_PAID"
+  }
+]

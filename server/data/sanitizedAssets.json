@@ -49001,20 +49001,116 @@
       "yield": "3.5% APY (Rent derived)"
     },
     "flavorText": "[CLASSIFIED]\nLocated in the Inland Strategic Reserve (内陆战略储备). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
-    "status": "AVAILABLE",
+    "status": "RESERVED",
     "tokenPrice": 227777,
     "imageUrl": "/assets/blueprints/command_post.png",
     "internalRef": "bot_asset_1767529465978_nylm1qf",
-    "reviewedAt": 1767529472798,
+    "reviewedAt": 1767530253304,
     "reviewHistory": [
       {
         "status": "AVAILABLE",
         "reviewedBy": "system",
         "reviewNotes": "Auto-approved by bot system",
         "reviewedAt": 1767529472807
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_bfng7z",
+        "reviewedAt": 1767530253315
       }
     ],
     "reviewedBy": "system",
-    "reviewNotes": "Auto-approved by bot system"
+    "reviewNotes": "Purchased by bot user bot_user_bfng7z",
+    "purchasedBy": "0xeCA78D1402AB03374Ec6F8D28598Dc439551e5De",
+    "purchasedAt": 1767530253304
+  },
+  {
+    "id": "bot_asset_1767529994760_zv9v7of",
+    "codeName": "CN-NW-CMD-6210",
+    "displayId": "CN-NW-DEEP-289",
+    "title": "Deep Inland Reserve Zone (深度内陆储备区) - COMMAND_POST (前线指挥所)",
+    "locationTag": "CN-NW-DEEP",
+    "region": "Deep Inland Reserve Zone (深度内陆储备区)",
+    "zoneClass": "COMMAND_POST (前线指挥所)",
+    "securityLevel": 3,
+    "specs": {
+      "area": "148 m²",
+      "capacity": "7 Personnel",
+      "type": "COMMAND_POST (前线指挥所)"
+    },
+    "financials": {
+      "totalTokens": 279166,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Deep Inland Reserve Zone (深度内陆储备区). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 279166,
+    "imageUrl": "/assets/blueprints/command_post.png",
+    "internalRef": "bot_asset_1767529994760_zv9v7of",
+    "reviewedAt": 1767530608105,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1767530001045
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_znc2i8",
+        "reviewedAt": 1767530608113
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_znc2i8",
+    "purchasedBy": "0xAeAEC99930578EA69FC54d2cC0c39d46C5f3e9D2",
+    "purchasedAt": 1767530608105
+  },
+  {
+    "id": "bot_asset_1767530528400_g9tot1n",
+    "codeName": "CN-INT-CMD-8959",
+    "displayId": "CN-INT-RES-182",
+    "title": "Inland Strategic Reserve (内陆战略储备) - COMMAND_POST (前线指挥所)",
+    "locationTag": "CN-INT-RES",
+    "region": "Inland Strategic Reserve (内陆战略储备)",
+    "zoneClass": "COMMAND_POST (前线指挥所)",
+    "securityLevel": 1,
+    "specs": {
+      "area": "147 m²",
+      "capacity": "7 Personnel",
+      "type": "COMMAND_POST (前线指挥所)"
+    },
+    "financials": {
+      "totalTokens": 155555,
+      "pricePerToken": 1,
+      "yield": "3.5% APY (Rent derived)"
+    },
+    "flavorText": "[CLASSIFIED]\nLocated in the Inland Strategic Reserve (内陆战略储备). \nStructure integrity: 99.8%. \nDistance from coastline: >1000km (Safe from naval bombardment).\nResources: Water source nearby.\nStatus: READY FOR OCCUPANCY.",
+    "status": "RESERVED",
+    "tokenPrice": 155555,
+    "imageUrl": "/assets/blueprints/command_post.png",
+    "internalRef": "bot_asset_1767530528400_g9tot1n",
+    "reviewedAt": 1767530840276,
+    "reviewHistory": [
+      {
+        "status": "AVAILABLE",
+        "reviewedBy": "system",
+        "reviewNotes": "Auto-approved by bot system",
+        "reviewedAt": 1767530535247
+      },
+      {
+        "status": "RESERVED",
+        "reviewedBy": "system",
+        "reviewNotes": "Purchased by bot user bot_user_1pgz0o",
+        "reviewedAt": 1767530840282
+      }
+    ],
+    "reviewedBy": "system",
+    "reviewNotes": "Purchased by bot user bot_user_1pgz0o",
+    "purchasedBy": "0x3Ed1F9B96c914f7CC2E8ebba4F95899EDaE3c0B8",
+    "purchasedAt": 1767530840276
   }
 ]

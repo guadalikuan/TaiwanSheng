@@ -1,0 +1,61 @@
+{
+  "targetTime": 1831543200000,
+  "totalAdjustmentMs": 1332000000,
+  "lastUpdated": "2026-01-03T08:37:35.858Z",
+  "history": [
+    {
+      "timestamp": 1767429455858,
+      "adjustment": 144000000,
+      "reason": "AI Analysis",
+      "source": "Oracle"
+    },
+    {
+      "timestamp": 1767418837044,
+      "adjustment": 144000000,
+      "reason": "AI Analysis",
+      "source": "Oracle"
+    },
+    {
+      "timestamp": 1767418189483,
+      "adjustment": 288000000,
+      "reason": "AI Analysis",
+      "source": "Oracle"
+    },
+    {
+      "timestamp": 1767358819455,
+      "adjustment": 144000000,
+      "reason": "AI Analysis",
+      "source": "Oracle"
+    },
+    {
+      "timestamp": 1767351627317,
+      "adjustment": 144000000,
+      "reason": "AI Analysis",
+      "source": "Oracle"
+    },
+    {
+      "timestamp": 1767351537014,
+      "adjustment": 144000000,
+      "reason": "AI Analysis",
+      "source": "Oracle"
+    },
+    {
+      "timestamp": 1767106808655,
+      "adjustment": 144000000,
+      "reason": "AI Analysis",
+      "source": "Oracle"
+    },
+    {
+      "timestamp": 1767010624231,
+      "adjustment": 144000000,
+      "reason": "AI Analysis",
+      "source": "Oracle"
+    },
+    {
+      "timestamp": 1766498068417,
+      "adjustment": 36000000,
+      "reason": "AI Analysis",
+      "source": "Oracle"
+    }
+  ]
+}

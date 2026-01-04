@@ -34103,5 +34103,33 @@
     "lastLogin": null,
     "createdAt": 1767529388855,
     "updatedAt": 1767529388855
+  },
+  {
+    "address": "0xb5484125F09c91a7937E56e563aB448606d11EFc",
+    "username": "bot_user_nm3501",
+    "passwordHash": "$2b$10$Jlke/JnxZ28Qn3HKQzelRev.vCnywEJqvYIVf8teSjhWxeMcsKUHC",
+    "encryptedMnemonic": "U2FsdGVkX1/tB/hKCu5c1SUnW+Hv9CtOsjLAjqbHZpCjVUEhlLyM3DdtdUdVhpu567ekuF4jBRmYx3HTaFJfKoX4UPOqetShX/9cNYiMJtvE4z3KrsG7/fRyqNQ92ZjI",
+    "role": "SUBMITTER",
+    "profile": {
+      "displayName": "bot_user_nm3501",
+      "avatar": ""
+    },
+    "lastLogin": null,
+    "createdAt": 1767529917934,
+    "updatedAt": 1767529917934
+  },
+  {
+    "address": "0x26826D628957aa1A33C6b4EC1A07f2DB56213417",
+    "username": "bot_user_evetvi",
+    "passwordHash": "$2b$10$H8qNWZHcebk.c2jw9MooU.UcD2Qmgof3lb2ZXUQFZdcb1tBdmYKBi",
+    "encryptedMnemonic": "U2FsdGVkX18skKQrtNn8iAxIeeIIIu7ulJcjEhoHL9gCBg7NOFxjcEtop2nrw8o6oiLZdGorVV1RBFppbnJw6Y6QQdrMf5AnRHKUZhOmUCg6rXxO9Yd5R6sbYgzL1w8v",
+    "role": "USER",
+    "profile": {
+      "displayName": "bot_user_evetvi",
+      "avatar": ""
+    },
+    "lastLogin": null,
+    "createdAt": 1767530418016,
+    "updatedAt": 1767530418016
   }
 ]

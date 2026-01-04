@@ -1,0 +1,551 @@
+[
+  {
+    "url": "https://apnews.com/hub/asia-pacific",
+    "title": "Asia Pacific",
+    "timestamp": 1767429455856,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://apnews.com/hub/russia-ukraine",
+    "title": "Russia-Ukraine War",
+    "timestamp": 1767429454473,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://apnews.com/hub/israel-hamas-war",
+    "title": "Israel-Hamas War",
+    "timestamp": 1767429453076,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://www.gwytb.gov.cn/xwdt/zwyw/202511/t20251120_12736252.htm",
+    "title": "第五届“携手圆梦——两岸同胞交流研讨活动”在四川举行",
+    "timestamp": 1767429451750,
+    "analysis": {
+      "score": 0,
+      "reason": "该新闻标题反映了两岸同胞的交流研讨活动，有助于增进理解和信任，对台海局势产生积极影响。"
+    }
+  },
+  {
+    "url": "http://www.gwytb.gov.cn/xwdt/zwyw/202512/t20251230_12743603.htm",
+    "title": "2025年全国台协会长座谈会在北京举行",
+    "timestamp": 1767429449929,
+    "analysis": {
+      "score": 45,
+      "reason": "该消息是台海地区正常的交流活动，没有直接涉及敏感议题或冲突升级，因此对局势的影响偏中性。"
+    }
+  },
+  {
+    "url": "http://www.gwytb.gov.cn/",
+    "title": "中共中央台湾工作办公室、国务院台湾事务办公室",
+    "timestamp": 1767429447718,
+    "analysis": {
+      "score": 40,
+      "reason": "该消息标题涉及台湾工作办公室和国务院台湾事务办公室，表明中央层面对台海局势的关注和积极作为，有助于维护两岸关系和平稳定，促进交流合作，降低紧张程度。"
+    }
+  },
+  {
+    "url": "https://www.war.gov/News/Press-Products/",
+    "title": "Press Products",
+    "timestamp": 1767428979273,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.defense.gov/#",
+    "title": "Place Holder",
+    "timestamp": 1767428977964,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.war.gov/",
+    "title": "U.S. DepartmentofWar",
+    "timestamp": 1767428976836,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://china.chinadaily.com.cn/a/202601/03/WS6958b144a310942cc4999e0a.html",
+    "title": "微视频｜中国，加速向新",
+    "timestamp": 1767428975432,
+    "analysis": {
+      "score": 45,
+      "reason": "该新闻标题主要表达的是中国在发展进步，没有直接涉及台海局势的紧张或缓和，因此打分为中性偏正面。"
+    }
+  },
+  {
+    "url": "https://china.chinadaily.com.cn/a/202601/03/WS6958b152a310942cc4999e0c.html",
+    "title": "习主席新年贺词展现欣欣向荣的中国",
+    "timestamp": 1767428973301,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://china.chinadaily.com.cn/a/202601/03/WS6958b186a310942cc4999e0e.html",
+    "title": "很不平凡的2025，总书记带领我们乘势而上",
+    "timestamp": 1767428971700,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.itaiwannews.cn/2025-12-26/04c4c0a3-bed7-47f0-a33e-ec4f977ed78f.html",
+    "title": "台湾民意机构通过赖清德弹劾提案 明年1月将举办公听会",
+    "timestamp": 1767426870050,
+    "analysis": {
+      "score": 95,
+      "reason": "该新闻涉及台湾内部政治操作，可能加剧两岸对立情绪，对台海和平稳定构成潜在风险。"
+    }
+  },
+  {
+    "url": "https://my-h5news.app.xinhuanet.com/h5/specialTopic/indexPc.html?articleId=91844cfba919401daaeafeb527fa8c99&",
+    "title": "专题：东部战区开展“正义使命-2025”演习",
+    "timestamp": 1767418837038,
+    "analysis": {
+      "score": 45,
+      "reason": "该消息表明东部战区进行了军事演习，这可能对台海局势产生一定影响。但具体影响程度难以确定，因此打分为45分，即中性/无明显波动。"
+    }
+  },
+  {
+    "url": "https://my-h5news.app.xinhuanet.com/h5activity/yunzhibo-pc/#/?roomId=69537287e4b087530b5c9044&isFull=0&isTest=no&isXR=0",
+    "title": "新华网独家直播回放：军事专家谈 “正义使命-2025”演习",
+    "timestamp": 1767418834450,
+    "analysis": {
+      "score": 0,
+      "reason": "该新闻标题仅涉及军事演习的直播回放，没有直接提及台海局势或紧张程度，因此无法给出具体的打分。但是，根据常识和背景知识，军事演习通常会增加地区的紧张氛围，尤其是在敏感地区如台海。然而，由于缺乏具体信息，无法确定此消息对台海局势的具体影响。"
+    }
+  },
+  {
+    "url": "https://www.news.cn/tw/20260102/5da7711c83324440aa9616608ec84699/c.html",
+    "title": "海报丨“小三通”航线开通25年 见证两岸交流不断深化",
+    "timestamp": 1767418831250,
+    "analysis": {
+      "score": 45,
+      "reason": "该新闻标题主要反映了两岸交流的深化，没有直接体现紧张或冲突。但由于涉及政治和地缘情感分析，可能会间接影响台海局势。因此，评分为45分，代表中性/无明显波动。"
+    }
+  },
+  {
+    "url": "https://china.chinadaily.com.cn/a/202601/03/WS69586af1a310942cc4999dd2.html",
+    "title": "新年贺词，习近平为何再次提到“窑洞之问”？",
+    "timestamp": 1767418828751,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://china.chinadaily.com.cn/a/202601/03/WS69586b2ba310942cc4999dd4.html",
+    "title": "这份“年度答卷”，我们共同署名",
+    "timestamp": 1767418827405,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://china.chinadaily.com.cn/a/202601/03/WS69586b2fa310942cc4999dd6.html",
+    "title": "时政微视频丨枝叶总关情",
+    "timestamp": 1767418826041,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://edition.cnn.com/politics/state-redistricting-maps-vis/index.html",
+    "title": "Redistricting Tracker",
+    "timestamp": 1767418189478,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.cnn.com/election/2025",
+    "title": "2025 Elections",
+    "timestamp": 1767418188384,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.cnn.com/politics/fact-check",
+    "title": "Facts First",
+    "timestamp": 1767418187270,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.militarytimes.com/education-transition",
+    "title": "Education & Transition",
+    "timestamp": 1767418186147,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.militarytimes.com/flashpoints",
+    "title": "Flashpoints",
+    "timestamp": 1767418185112,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://www.militarytimes.com/pay-benefits",
+    "title": "Pay & Benefits",
+    "timestamp": 1767418183971,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://news.cctv.com/2026/01/03/ARTI98AqF1n6SalWj5vZdq3A260103.shtml",
+    "title": "能源→交通→民生 建设者刷新重大工程“进度条”",
+    "timestamp": 1767418181556,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "https://news.cctv.com/2026/01/03/ARTI2KX3SvwC1SIINOJrxHij260103.shtml",
+    "title": "多视角“数”说长江十年禁渔新成就",
+    "timestamp": 1767418180456,
+    "analysis": {
+      "score": 0,
+      "reason": "该消息仅涉及长江十年禁渔的新成就，与台海局势无直接关联。"
+    }
+  },
+  {
+    "url": "http://tw.people.com.cn/n1/2025/1215/c14657-40624351.html",
+    "title": "“台湾阿公”的“归根”之旅",
+    "timestamp": 1767418178842,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://tw.people.com.cn/n1/2025/1224/c14657-40631197.html",
+    "title": "两岸人士在京共话赓续抗战精神",
+    "timestamp": 1767418177416,
+    "analysis": {
+      "score": 0,
+      "reason": "此消息标题涉及两岸人士在京共话赓续抗战精神，属于正面交流，有助于增进两岸同胞的相互了解和信任，对台海局势产生积极影响。因此，根据题目要求，我给出40分的评分（0-40分为局势缓和/正面交流）。"
+    }
+  },
+  {
+    "url": "http://tw.people.com.cn/n1/2025/1229/c14657-40634234.html",
+    "title": "年终报道丨铭记历史荣耀 积蓄统一大势——两岸关系这一年",
+    "timestamp": 1767418174742,
+    "analysis": {
+      "score": 45,
+      "reason": "此消息强调两岸关系的历史荣耀和统一大势，表明双方在和平发展道路上的共同努力，有助于缓解台海局势紧张。"
+    }
+  },
+  {
+    "url": "https://www.itaiwannews.cn/2025-12-31/9660849d-1e0f-3293-34d4-d4856ba7f15b.html",
+    "title": "祸台实锤！2025赖清德当局“台独”祸行大盘点",
+    "timestamp": 1767418024635,
+    "analysis": {
+      "score": 95,
+      "reason": "标题明确谴责“台独”分裂行径，体现维护国家主权的坚定立场，加剧两岸对立情绪。"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202601/t20260101_12744039.htm",
+    "title": "涉及社會民生多個領域 一批新規今起正式施行",
+    "timestamp": 1767258007102,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202601/t20260101_12744019.htm",
+    "title": "視頻堶中老鐵路開通運營滿四年 跨境果蔬運輸需求旺盛",
+    "timestamp": 1767258005976,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202601/t20260101_12744013.htm",
+    "title": "多地多部門持續強化運能保障 確保民眾元旦假期出行順暢",
+    "timestamp": 1767258002776,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251231_12743673.htm",
+    "title": "網絡安全法修訂： 為智能時代織就安全法治之網",
+    "timestamp": 1767164408273,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251231_12743677.htm",
+    "title": "從國博鳳冠到英歌舞，血脈里的國風DNA動了。一絲一線，織就千年風雅　一餐一飲，品味煙火人間",
+    "timestamp": 1767164406724,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251231_12743665.htm",
+    "title": "2025→2026，接力向前！",
+    "timestamp": 1767164405459,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251230_12743637.htm",
+    "title": "優化支持范圍！2026年“兩新”政策部署來了",
+    "timestamp": 1767106808647,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251230_12743634.htm",
+    "title": "2026年農業強國建設，“施工圖”來了！",
+    "timestamp": 1767106807395,
+    "analysis": {
+      "score": 0,
+      "reason": "该消息是关于中国农业发展的积极新闻，与台海局势无直接关联。"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251230_12743640.htm",
+    "title": "促進就業增收為消費添動力",
+    "timestamp": 1767106805309,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251230_12743622.htm",
+    "title": "深耕中國堶2025，外資“不見外”，創新是錨點",
+    "timestamp": 1767103207531,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251230_12743621.htm",
+    "title": "年終特稿堶2025，以中國方案作答“世界之問”",
+    "timestamp": 1767103206194,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251230_12743619.htm",
+    "title": "【社論】服務消費提質擴容，點燃消費新引擎",
+    "timestamp": 1767103204859,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251228_12743091.htm",
+    "title": "新城市志｜突破5萬公里，對中國高鐵意味著什麼",
+    "timestamp": 1766904969154,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251228_12743089.htm",
+    "title": "數智化趨勢下如何以新供給創造新消費？",
+    "timestamp": 1766904967852,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251228_12743080.htm",
+    "title": "“中企承建的供水項目讓我們的生活煥然一新”（新時代中非合作）",
+    "timestamp": 1766904966530,
+    "analysis": {
+      "score": 40,
+      "reason": "包含关键词\"合作\"，判定为局势缓和"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251229_12743229.htm",
+    "title": "“兩重”建設高質量推進 民生福祉持續增強",
+    "timestamp": 1767010624226,
+    "analysis": {
+      "score": 0,
+      "reason": "此新闻标题主要描述的是‘兩重’建设高质量推进和民生福祉持续增强，这是一个积极的经济发展和社会进步的消息，与台海局势无直接关联。因此，无法根据该新闻标题对台海局势的影响进行打分。"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251229_12743232.htm",
+    "title": "如何實施更加積極的財政政策？2026年將這樣做",
+    "timestamp": 1767010621047,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251229_12743231.htm",
+    "title": "焦點訪談｜“智慧大腦”結合“靈活身體” 我國重點布局具身智能產業",
+    "timestamp": 1767010618706,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251228_12743091.htm",
+    "title": "新城市志｜突破5萬公里，對中國高鐵意味著什麼",
+    "timestamp": 1766898352075,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251228_12743089.htm",
+    "title": "數智化趨勢下如何以新供給創造新消費？",
+    "timestamp": 1766898350761,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251228_12743080.htm",
+    "title": "“中企承建的供水項目讓我們的生活煥然一新”（新時代中非合作）",
+    "timestamp": 1766898341575,
+    "analysis": {
+      "score": 40,
+      "reason": "包含关键词\"合作\"，判定为局势缓和"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251227_12742892.htm",
+    "title": "2025，邂逅更開放的中國",
+    "timestamp": 1766819933360,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251227_12742883.htm",
+    "title": "以正確認知共尋相處之道（鐘聲·大國外交·2025年度回眸）",
+    "timestamp": 1766819931944,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251227_12742983.htm",
+    "title": "年終報道堶數說我們的2025",
+    "timestamp": 1766819930069,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251225_12742154.htm",
+    "title": "美國學者：高市錯誤言論衝擊地區穩定",
+    "timestamp": 1766645631825,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251225_12742166.htm",
+    "title": "江山如畫｜跨過萬億門檻，這座制造業城市再出發",
+    "timestamp": 1766645630641,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251225_12742157.htm",
+    "title": "外交部：堅決反對美方濫施關稅，無理打壓中國產業",
+    "timestamp": 1766645629557,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251223_12741743.htm",
+    "title": "中央經濟工作會議中的“十五五”名詞：“好房子”",
+    "timestamp": 1766498068402,
+    "analysis": {
+      "score": 40,
+      "reason": "该新闻聚焦国内经济政策，未涉及台海议题，体现大陆专注内部发展，对两岸关系无直接影响。"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251223_12741738.htm",
+    "title": "從產教融合看職業教育新前景（大數據觀察·點讀“十四五”）",
+    "timestamp": 1766498064945,
+    "analysis": {
+      "score": 40,
+      "reason": "包含关键词\"融合\"，判定为局势缓和"
+    }
+  },
+  {
+    "url": "http://big5.chinataiwan.cn/gate/big5/www.chinataiwan.cn/xwzx/PoliticsNews/202512/t20251223_12741748.htm",
+    "title": "日本社會各界批評高市早苗政府強軍擴武（國際視點）",
+    "timestamp": 1766498063401,
+    "analysis": {
+      "score": 50,
+      "reason": "常规报道"
+    }
+  }
+]

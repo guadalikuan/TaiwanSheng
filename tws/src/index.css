@@ -1,0 +1,564 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --gold: #fbbf24;
+  --cyan: #06b6d4;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: #020617;
+}
+
+body {
+  font-family: 'Courier New', Courier, monospace;
+  background-color: #000;
+  color: #e2e8f0;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+::selection {
+  background-color: #7f1d1d;
+  color: #fff;
+}
+
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.animate-scan {
+  animation: scan 4s linear infinite;
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 0 200;
+  }
+  100% {
+    stroke-dasharray: 200 0;
+  }
+}
+
+.animate-dash {
+  animation: dash 2s linear infinite;
+}
+
+.clip-path-polygon {
+  clip-path: polygon(0 0, 95% 0, 100% 50%, 95% 100%, 0 100%);
+}
+
+@keyframes glitch {
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+  100% {
+    transform: translate(0);
+  }
+}
+
+.glitch-active {
+  animation: glitch 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+  color: #ff0000;
+  text-shadow: 2px 0 #fff, -2px 0 #ff0000;
+}
+
+@keyframes pulse {
+  0% {
+    text-shadow: 0 0 10px #8b0000;
+  }
+  50% {
+    text-shadow: 0 0 25px #ff0000;
+  }
+  100% {
+    text-shadow: 0 0 10px #8b0000;
+  }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+.omega-clock {
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  text-shadow: 0 0 30px rgba(255, 0, 0, 0.6);
+}
+
+.map-panel {
+  position: relative;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  border: 1px solid rgba(248, 113, 113, 0.15);
+  background: rgba(2, 6, 23, 0.85);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+/* 高德地图容器 */
+.map-panel .amap-container {
+  width: 100%;
+  height: 100%;
+  background: #1a1a2e !important;
+}
+
+.map-panel .amap-tile {
+  background: #1a1a2e !important;
+}
+
+.tw-map-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #1a1a2e;
+}
+
+.tw-scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: rgba(34, 197, 94, 0.35);
+  animation: tw-scan 4s linear infinite;
+  pointer-events: none;
+  z-index: 20;
+}
+
+@keyframes tw-scan {
+  0% { top: 0%; }
+  100% { top: 100%; }
+}
+
+.mainland-map-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #1a1a2e;
+}
+
+/* 移除旧的 Leaflet 样式 */
+.mainland-map-container .leaflet-container {
+  display: none;
+}
+
+.mainland-beacon-icon {
+  background: rgba(251, 191, 36, 0.95);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.9), 0 0 28px rgba(250, 204, 21, 0.7);
+  animation: mainland-glow 3s ease-in-out infinite;
+}
+
+@keyframes mainland-glow {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0.95;
+  }
+}
+
+.map-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #fbbf24 !important;
+  font-family: 'Courier New', Courier, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+/* 闪烁动画 (blink) */
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.blink {
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+/* 跑马灯动画 (marquee) */
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+  display: inline-block;
+}
+
+/* 移动端安全区域适配 */
+@supports (padding: max(0px)) {
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  
+  .pt-safe {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+  
+  .px-safe {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* 滚动条隐藏 (用于筛选栏) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* 慢速旋转动画 (用于CLAIM按钮) */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+/* 雷达扫描动画 (用于 NetworkRadar) */
+@keyframes radar-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-radar-sweep {
+  animation: radar-sweep 4s linear infinite;
+}
+
+/* FadeIn 动画 (用于 ArsenalEntry) */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* 长安家书 - 竖排文字样式 */
+.writing-vertical-rl {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+}
+
+/* 长安家书 - 自定义滚动条样式 */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #e6dcc3; 
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #8b281f; 
+  border-radius: 3px;
+}
+
+/* 增强地图文字可读性 */
+.leaflet-tile {
+  filter: none;
+}
+
+/* 地图标签优化 */
+.leaflet-pane text {
+  fill: #9ca3af !important;
+}
+
+/* 蓝色用户位置标记（美化） */
+.user-location-blue-wrapper {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: inline-block;
+  transform: translateZ(0);
+  z-index: 1300 !important;
+  pointer-events: auto !important;
+}
+
+/* 中心非实心圆点 */
+.user-location-blue {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  /* 半透明中心，非实心效果 */
+  background: rgba(26, 115, 232, 0.6);
+  border: 2px solid rgba(126, 203, 255, 0.8);
+  /* 中心高光增强通透感 */
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3) inset,
+              0 0 8px rgba(26, 115, 232, 0.6);
+  z-index: 2;
+}
+
+/* 第一层水波 */
+.user-location-blue::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(126, 203, 255, 0.7);
+  opacity: 0;
+  animation: wave 2s ease-out infinite;
+  z-index: 1;
+}
+
+/* 第二层水波 */
+.user-location-blue::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(26, 115, 232, 0.5);
+  opacity: 0;
+  animation: wave 2s ease-out 0.6s infinite; /* 延迟0.6s形成层次感 */
+  z-index: 0;
+}
+
+/* 水波扩散动画 */
+@keyframes wave {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3); /* 小范围扩散（3倍大小） */
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+/* 钱包连接标记（绿色水波效果） */
+.wallet-location-green-wrapper {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: inline-block;
+  transform: translateZ(0);
+  z-index: 1100 !important;
+  pointer-events: auto !important;
+}
+
+/* 中心圆点 */
+.wallet-location-green {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.8);
+  border: 2px solid rgba(74, 222, 128, 0.9);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4) inset,
+              0 0 12px rgba(34, 197, 94, 0.7);
+  z-index: 2;
+}
+
+/* 第一层水波 */
+.wallet-location-green::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(74, 222, 128, 0.8);
+  opacity: 0;
+  animation: walletWave 2.5s ease-out infinite;
+  z-index: 1;
+}
+
+/* 第二层水波 */
+.wallet-location-green::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(34, 197, 94, 0.6);
+  opacity: 0;
+  animation: walletWave 2.5s ease-out 0.8s infinite;
+  z-index: 0;
+}
+
+/* 钱包水波扩散动画 */
+@keyframes walletWave {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(4);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+/* 访问记录标记（青色脉冲点效果） */
+.visit-location-cyan-wrapper {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: inline-block;
+  transform: translateZ(0);
+  z-index: 1050 !important;
+  pointer-events: auto !important;
+}
+
+/* 中心圆点 */
+.visit-location-cyan {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(6, 182, 212, 0.85); /* cyan-500 */
+  border: 2px solid rgba(34, 211, 238, 0.9); /* cyan-400 */
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3) inset,
+              0 0 10px rgba(6, 182, 212, 0.7);
+  z-index: 2;
+}
+
+/* 第一层脉冲 */
+.visit-location-cyan::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid rgba(34, 211, 238, 0.8);
+  opacity: 0;
+  animation: visitPulse 2s ease-out infinite;
+  z-index: 1;
+}
+
+/* 第二层脉冲 */
+.visit-location-cyan::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid rgba(6, 182, 212, 0.6);
+  opacity: 0;
+  animation: visitPulse 2s ease-out 0.7s infinite;
+  z-index: 0;
+}
+
+/* 访问记录脉冲动画 */
+@keyframes visitPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3.5);
+    opacity: 0;
+    border-width: 1px;
+  }
+}

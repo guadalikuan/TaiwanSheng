@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TWS - 资产避难所网络</title>
+    <script>
+      var _hmt = _hmt || [];
+      (function() {
+        var hm = document.createElement("script");
+        hm.src = "https://hm.baidu.com/hm.js?177afaec1b7df708ff98e297052ab7d5";
+        var s = document.getElementsByTagName("script")[0]; 
+        s.parentNode.insertBefore(hm, s);
+      })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        /* 保持暗黑风格，但主色调改为“流金”，象征财富与皇权 */
+        body { background-color: #050505; color: #FFD700; font-family: 'Courier New', Courier, monospace; margin: 0; padding: 0; overflow: hidden; }
+        #map { width: 100vw; height: 100vh; z-index: 1; filter: contrast(1.1) brightness(0.6) sepia(0.5) hue-rotate(320deg) saturate(1.5); }
+        
+        /* 金色信标动画 */
+        .beacon-icon {
+            background: rgba(255, 215, 0, 0.9);
+            border-radius: 50%;
+            box-shadow: 0 0 15px #FFD700, 0 0 30px #DAA520;
+            animation: glow 3s infinite alternate;
+        }
+        @keyframes glow {
+            0% { transform: scale(0.8); opacity: 0.6; box-shadow: 0 0 5px #FFD700; }
+            100% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 25px #FFD700, 0 0 50px #FFD700; }
+        }
+
+        /* 连线特效 */
+        .connection-line {
+            stroke: rgba(255, 215, 0, 0.3);
+            stroke-width: 1;
+            stroke-dasharray: 5, 10;
+            animation: dash 30s linear infinite;
+        }
+        @keyframes dash { to { stroke-dashoffset: 1000; } }
+
+        /* UI 面板 */
+        .glass-panel {
+            background: rgba(20, 20, 20, 0.9);
+            border: 1px solid #B8860B;
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部资产数据 -->
+    <div class="glass-panel absolute top-4 left-4 p-5 rounded z-[1000] max-w-sm shadow-[0_0_15px_rgba(255,215,0,0.2)]">
+        <div class="text-xs text-yellow-600 mb-1 tracking-[0.2em]">SAFE HAVEN INVENTORY</div>
+        <div class="text-3xl font-bold text-yellow-400 mb-2" id="total-assets">¥ 0.00</div>
+        
+        <div class="grid grid-cols-2 gap-4 text-xs mb-3 border-b border-yellow-900 pb-3">
+            <div>
+                <div class="text-gray-500">UNITS SECURED</div>
+                <div class="text-white font-bold" id="unit-count">42,109</div>
+            </div>
+            <div>
+                <div class="text-gray-500">BLOCK HEIGHT</div>
+                <div class="text-white font-bold">#8922104</div>
+            </div>
+        </div>
+
+        <div class="space-y-1 h-24 overflow-hidden" id="asset-log">
+            <!-- 滚动日志 -->
+        </div>
+    </div>
+
+    <!-- 底部标语 -->
+    <div class="glass-panel absolute bottom-8 left-1/2 transform -translate-x-1/2 px-6 py-2 rounded-full z-[1000]">
+        <div class="text-sm text-yellow-200 tracking-widest uppercase animate-pulse">
+            Mainland China · The Ultimate Sanctuary
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script>
+        // 初始化地图，中心对准中国大陆腹地
+        const map = L.map('map', {
+            zoomControl: false, scrollWheelZoom: false, dragging: true, doubleClickZoom: false
+        }).setView([34.3416, 108.9398], 5); // 以西安为视觉中心，呼应“老家”和战略腹地
+
+        // 使用暗色底图，便于凸显金色
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 }).addTo(map);
+
+        // 战略资产节点库 (基于您的资源)
+        const strategicNodes = [
+            { name: 'SHAANXI (Qinling Base)', lat: 33.8700, lng: 110.1500, type: 'Deep Mountain' }, // 商洛/洛南
+            { name: 'XI\'AN (Urban Reserve)', lat: 34.3416, lng: 108.9398, type: 'Urban' }, // 陕西房产主编资源
+            { name: 'FUJIAN (Coastal Front)', lat: 26.0745, lng: 119.2965, type: 'Coastal' }, // 离台湾最近
+            { name: 'HORGOS (Tax Haven)', lat: 44.2144, lng: 80.4085, type: 'Financial' }, // 霍尔果斯
+            { name: 'GUANGDONG (Inventory)', lat: 23.1291, lng: 113.2644, type: 'Strategic' }, // 广东军区动员局
+            { name: 'SICHUAN (Backup)', lat: 30.5728, lng: 104.0668, type: 'Strategic' } 
+        ];
+
+        // 金色信标图标
+        const goldIcon = L.divIcon({ className: 'beacon-icon', iconSize: [14, 14], iconAnchor: [7, 7] });
+
+        let assetValue = 1425000000; // 初始 14亿
+        let unitCount = 42109;
+
+        const assetDisplay = document.getElementById('total-assets');
+        const unitDisplay = document.getElementById('unit-count');
+        const logContainer = document.getElementById('asset-log');
+
+        // 渲染固定战略节点
+        strategicNodes.forEach(node => {
+            L.marker([node.lat, node.lng], { icon: goldIcon }).addTo(map);
+            
+            // 添加永久文字标签
+            L.tooltip({ permanent: true, direction: 'bottom', className: 'bg-transparent text-yellow-500 border-none shadow-none font-bold text-xs' })
+                .setContent(node.name)
+                .setLatLng([node.lat, node.lng])
+                .addTo(map);
+        });
+
+        // 模拟随机资产上链（在战略节点附近）
+        function spawnAsset() {
+            const baseNode = strategicNodes[Math.floor(Math.random() * strategicNodes.length)];
+            const offsetLat = (Math.random() - 0.5) * 2; // 范围大一点，显示辐射效应
+            const offsetLng = (Math.random() - 0.5) * 2;
+
+            // 临时闪烁点
+            const tempMarker = L.circleMarker([baseNode.lat + offsetLat, baseNode.lng + offsetLng], {
+                radius: 2, color: '#FFD700', fillOpacity: 1
+            }).addTo(map);
+
+            // 数值增长
+            assetValue += Math.floor(Math.random() * 500000);
+            unitCount++;
+            
+            // 格式化货币
+            assetDisplay.innerText = '¥ ' + (assetValue / 100000000).toFixed(4) + ' B';
+            unitDisplay.innerText = unitCount.toLocaleString();
+
+            // 日志更新
+            const logItem = document.createElement('div');
+            logItem.className = "text-xs font-mono flex justify-between";
+            const contractId = Math.random().toString(16).substring(2, 6).toUpperCase();
+            logItem.innerHTML = `
+                <span class="text-yellow-600">CONFIRMED</span>
+                <span class="text-gray-400">Lot-${contractId}</span>
+                <span class="text-white text-right">${baseNode.name.split(' ')[0]}</span>
+            `;
+            logContainer.insertBefore(logItem, logContainer.firstChild);
+            if (logContainer.children.length > 5) logContainer.removeChild(logContainer.lastChild);
+
+            // 2秒后移除临时点，保持地图整洁，只留核心节点
+            setTimeout(() => map.removeLayer(tempMarker), 2000);
+        }
+
+        setInterval(spawnAsset, 600); // 高频刷新，展示资产入库的火爆
+
+    </script>
+</body>
+</html>

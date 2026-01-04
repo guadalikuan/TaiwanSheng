@@ -21782,5 +21782,39 @@
     "proofDocs": [],
     "timestamp": 1767529465978,
     "submittedBy": "0x311Af055B00A808961ddF0dFfB7501DE6549f98f"
+  },
+  {
+    "id": "bot_asset_1767529994760_zv9v7of",
+    "ownerName": "Owner_70nw48",
+    "ownerId": "8638",
+    "contactPhone": "13924961630",
+    "projectName": "商洛·项目DP14",
+    "city": "商洛",
+    "district": "开发区",
+    "address": "商洛路900号",
+    "roomNumber": "2613",
+    "area": 148,
+    "marketValuation": 301.5,
+    "debtAmount": 201,
+    "proofDocs": [],
+    "timestamp": 1767529994760,
+    "submittedBy": "0x1a9330989c366523c6C6f7AEd13608f11D828766"
+  },
+  {
+    "id": "bot_asset_1767530528400_g9tot1n",
+    "ownerName": "Owner_4x76bu",
+    "ownerId": "9659",
+    "contactPhone": "13991513290",
+    "projectName": "安康·项目9BHN",
+    "city": "安康",
+    "district": "开发区",
+    "address": "安康路942号",
+    "roomNumber": "3032",
+    "area": 147,
+    "marketValuation": 168,
+    "debtAmount": 112,
+    "proofDocs": [],
+    "timestamp": 1767530528400,
+    "submittedBy": "0x4AB10cE17b0C18A0b8aB477Ab8Ad39E0a90f0870"
   }
 ]
