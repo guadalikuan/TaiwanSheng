@@ -9,8 +9,9 @@ import { Loader } from 'lucide-react';
  * 
  * @param {React.ReactNode} children - 要渲染的子组件
  * @param {string[]} allowedRoles - 允许访问的角色数组（可选）
+ * @param {string} redirectTo - 未认证时重定向的路径（可选，默认 /login）
  */
-const ProtectedRoute = ({ children, allowedRoles = [] }) => {
+const ProtectedRoute = ({ children, allowedRoles = [], redirectTo = '/login' }) => {
   const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
 
@@ -30,7 +31,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 
   // 未认证，重定向到登录页
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
   // 如果指定了角色权限，检查用户角色

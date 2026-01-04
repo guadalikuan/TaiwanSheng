@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }) => {
             console.log("Wallet disconnected externally, logging out...");
             localStorage.removeItem('tws_token');
             localStorage.removeItem('tws_wallet_login');
+            localStorage.removeItem('tws_user');
             setToken(null);
             setUser(null);
             setIsAuthenticated(false);
@@ -69,9 +70,14 @@ export const AuthProvider = ({ children }) => {
       if (response.success) {
         setUser(response.user);
         setIsAuthenticated(true);
+        // 保存用户信息到localStorage以便检查角色
+        if (response.user) {
+          localStorage.setItem('tws_user', JSON.stringify(response.user));
+        }
       } else {
         // Token 无效，清除
         localStorage.removeItem('tws_token');
+        localStorage.removeItem('tws_user');
         setToken(null);
         setUser(null);
         setIsAuthenticated(false);
@@ -79,6 +85,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Error loading user:', error);
       localStorage.removeItem('tws_token');
+      localStorage.removeItem('tws_user');
       setToken(null);
       setUser(null);
       setIsAuthenticated(false);
@@ -96,6 +103,10 @@ export const AuthProvider = ({ children }) => {
         setUser(response.user);
         setIsAuthenticated(true);
         localStorage.setItem('tws_token', response.token);
+        // 保存用户信息到localStorage以便检查角色
+        if (response.user) {
+          localStorage.setItem('tws_user', JSON.stringify(response.user));
+        }
         return { success: true, mnemonic: response.mnemonic };
       } else {
         return { success: false, message: response.message || '注册失败' };
@@ -115,6 +126,10 @@ export const AuthProvider = ({ children }) => {
         setUser(response.user);
         setIsAuthenticated(true);
         localStorage.setItem('tws_token', response.token);
+        // 保存用户信息到localStorage以便检查角色
+        if (response.user) {
+          localStorage.setItem('tws_user', JSON.stringify(response.user));
+        }
         return { success: true };
       } else {
         return { success: false, message: response.message || '登录失败' };
@@ -154,6 +169,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('tws_token');
     localStorage.removeItem('tws_wallet_login');
+    localStorage.removeItem('tws_user');
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);
@@ -169,6 +185,10 @@ export const AuthProvider = ({ children }) => {
         setUser(response.user);
         setIsAuthenticated(true);
         localStorage.setItem('tws_token', response.token);
+        // 保存用户信息到localStorage以便检查角色
+        if (response.user) {
+          localStorage.setItem('tws_user', JSON.stringify(response.user));
+        }
         return { success: true };
       } else {
         return { success: false, message: response.message || '登录失败' };

@@ -12,6 +12,8 @@ import ArsenalEntry from './components/ArsenalEntry';
 import CommandCenter from './components/CommandCenter';
 import RegisterPage from './components/RegisterPage';
 import LoginPage from './components/LoginPage';
+import ArsenalLoginPage from './components/ArsenalLoginPage';
+import ProtectedRoute from './components/ProtectedRoute';
 import MarketDetailPage from './components/MarketDetailPage';
 import MapNodeDetailPage from './components/MapNodeDetailPage';
 import AssetDetailPage from './components/AssetDetailPage';
@@ -36,6 +38,7 @@ const App = () => (
     <Route path="/events" element={<EventListPage />} />
     <Route path="/register" element={<RegisterPage />} />
     <Route path="/login" element={<LoginPage />} />
+    <Route path="/arsenal/login" element={<ArsenalLoginPage />} />
     <Route path="/bunker" element={<DespairBunker />} />
     <Route path="/bunker-old" element={<BunkerApp />} />
     <Route path="/market" element={<BlackMarket />} />
@@ -43,7 +46,18 @@ const App = () => (
     <Route path="/my-assets" element={<MyAssets />} />
     <Route path="/agent" element={<AgentApp />} />
     <Route path="/app" element={<TWSApp />} />
-    <Route path="/arsenal" element={<ArsenalEntry />} />
+    {/* 资产入库页面需要认证和特定角色 */}
+    <Route 
+      path="/arsenal" 
+      element={
+        <ProtectedRoute 
+          allowedRoles={['SUBMITTER', 'ADMIN']} 
+          redirectTo="/arsenal/login"
+        >
+          <ArsenalEntry />
+        </ProtectedRoute>
+      } 
+    />
     <Route path="/command" element={<CommandCenter />} />
     <Route path="/market-detail" element={<MarketDetailPage />} />
     <Route path="/map-node/:id" element={<MapNodeDetailPage />} />

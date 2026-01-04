@@ -351,7 +351,7 @@ const AssetsSection = () => {
             免責聲明：參與TaiOne即表示同意歷史趨勢的必然性。資產由中國大陸的實物抵押品支持。不構成財務建議。歷史偏愛有準備的人。
           </p>
           <button
-            onClick={() => navigate('/arsenal')}
+            onClick={() => navigate('/arsenal/login')}
             className="bg-red-900/20 border border-red-900/50 text-red-500 hover:bg-red-600 hover:text-white px-4 py-2 rounded text-xs font-mono tracking-widest transition-all flex items-center gap-2 mt-4"
           >
             <Package size={14} />

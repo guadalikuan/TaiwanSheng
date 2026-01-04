@@ -61,8 +61,8 @@ const upload = multer({
 
 const router = express.Router();
 
-// POST /api/arsenal/submit - 提交资产数据
-router.post('/submit', async (req, res) => {
+// POST /api/arsenal/submit - 提交资产数据（需要认证和SUBMITTER或ADMIN角色）
+router.post('/submit', authenticate, requireRole(ROLES.SUBMITTER, ROLES.ADMIN), async (req, res) => {
   try {
     const {
       ownerName,
@@ -393,8 +393,8 @@ router.get('/stats', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN), asy
   }
 });
 
-// POST /api/arsenal/upload - 文件上传
-router.post('/upload', upload.single('file'), (req, res) => {
+// POST /api/arsenal/upload - 文件上传（需要认证和SUBMITTER或ADMIN角色）
+router.post('/upload', authenticate, requireRole(ROLES.SUBMITTER, ROLES.ADMIN), upload.single('file'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ 
