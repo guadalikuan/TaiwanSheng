@@ -1,0 +1,48 @@
+{
+  "name": "tws",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n \"前端,后端\" -c \"cyan,magenta\" \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "start": "npm run dev",
+    "dev:frontend": "vite",
+    "dev:backend": "cd server && node server.mjs",
+    "start:server": "cd server && node start.js",
+    "check-server": "cd server && node scripts/check-server.js",
+    "check": "npm run check-server",
+    "build": "vite build",
+    "build:prod": "vite build --mode production",
+    "preview": "vite preview",
+    "lint": "echo \"lint script not configured\"",
+    "docker:build": "docker build -t tws-app .",
+    "docker:run": "docker run -p 80:80 tws-app",
+    "docker:compose": "docker-compose up -d",
+    "docker:compose:down": "docker-compose down"
+  },
+  "dependencies": {
+    "@solana/wallet-adapter-base": "^0.9.27",
+    "@solana/wallet-adapter-react": "^0.15.39",
+    "@solana/wallet-adapter-react-ui": "^0.9.39",
+    "@solana/wallet-adapter-wallets": "^0.19.37",
+    "@solana/web3.js": "^1.98.4",
+    "bip39": "^3.1.0",
+    "ethers": "^6.13.0",
+    "framer-motion": "^12.23.25",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.447.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.9.6"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.7",
+    "@types/react-dom": "^18.3.3",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^8.2.2",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "vite": "^5.4.2"
+  }
+}
