@@ -52,7 +52,7 @@ const MapLanternOverlay = forwardRef(({
     canvas.style.zIndex = '1000';
     canvas.style.borderRadius = 'inherit';
     
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     // 设置 Canvas 尺寸

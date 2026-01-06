@@ -723,39 +723,71 @@ export const getOmegaData = async () => {
 };
 
 /**
- * 获取Market屏数据
+ * 获取市场实时价格
  * @returns {Promise<Object>}
  */
-export const getMarketData = async () => {
+export const getMarketPrice = async () => {
   try {
-    return await fetchWithRetry(
-      `${API_BASE_URL}/api/homepage/market`,
-      {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      },
-      3, // 最多重试3次
-      1000 // 基础延迟1秒
-    );
+    const response = await fetch(`${API_BASE_URL}/api/market/price`);
+    return await handleResponse(response);
   } catch (error) {
-    console.error('API getMarketData error:', error);
-    
-    // 提供更详细的错误信息
-    let errorMessage = '网络错误，请检查服务器连接';
-    if (error.name === 'AbortError') {
-      errorMessage = `请求超时，请检查服务器是否运行在 ${API_BASE_URL}`;
-    } else if (error.message) {
-      errorMessage = error.message;
-    } else if (error.toString().includes('Failed to fetch')) {
-      errorMessage = `无法连接到服务器 ${API_BASE_URL}，请确保后端服务正在运行`;
-    }
-    
-    return { 
-      success: false, 
-      message: errorMessage,
-      error: error.name || 'NetworkError'
-    };
+    console.error('API getMarketPrice error:', error);
+    return { success: false, message: error.message };
   }
+};
+
+/**
+ * 获取市场统计数据
+ * @returns {Promise<Object>}
+ */
+export const getMarketStats = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/market/stats`);
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getMarketStats error:', error);
+    return { success: false, message: error.message };
+  }
+};
+
+/**
+ * 获取K线数据
+ * @param {string} interval - 时间间隔 (1m, 5m, 15m, 1H, 4H, 1D)
+ * @param {number} from - 开始时间戳
+ * @param {number} to - 结束时间戳
+ * @returns {Promise<Object>}
+ */
+export const getMarketKline = async (interval = '1H', from, to) => {
+  try {
+    const params = new URLSearchParams({ interval });
+    if (from) params.append('from', from);
+    if (to) params.append('to', to);
+    
+    const response = await fetch(`${API_BASE_URL}/api/market/kline?${params.toString()}`);
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getMarketKline error:', error);
+    return { success: false, message: error.message };
+  }
+};
+
+/**
+ * 获取市场数据（兼容旧代码）
+ * @deprecated 请使用 getMarketPrice, getMarketStats, getMarketKline 替代
+ */
+export const getMarketData = async () => {
+  const [priceRes, statsRes] = await Promise.all([
+    getMarketPrice(),
+    getMarketStats()
+  ]);
+  
+  return {
+    success: priceRes.success && statsRes.success,
+    data: {
+      ...(priceRes.data || {}),
+      ...(statsRes.data || {})
+    }
+  };
 };
 
 /**

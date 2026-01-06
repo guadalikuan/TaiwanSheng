@@ -42,8 +42,7 @@ const MarketSection = () => {
   useEffect(() => {
     const fetchPrice = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}/api/market/price`);
-        const result = await response.json();
+        const result = await getMarketPrice();
         
         if (result.success && result.data) {
           setCurrentPrice(result.data.price);
@@ -100,46 +99,58 @@ const MarketSection = () => {
             break;
         }
 
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}/api/market/kline?interval=${interval}&from=${timeFrom}&to=${now}`
-        );
-        const result = await response.json();
-        
-        if (result.success && result.data && result.data.klineData) {
-          setRawData(result.data.klineData);
+        const result = await getMarketKline(interval, timeFrom, now);
+
+        if (result.success && result.data && Array.isArray(result.data.klineData)) {
+          const klineData = result.data.klineData.map(item => ({
+            time: item.time,
+            open: item.open,
+            high: item.high,
+            low: item.low,
+            close: item.close,
+            volume: item.volume
+          }));
+          
+          setRawData(klineData);
+          setData(klineData);
+          
+          // 更新今日最高最低
+          if (klineData.length > 0) {
+            const highs = klineData.map(d => d.high);
+            const lows = klineData.map(d => d.low);
+            setTodayHigh(Math.max(...highs));
+            setTodayLow(Math.min(...lows));
+            
+            // 设置昨收（这里简化为第一条数据的close，实际应该更复杂）
+            if (klineData.length > 1) {
+              setYesterdayClose(klineData[0].close);
+            }
+          }
         }
       } catch (err) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('获取K线数据失败:', err);
-        }
+        console.error('获取K线数据失败:', err);
       }
     };
 
     fetchKline();
-    const interval = setInterval(fetchKline, 60000); // 60秒更新一次
-    return () => clearInterval(interval);
   }, [viewMode]);
 
-  // 从后端API获取市场统计
+  // 获取市场统计数据
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}/api/market/stats`);
-        const result = await response.json();
-        
+        const result = await getMarketStats();
         if (result.success && result.data) {
           setMarketStats(result.data);
-          setVolume24h(result.data.volume24h || 0);
+          if (result.data.volume24h) setVolume24h(result.data.volume24h);
         }
       } catch (err) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('获取市场统计失败:', err);
-        }
+        console.error('获取市场统计失败:', err);
       }
     };
-
+    
     fetchStats();
-    const interval = setInterval(fetchStats, 30000); // 30秒更新一次
+    const interval = setInterval(fetchStats, 60000); // 1分钟更新一次
     return () => clearInterval(interval);
   }, []);
 

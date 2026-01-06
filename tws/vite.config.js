@@ -71,6 +71,7 @@ export default defineConfig({
   // 服务器配置
   server: {
     port: 5173,
+    host: '0.0.0.0',
     open: true,
     cors: true,
     proxy: {
