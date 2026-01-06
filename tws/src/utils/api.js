@@ -502,6 +502,203 @@ export const loginWithMnemonic = async (mnemonic, password) => {
   }
 };
 
+/**
+ * 钱包登录
+ * @param {string} address - 钱包地址
+ * @param {string} signature - 签名 (Base64)
+ * @param {string} message - 签名消息
+ * @returns {Promise<Object>}
+ */
+export const loginWithWallet = async (address, signature, message) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login-wallet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, signature, message }),
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API loginWithWallet error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 钱包注册
+ * @param {string} address - 钱包地址
+ * @param {string} signature - 签名 (Base64)
+ * @param {string} message - 签名消息
+ * @param {string} username - 用户名
+ * @param {string} password - 密码
+ * @returns {Promise<Object>}
+ */
+export const registerWithWallet = async (address, signature, message, username, password) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/register-wallet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, signature, message, username, password }),
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API registerWithWallet error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+// ==================== 用户管理 API（仅管理员）====================
+
+/**
+ * 获取所有用户（仅管理员）
+ * @returns {Promise<Object>}
+ */
+export const getAllUsers = async () => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/users`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getAllUsers error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取所有房地产开发商账户（仅管理员）
+ * @returns {Promise<Object>}
+ */
+export const getDevelopers = async () => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    if (!token) {
+      return { success: false, message: '未登录，请先登录' };
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/users/developers`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 404) {
+        return { success: false, message: 'API路径不存在，请检查后端路由配置' };
+      }
+      return { 
+        success: false, 
+        message: errorData.message || `HTTP ${response.status}: ${response.statusText}` 
+      };
+    }
+    
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getDevelopers error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 创建房地产开发商账户（仅管理员）
+ * @param {string} username - 用户名
+ * @param {string} password - 密码
+ * @param {string} mnemonic - 助记符（可选，不提供则自动生成）
+ * @returns {Promise<Object>}
+ */
+export const createDeveloper = async (username, password, mnemonic = null) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/users/developers`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ username, password, mnemonic }),
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API createDeveloper error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 更新房地产开发商账户（仅管理员）
+ * @param {string} address - 钱包地址
+ * @param {Object} updates - 更新数据
+ * @returns {Promise<Object>}
+ */
+export const updateDeveloper = async (address, updates) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/users/developers/${address}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(updates),
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API updateDeveloper error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 删除房地产开发商账户（仅管理员）
+ * @param {string} address - 钱包地址
+ * @returns {Promise<Object>}
+ */
+export const deleteDeveloper = async (address) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/users/developers/${address}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API deleteDeveloper error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取当前用户信息
+ * @returns {Promise<Object>}
+ */
+/**
+export const getCurrentUser = async () => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    if (!token) return { success: false, message: 'Not logged in' };
+
+    const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getCurrentUser error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};*/
+
 // ==================== 首页数据 API ====================
 
 /**

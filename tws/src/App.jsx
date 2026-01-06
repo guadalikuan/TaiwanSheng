@@ -31,6 +31,9 @@ import AuctionPage from './auction/AuctionPage';
 import EventListPage from './components/EventListPage';
 import AuctionListPage from './auction/AuctionListPage';
 import AuctionCreatePage from './auction/AuctionCreatePage';
+import ArsenalProtectedRoute from './components/ArsenalProtectedRoute';
+import UserManagement from './components/UserManagement';
+import { ArsenalAuthProvider } from './contexts/ArsenalAuthContext';
 
 const App = () => (
   <Routes>
@@ -72,6 +75,15 @@ const App = () => (
     <Route path="/tech-project/:id" element={<TechProjectDetail />} />
     <Route path="/my-investments" element={<MyInvestments />} />
     <Route path="/admin/dashboard" element={<AdminDashboard />} />
+    {/* 用户管理页面（仅管理员） */}
+    <Route 
+      path="/admin/users" 
+      element={
+        <ProtectedRoute allowedRoles={['ADMIN']}>
+          <UserManagement />
+        </ProtectedRoute>
+      } 
+    />
     <Route path="/auction" element={<AuctionPage />} />
     <Route path="/auction/:assetId" element={<AuctionPage />} />
     <Route path="/auctions" element={<AuctionListPage />} />

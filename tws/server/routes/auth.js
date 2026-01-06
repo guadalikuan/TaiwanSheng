@@ -15,6 +15,9 @@ import {
 } from '../utils/web3.js';
 import { generateToken } from '../utils/jwt.js';
 import { ROLES } from '../utils/roles.js';
+import nacl from 'tweetnacl';
+import { PublicKey } from '@solana/web3.js';
+import bs58 from 'bs58';
 
 const router = express.Router();
 
@@ -415,6 +418,247 @@ router.post('/verify-mnemonic', (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Verification failed',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/auth/login-wallet - 钱包登录
+router.post('/login-wallet', async (req, res) => {
+  try {
+    const { address, signature, message } = req.body;
+
+    if (!address || !signature || !message) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields',
+        message: 'Address, signature, and message are required'
+      });
+    }
+
+    // 验证 Solana 地址格式
+    const solanaAddressRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+    if (!solanaAddressRegex.test(address)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid address',
+        message: 'Invalid Solana wallet address format'
+      });
+    }
+
+    // 查找用户
+    const user = getUserByAddress(address);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+        message: '该钱包地址未注册，请先注册账户',
+        needsRegistration: true
+      });
+    }
+
+    // 验证签名
+    try {
+      const publicKey = new PublicKey(address);
+      const messageBytes = new TextEncoder().encode(message);
+      // 假设签名是 base64 编码
+      const signatureBytes = Buffer.from(signature, 'base64');
+
+      const isValid = nacl.sign.detached.verify(
+        messageBytes,
+        signatureBytes,
+        publicKey.toBytes()
+      );
+
+      if (!isValid) {
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid signature',
+          message: '签名验证失败'
+        });
+      }
+    } catch (error) {
+      console.error('签名验证错误:', error);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid signature',
+        message: '签名验证失败'
+      });
+    }
+
+    // 更新最后登录时间
+    updateUser(user.address, { lastLogin: Date.now() });
+    
+    // 生成 Token
+    const token = generateToken(user);
+
+    // 记录钱包连接
+    try {
+      const { addWalletLog } = await import('../utils/homepageStorage.js');
+      const clientIp = req.ip || req.connection.remoteAddress || '127.0.0.1';
+      // 简化定位逻辑
+      addWalletLog({
+        address: user.address,
+        userId: user.id || user.address,
+        username: user.username,
+        location: { lat: 25.033, lng: 121.5654 }, // 默认台北
+        city: 'Taipei',
+        timestamp: Date.now()
+      });
+    } catch (e) {
+      console.warn('Wallet log failed:', e);
+    }
+
+    res.json({
+      success: true,
+      message: 'Wallet login successful',
+      token,
+      user: {
+        address: user.address,
+        username: user.username,
+        role: user.role,
+        profile: user.profile
+      }
+    });
+  } catch (error) {
+    console.error('Wallet login error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Login failed',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/auth/register-wallet - 钱包注册
+router.post('/register-wallet', async (req, res) => {
+  try {
+    const { address, signature, message, username, password, inviteCode } = req.body;
+
+    if (!address || !signature || !message || !username || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields',
+        message: 'Address, signature, message, username, and password are required'
+      });
+    }
+
+    // 验证地址格式
+    const solanaAddressRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+    if (!solanaAddressRegex.test(address)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid address',
+        message: 'Invalid Solana wallet address format'
+      });
+    }
+
+    // 验证用户名
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid username',
+        message: 'Username must be 3-20 characters and contain only letters, numbers, and underscores'
+      });
+    }
+
+    // 验证密码
+    if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/.test(password)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Weak password',
+        message: 'Password must be at least 8 characters and contain both letters and numbers'
+      });
+    }
+
+    // 检查是否已存在
+    const existingUser = getUserByUsername(username);
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: 'Username already exists',
+        message: 'This username is already taken'
+      });
+    }
+
+    const existingAddress = getUserByAddress(address);
+    if (existingAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'Address already exists',
+        message: 'This wallet address is already registered'
+      });
+    }
+
+    // 验证签名
+    try {
+      const publicKey = new PublicKey(address);
+      const messageBytes = new TextEncoder().encode(message);
+      const signatureBytes = Buffer.from(signature, 'base64');
+
+      const isValid = nacl.sign.detached.verify(
+        messageBytes,
+        signatureBytes,
+        publicKey.toBytes()
+      );
+
+      if (!isValid) {
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid signature',
+          message: '签名验证失败'
+        });
+      }
+    } catch (error) {
+      console.error('签名验证错误:', error);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid signature',
+        message: '签名验证失败'
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    
+    // 角色处理
+    let role = ROLES.USER;
+    if (inviteCode && inviteCode === process.env.ADMIN_INVITE_CODE) {
+       // 简化的邀请码检查
+       role = ROLES.USER; // 默认还是USER，除非特殊逻辑
+    }
+
+    const userData = {
+      address: address,
+      username,
+      passwordHash,
+      encryptedMnemonic: '', // 钱包注册没有助记符托管
+      role,
+      profile: { 
+        displayName: username, 
+        avatar: '' 
+      },
+      lastLogin: null
+    };
+
+    const savedUser = saveUser(userData);
+    const token = generateToken(savedUser);
+
+    res.json({
+      success: true,
+      message: 'Wallet registration successful',
+      token,
+      user: {
+        address: savedUser.address,
+        username: savedUser.username,
+        role: savedUser.role,
+        profile: savedUser.profile
+      }
+    });
+  } catch (error) {
+    console.error('Wallet registration error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Registration failed',
       message: error.message
     });
   }
