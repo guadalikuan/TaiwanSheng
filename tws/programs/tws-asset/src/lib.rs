@@ -206,7 +206,7 @@ pub mod tws_asset {
         let current_price = auction.price;
         let new_owner = &ctx.accounts.new_owner;
         let old_owner = &ctx.accounts.old_owner;
-        let treasury = &ctx.accounts.treasury;
+        let treasury = &ctx.accounts.treasury; // 注意：这里只用了地址验证，实际转账用的是 treasury_token_account
         let clock = Clock::get()?;
 
         require!(
@@ -214,7 +214,14 @@ pub mod tws_asset {
             ErrorCode::MessageTooLong
         );
 
-        // 1. 验证出价必须比当前价格高至少 10%
+        // 1. 验证 TWSCoin mint 地址 (双重保险)
+        require_keys_eq!(
+            ctx.accounts.twscoin_mint.key(),
+            pubkey!("ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk"),
+            ErrorCode::InvalidTokenMint
+        );
+
+        // 2. 验证出价必须比当前价格高至少 10%
         // 计算公式：min_bid = current_price * 110 / 100
         let min_required = current_price
             .checked_mul(110)
@@ -285,6 +292,171 @@ pub mod tws_asset {
             payout,
             timestamp: clock.unix_timestamp,
         });
+
+        Ok(())
+    }
+
+    // --- 预测市场功能 ---
+
+    /// 初始化预测市场
+    pub fn initialize_prediction_market(
+        ctx: Context<InitializePredictionMarket>,
+        market_id: u64,
+        description: String,
+        option_a: String,
+        option_b: String,
+        end_timestamp: i64,
+    ) -> Result<()> {
+        require!(description.len() <= 50, ErrorCode::MessageTooLong);
+        require!(option_a.len() <= 20, ErrorCode::MessageTooLong);
+        require!(option_b.len() <= 20, ErrorCode::MessageTooLong);
+
+        require_keys_eq!(
+            ctx.accounts.twscoin_mint.key(),
+            pubkey!("ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk"),
+            ErrorCode::InvalidTokenMint
+        );
+
+        let market = &mut ctx.accounts.market;
+        market.authority = ctx.accounts.authority.key();
+        market.market_id = market_id;
+        market.description = description;
+        market.option_a = option_a;
+        market.option_b = option_b;
+        market.pool_a = 0;
+        market.pool_b = 0;
+        market.end_timestamp = end_timestamp;
+        market.resolved = false;
+        market.winner_option = 0; // 0: None, 1: A, 2: B
+        market.bump = ctx.bumps.market;
+        market.twscoin_mint = ctx.accounts.twscoin_mint.key();
+
+        emit!(MarketInitialized {
+            market_id,
+            description: market.description.clone(),
+            end_timestamp,
+        });
+
+        Ok(())
+    }
+
+    /// 下注
+    pub fn place_bet(
+        ctx: Context<PlaceBet>,
+        amount: u64,
+        choice: u8, // 1 for A, 2 for B
+    ) -> Result<()> {
+        let market = &mut ctx.accounts.market;
+        let bet = &mut ctx.accounts.bet;
+        let clock = Clock::get()?;
+
+        require!(!market.resolved, ErrorCode::MarketAlreadyResolved);
+        require!(clock.unix_timestamp < market.end_timestamp, ErrorCode::MarketClosed);
+        require!(choice == 1 || choice == 2, ErrorCode::InvalidChoice);
+
+        require_keys_eq!(
+            ctx.accounts.twscoin_mint.key(),
+            pubkey!("ZRGboZN3K6JZYhGe8PHDcazwKuqhgp2tTG7h8G5fKGk"),
+            ErrorCode::InvalidTokenMint
+        );
+
+        // Transfer tokens to vault
+        let cpi_accounts = Transfer {
+            from: ctx.accounts.user_token_account.to_account_info(),
+            to: ctx.accounts.market_vault.to_account_info(),
+            authority: ctx.accounts.user.to_account_info(),
+        };
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+        token::transfer(cpi_ctx, amount)?;
+
+        // Update state
+        if choice == 1 {
+            market.pool_a = market.pool_a.checked_add(amount).ok_or(ErrorCode::MathOverflow)?;
+        } else {
+            market.pool_b = market.pool_b.checked_add(amount).ok_or(ErrorCode::MathOverflow)?;
+        }
+
+        // Record bet receipt
+        bet.market = market.key();
+        bet.user = ctx.accounts.user.key();
+        bet.amount = amount;
+        bet.choice = choice;
+        bet.claimed = false;
+        bet.bump = ctx.bumps.bet;
+
+        emit!(BetPlaced {
+            market_id: market.market_id,
+            user: ctx.accounts.user.key(),
+            amount,
+            choice,
+        });
+
+        Ok(())
+    }
+
+    /// 结算市场 (仅管理员)
+    pub fn resolve_market(
+        ctx: Context<ResolveMarket>,
+        winner_option: u8,
+    ) -> Result<()> {
+        let market = &mut ctx.accounts.market;
+        require!(!market.resolved, ErrorCode::MarketAlreadyResolved);
+        require!(winner_option == 1 || winner_option == 2, ErrorCode::InvalidChoice);
+        
+        market.resolved = true;
+        market.winner_option = winner_option;
+
+        emit!(MarketResolved {
+            market_id: market.market_id,
+            winner_option,
+        });
+
+        Ok(())
+    }
+
+    /// 领取奖金
+    pub fn claim_winnings(ctx: Context<ClaimWinnings>) -> Result<()> {
+        let market = &ctx.accounts.market;
+        let bet = &mut ctx.accounts.bet;
+
+        require!(market.resolved, ErrorCode::MarketNotResolved);
+        require!(!bet.claimed, ErrorCode::AlreadyClaimed);
+        require!(bet.choice == market.winner_option, ErrorCode::YouLost);
+
+        // Calculate winnings
+        // Share = (My Bet / Total Winning Pool) * Total Pool
+        // Total Pool = Pool A + Pool B
+        let total_pool = market.pool_a.checked_add(market.pool_b).ok_or(ErrorCode::MathOverflow)?;
+        let winning_pool = if market.winner_option == 1 { market.pool_a } else { market.pool_b };
+        
+        // Avoid division by zero
+        require!(winning_pool > 0, ErrorCode::MathOverflow);
+
+        let winnings = (bet.amount as u128)
+            .checked_mul(total_pool as u128)
+            .ok_or(ErrorCode::MathOverflow)?
+            .checked_div(winning_pool as u128)
+            .ok_or(ErrorCode::MathOverflow)? as u64;
+
+        // Transfer winnings
+        let seeds = &[
+            b"prediction_market",
+            market.market_id.to_le_bytes().as_ref(),
+            &[market.bump],
+        ];
+        let signer = &[&seeds[..]];
+
+        let cpi_accounts = Transfer {
+            from: ctx.accounts.market_vault.to_account_info(),
+            to: ctx.accounts.user_token_account.to_account_info(),
+            authority: ctx.accounts.market.to_account_info(),
+        };
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
+        token::transfer(cpi_ctx, winnings)?;
+
+        bet.claimed = true;
 
         Ok(())
     }
@@ -557,5 +729,182 @@ pub enum ErrorCode {
     InvalidOldOwner,
     #[msg("Message too long (max 100 characters)")]
     MessageTooLong,
+    #[msg("Market already resolved")]
+    MarketAlreadyResolved,
+    #[msg("Market closed for betting")]
+    MarketClosed,
+    #[msg("Invalid choice (must be 1 or 2)")]
+    InvalidChoice,
+    #[msg("Market not resolved yet")]
+    MarketNotResolved,
+    #[msg("Winnings already claimed")]
+    AlreadyClaimed,
+    #[msg("You lost the bet")]
+    YouLost,
+}
+
+/// 预测市场结构
+#[account]
+pub struct PredictionMarket {
+    pub authority: Pubkey,
+    pub market_id: u64,
+    pub description: String, // Max 50
+    pub option_a: String,    // Max 20
+    pub option_b: String,    // Max 20
+    pub pool_a: u64,
+    pub pool_b: u64,
+    pub end_timestamp: i64,
+    pub resolved: bool,
+    pub winner_option: u8,
+    pub bump: u8,
+    pub twscoin_mint: Pubkey,
+}
+
+impl PredictionMarket {
+    pub const LEN: usize = 32 // authority
+        + 8 // market_id
+        + 4 + 50 // description
+        + 4 + 20 // option_a
+        + 4 + 20 // option_b
+        + 8 // pool_a
+        + 8 // pool_b
+        + 8 // end_timestamp
+        + 1 // resolved
+        + 1 // winner_option
+        + 1 // bump
+        + 32; // twscoin_mint
+}
+
+/// 下注凭证结构
+#[account]
+pub struct Bet {
+    pub market: Pubkey,
+    pub user: Pubkey,
+    pub amount: u64,
+    pub choice: u8,
+    pub claimed: bool,
+    pub bump: u8,
+}
+
+impl Bet {
+    pub const LEN: usize = 32 + 32 + 8 + 1 + 1 + 1;
+}
+
+/// 初始化预测市场上下文
+#[derive(Accounts)]
+#[instruction(market_id: u64)]
+pub struct InitializePredictionMarket<'info> {
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + PredictionMarket::LEN,
+        seeds = [b"prediction_market", market_id.to_le_bytes().as_ref()],
+        bump
+    )]
+    pub market: Account<'info, PredictionMarket>,
+
+    /// CHECK: TWSCoin Mint
+    pub twscoin_mint: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+/// 下注上下文
+#[derive(Accounts)]
+pub struct PlaceBet<'info> {
+    #[account(mut)]
+    pub market: Account<'info, PredictionMarket>,
+
+    #[account(
+        init,
+        payer = user,
+        space = 8 + Bet::LEN,
+        seeds = [b"bet", market.key().as_ref(), user.key().as_ref()],
+        bump
+    )]
+    pub bet: Account<'info, Bet>,
+
+    #[account(mut)]
+    pub user_token_account: Account<'info, TokenAccount>,
+
+    #[account(
+        init_if_needed,
+        payer = user,
+        seeds = [b"prediction_vault", market.key().as_ref()],
+        bump,
+        token::mint = twscoin_mint,
+        token::authority = market,
+    )]
+    pub market_vault: Account<'info, TokenAccount>,
+
+    /// CHECK: TWSCoin Mint
+    pub twscoin_mint: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub user: Signer<'info>,
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub rent: Sysvar<'info, Rent>,
+}
+
+/// 结算市场上下文
+#[derive(Accounts)]
+pub struct ResolveMarket<'info> {
+    #[account(mut)]
+    pub market: Account<'info, PredictionMarket>,
+    pub authority: Signer<'info>, // Must match market.authority (checked in logic or constraint)
+}
+
+/// 领奖上下文
+#[derive(Accounts)]
+pub struct ClaimWinnings<'info> {
+    #[account(mut)]
+    pub market: Account<'info, PredictionMarket>,
+
+    #[account(
+        mut,
+        seeds = [b"bet", market.key().as_ref(), user.key().as_ref()],
+        bump = bet.bump,
+        has_one = user,
+        has_one = market
+    )]
+    pub bet: Account<'info, Bet>,
+
+    #[account(
+        mut,
+        seeds = [b"prediction_vault", market.key().as_ref()],
+        bump,
+    )]
+    pub market_vault: Account<'info, TokenAccount>,
+
+    #[account(mut)]
+    pub user_token_account: Account<'info, TokenAccount>,
+
+    #[account(mut)]
+    pub user: Signer<'info>,
+    pub token_program: Program<'info, Token>,
+}
+
+#[event]
+pub struct MarketInitialized {
+    pub market_id: u64,
+    pub description: String,
+    pub end_timestamp: i64,
+}
+
+#[event]
+pub struct BetPlaced {
+    pub market_id: u64,
+    pub user: Pubkey,
+    pub amount: u64,
+    pub choice: u8,
+}
+
+#[event]
+pub struct MarketResolved {
+    pub market_id: u64,
+    pub winner_option: u8,
 }
 
