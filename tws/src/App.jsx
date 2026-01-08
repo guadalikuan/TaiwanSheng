@@ -33,6 +33,14 @@ import AuctionListPage from './auction/AuctionListPage';
 import AuctionCreatePage from './auction/AuctionCreatePage';
 import ArsenalProtectedRoute from './components/ArsenalProtectedRoute';
 import UserManagement from './components/UserManagement';
+import AncestorMarker from './components/AncestorMarker';
+import AssetPoolManagement from './components/AssetPoolManagement';
+import RWABuyRequest from './components/RWABuyRequest';
+import RWARecommendations from './components/RWARecommendations';
+import RWAMarketplace from './components/RWAMarketplace';
+import RWABuyRequest from './components/RWABuyRequest';
+import RWARecommendations from './components/RWARecommendations';
+import RWAMarketplace from './components/RWAMarketplace';
 import { ArsenalAuthProvider } from './contexts/ArsenalAuthContext';
 
 const App = () => (
@@ -84,10 +92,25 @@ const App = () => (
         </ProtectedRoute>
       } 
     />
+    {/* 资产池管理页面 */}
+    <Route 
+      path="/asset-pool" 
+      element={
+        <ProtectedRoute allowedRoles={['ADMIN', 'REVIEWER']}>
+          <AssetPoolManagement />
+        </ProtectedRoute>
+      } 
+    />
     <Route path="/auction" element={<AuctionPage />} />
     <Route path="/auction/:assetId" element={<AuctionPage />} />
     <Route path="/auctions" element={<AuctionListPage />} />
     <Route path="/auctions/create" element={<AuctionCreatePage />} />
+    <Route path="/mark-origin" element={<AncestorMarker />} />
+    <Route path="/mark-property" element={<AncestorMarker />} />
+    {/* RWA交易路由 */}
+    <Route path="/rwa/buy-request" element={<RWABuyRequest />} />
+    <Route path="/rwa/recommendations" element={<RWARecommendations />} />
+    <Route path="/rwa/marketplace" element={<RWAMarketplace />} />
   </Routes>
 );
 

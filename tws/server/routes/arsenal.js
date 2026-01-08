@@ -20,6 +20,8 @@ import { generateContractByAssetId } from '../utils/contractGenerator.js';
 import { getAssetById, updateRawAsset, getAssetReviewHistory } from '../utils/storage.js';
 import { readFileSync } from 'fs';
 import blockchainService from '../utils/blockchain.js';
+import { addAssetLog, readHomepageData, writeHomepageData } from '../utils/homepageStorage.js';
+import { generateAssetLog } from '../utils/nodeNameGenerator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -101,7 +103,8 @@ router.post('/submit', authenticate, requireRole(ROLES.SUBMITTER, ROLES.ADMIN), 
       marketValuation: Number(marketValuation) || Number(debtPrice) * 1.5,
       debtAmount: Number(debtPrice),
       proofDocs,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      submittedBy: req.user?.address || req.user?.username || req.user?.id || 'unknown' // 保存提交者信息
     };
 
     // 保存原始资产
@@ -302,12 +305,25 @@ router.put('/approve/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN
     const { id } = req.params;
     const { autoMint = true, mintToAddress } = req.body;
     
-    // 更新资产状态
+    // 获取资产数据
     const assetData = await getAssetById(id);
+    
+    // 更新资产状态
     const updatedAsset = await updateAssetStatus(id, 'AVAILABLE', {
       reviewedBy: req.user?.username || req.body.reviewedBy || 'system',
       reviewNotes: req.body.reviewNotes || ''
     });
+    
+    // 自动添加到资产池（地图日志）
+    let assetLogResult = null;
+    try {
+      const assetLog = generateAssetLog(assetData, id);
+      assetLogResult = await addAssetLog(assetLog);
+      console.log(`✅ 资产已添加到资产池: ${assetData.sanitized?.codeName || id}`);
+    } catch (logError) {
+      console.error('⚠️ 添加资产到资产池失败（但审核已通过）:', logError);
+      // 资产池添加失败不影响审核通过
+    }
     
     // 如果启用自动上链，则触发区块链铸造
     let mintResult = null;
@@ -317,6 +333,18 @@ router.put('/approve/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN
         if (toAddress) {
           mintResult = await blockchainService.mintAsset(assetData, toAddress);
           console.log('✅ 资产已自动上链:', mintResult);
+          
+          // 更新资产的上链状态
+          if (mintResult && mintResult.success) {
+            await updateAssetStatus(id, 'AVAILABLE', {
+              nftMinted: true,
+              nftTokenId: mintResult.tokenId,
+              nftTxHash: mintResult.txHash,
+              nftMintedAt: Date.now(),
+              nftMintedTo: toAddress,
+              nftBlockNumber: mintResult.blockNumber
+            });
+          }
         }
       } catch (mintError) {
         console.error('⚠️ 资产上链失败（但审核已通过）:', mintError);
@@ -328,9 +356,14 @@ router.put('/approve/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN
       success: true,
       message: 'Asset approved successfully',
       asset: updatedAsset,
+      assetPool: assetLogResult ? {
+        added: true,
+        logId: assetLogResult.id
+      } : null,
       blockchain: mintResult ? {
         txHash: mintResult.txHash,
-        tokenId: mintResult.tokenId
+        tokenId: mintResult.tokenId,
+        blockNumber: mintResult.blockNumber
       } : null
     });
   } catch (error) {
@@ -614,6 +647,166 @@ router.get('/review-history/:id', authenticate, requireRole(ROLES.REVIEWER, ROLE
     res.status(500).json({
       success: false,
       error: 'Failed to get review history',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/arsenal/blockchain-status/:id - 获取资产上链状态
+router.get('/blockchain-status/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const assetData = await getAssetById(id);
+    
+    if (!assetData.sanitized) {
+      return res.status(404).json({
+        success: false,
+        error: 'Asset not found'
+      });
+    }
+    
+    const sanitized = assetData.sanitized;
+    const blockchainStatus = {
+      isMinted: sanitized.nftMinted || false,
+      tokenId: sanitized.nftTokenId || null,
+      txHash: sanitized.nftTxHash || null,
+      blockNumber: sanitized.nftBlockNumber || null,
+      mintedAt: sanitized.nftMintedAt || null,
+      mintedTo: sanitized.nftMintedTo || null,
+      contractAddress: process.env.CONTRACT_ADDRESS || null
+    };
+    
+    res.json({
+      success: true,
+      assetId: id,
+      blockchain: blockchainStatus
+    });
+  } catch (error) {
+    console.error('Error getting blockchain status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get blockchain status',
+      message: error.message
+    });
+  }
+});
+
+// PUT /api/arsenal/redeem/:id - 赎回资产（仅开发商，且资产未被购买）
+router.put('/redeem/:id', authenticate, requireRole(ROLES.DEVELOPER, ROLES.ADMIN), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    // 获取资产数据
+    const assetData = await getAssetById(id);
+    
+    if (!assetData.raw || !assetData.sanitized) {
+      return res.status(404).json({
+        success: false,
+        error: 'Asset not found'
+      });
+    }
+    
+    const { raw, sanitized } = assetData;
+    const userAddress = req.user?.address || req.user?.username || req.user?.id;
+    
+    // 检查资产是否由当前用户提交
+    if (raw.submittedBy && raw.submittedBy !== userAddress && req.user?.role !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized',
+        message: '只能赎回自己提交的资产'
+      });
+    }
+    
+    // 检查资产是否已被购买
+    // 条件：状态不是AVAILABLE，或者有purchasedBy字段，或者有NFT持有者
+    const isPurchased = sanitized.status !== 'AVAILABLE' || 
+                       sanitized.purchasedBy || 
+                       (sanitized.nftMinted && sanitized.nftTokenId);
+    
+    if (isPurchased) {
+      return res.status(400).json({
+        success: false,
+        error: 'Asset already purchased',
+        message: '该资产已被购买，无法赎回'
+      });
+    }
+    
+    // 更新资产状态为REDEEMED
+    const updatedAsset = await updateAssetStatus(id, 'REDEEMED', {
+      reviewedBy: req.user?.username || 'system',
+      reviewNotes: reason || `资产被开发商赎回`,
+      redeemedBy: userAddress,
+      redeemedAt: Date.now()
+    });
+    
+    // 从资产池中移除（如果存在）
+    try {
+      const homepageData = readHomepageData();
+      if (homepageData?.map?.mainland?.logs) {
+        homepageData.map.mainland.logs = homepageData.map.mainland.logs.filter(
+          log => log.assetId !== id
+        );
+        // 更新资产池统计
+        if (homepageData.map.mainland.assetPoolValue && raw.debtAmount) {
+          homepageData.map.mainland.assetPoolValue = Math.max(0, 
+            homepageData.map.mainland.assetPoolValue - raw.debtAmount
+          );
+        }
+        if (homepageData.map.mainland.unitCount > 0) {
+          homepageData.map.mainland.unitCount -= 1;
+        }
+        await writeHomepageData(homepageData);
+      }
+    } catch (logError) {
+      console.error('⚠️ 从资产池移除资产失败:', logError);
+      // 不影响赎回操作
+    }
+    
+    res.json({
+      success: true,
+      message: 'Asset redeemed successfully',
+      asset: updatedAsset
+    });
+  } catch (error) {
+    console.error('Error redeeming asset:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to redeem asset',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/arsenal/redeem-history - 获取赎回历史
+router.get('/redeem-history', authenticate, requireRole(ROLES.DEVELOPER, ROLES.ADMIN), async (req, res) => {
+  try {
+    const userAddress = req.user?.address || req.user?.username || req.user?.id;
+    const isAdmin = req.user?.role === 'ADMIN';
+    
+    // 获取所有资产
+    const allAssets = await getAllAssets();
+    
+    // 筛选已赎回的资产
+    const redeemedAssets = allAssets.sanitized.filter(asset => {
+      if (asset.status !== 'REDEEMED') return false;
+      if (isAdmin) return true;
+      // 开发商只能看到自己提交的
+      const rawAsset = allAssets.raw.find(r => r.id === asset.id);
+      return rawAsset?.submittedBy === userAddress;
+    });
+    
+    res.json({
+      success: true,
+      count: redeemedAssets.length,
+      assets: redeemedAssets
+    });
+  } catch (error) {
+    console.error('Error getting redeem history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get redeem history',
       message: error.message
     });
   }

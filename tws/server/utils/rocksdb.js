@@ -337,7 +337,14 @@ export const NAMESPACES = {
   MARKET_DATA: 'marketData', // K线数据
   MARKET_PRICE: 'marketPrice', // 实时价格缓存
   MARKET_TRANSACTIONS: 'marketTransactions', // 已处理的交易签名（用于增量更新）
-  MARKET_STATS: 'marketStats' // 市场统计信息
+  MARKET_STATS: 'marketStats', // 市场统计信息
+  ANCESTOR_ORIGINS: 'ancestorOrigins', // 祖籍标记
+  ANCESTOR_PROPERTIES: 'ancestorProperties', // 祖产标记
+  BUY_REQUESTS: 'buyRequests', // 购买需求
+  RWA_ORDERS: 'rwaOrders', // RWA订单
+  RWA_TRADES: 'rwaTrades', // RWA交易记录
+  RWA_LOCKS: 'rwaLocks', // 锁定记录
+  TOT_PURCHASE_ORDERS: 'totPurchaseOrders' // TOT购买订单
 };
 
 export default {

@@ -7,6 +7,7 @@ fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{metho
 // #endregion
 import cors from 'cors';
 import arsenalRoutes from './routes/arsenal.js';
+import assetPoolRoutes from './routes/assetPool.js';
 import authRoutes from './routes/auth.js';
 import homepageRoutes from './routes/homepage.js';
 import oracleRoutes from './routes/oracle.js';
@@ -24,8 +25,12 @@ import adminRoutes from './routes/admin.js';
 import investmentRoutes from './routes/investments.js';
 import myAssetsRoutes from './routes/myAssets.js';
 import marketRoutes from './routes/market.js';
+import ancestorRoutes from './routes/ancestor.js';
+import rwaTradeRoutes from './routes/rwaTrade.js';
+import totPurchaseRoutes from './routes/totPurchase.js';
 import { startBackgroundTasks } from './utils/backgroundTasks.js';
 import { startMarketDataTasks } from './utils/marketDataTasks.js';
+import { startMatchingScheduler } from './utils/rwaMatchingScheduler.js';
 import { startScanning } from './utils/oracle.js';
 import { initTimeManager } from './utils/timeManager.js';
 import { initHistoryManager } from './utils/historyManager.js';
@@ -161,6 +166,7 @@ app.use('/uploads', express.static(uploadsDir));
 
 // API 路由
 app.use('/api/arsenal', arsenalRoutes);
+app.use('/api/asset-pool', assetPoolRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/homepage', homepageRoutes);
 app.use('/api/oracle', oracleRoutes);
@@ -174,6 +180,9 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/investments', investmentRoutes);
 app.use('/api/my-assets', myAssetsRoutes);
 app.use('/api/market', marketRoutes);
+app.use('/api/ancestor', ancestorRoutes);
+app.use('/api/rwa-trade', rwaTradeRoutes);
+app.use('/api/tot-purchase', totPurchaseRoutes);
 
 // 调试：列出所有注册的路由
 console.log('📋 已注册的路由:');
@@ -469,6 +478,9 @@ const startServer = async () => {
     
     // 启动市场数据任务
     await startMarketDataTasks();
+    
+    // 启动RWA撮合调度器
+    startMatchingScheduler();
     
     console.log('\n✅ 所有服务已启动：');
     console.log('   ✓ Express API 服务器');

@@ -7,6 +7,7 @@ import { useSSE } from '../contexts/SSEContext';
 import { useServerStatus } from '../contexts/ServerStatusContext';
 import { TaiOneToken_MINT } from '../utils/twscoin';
 import KlineChart from './KlineChart';
+import TOTPurchaseCard from './TOTPurchaseCard';
 
 const MarketSection = () => {
   const navigate = useNavigate();
@@ -721,32 +722,8 @@ const MarketSection = () => {
       </div>
 
       <div className="relative z-10 w-full md:w-1/4 bg-slate-900/30 backdrop-blur flex flex-col font-mono">
-        {/* Buy Channel Section */}
-        <div className="h-2/3 flex flex-col border-b border-slate-800">
-            <div className="h-10 border-b border-slate-800 flex items-center px-4 text-xs text-slate-400 uppercase tracking-wider bg-slate-900">
-              <ShoppingBag size={14} className="mr-2" /> Buy TaiOneToken
-            </div>
-            <div className="flex-1 p-4 flex flex-col justify-center items-center space-y-4 bg-slate-900/20">
-                <div className="text-center">
-                    <h3 className="text-lg font-bold text-white mb-1">Trade on Raydium</h3>
-                    <p className="text-xs text-slate-400">Best liquidity for TaiOneToken</p>
-                </div>
-                
-                <a 
-                    href={`https://raydium.io/swap/?inputMint=sol&outputMint=${TaiOneToken_MINT}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold rounded-lg text-center transition-all transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2"
-                >
-                    <span>Buy Now</span>
-                    <Globe size={16} />
-                </a>
-
-                <div className="text-[10px] text-slate-500 text-center max-w-[200px]">
-                    Clicking will open the official Raydium Swap page with the pair pre-loaded.
-                </div>
-            </div>
-        </div>
+        {/* 7-11 ibon 购买 TOT */}
+        <TOTPurchaseCard />
 
         {/* Market Stats Section (Moved to bottom) */}
         <div className="h-1/3 border-t border-slate-800 bg-black/20 p-2 flex flex-col">

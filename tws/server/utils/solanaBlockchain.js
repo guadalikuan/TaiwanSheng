@@ -5,7 +5,7 @@ import { Connection, PublicKey, Keypair, Transaction } from '@solana/web3.js';
 // #region agent log
 fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'utils/solanaBlockchain.js:2',message:'@solana/web3.js导入成功',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
 // #endregion
-import { getAssociatedTokenAddress, createTransferInstruction, getAccount } from '@solana/spl-token';
+import { getAssociatedTokenAddress, createTransferInstruction, getAccount, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
 // #region agent log
 fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'utils/solanaBlockchain.js:3',message:'@solana/spl-token导入成功',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
 // #endregion
@@ -705,6 +705,115 @@ class SolanaBlockchainService {
     
     return results;
   }
+
+  /**
+   * 从平台钱包转账TOT到用户钱包
+   * @param {string} userWalletAddress - 用户钱包地址
+   * @param {number} totAmount - TOT数量（不是最小单位，是实际数量）
+   * @returns {Promise<Object>} 转账结果
+   */
+  async transferTOTToUser(userWalletAddress, totAmount) {
+    if (!this.wallet) {
+      throw new Error("Platform wallet not loaded");
+    }
+
+    if (!this.connection) {
+      throw new Error("Solana connection not initialized");
+    }
+
+    try {
+      const recipientPubkey = new PublicKey(userWalletAddress);
+      
+      // 获取平台钱包的TOT代币账户
+      const sourceTokenAccount = await getAssociatedTokenAddress(
+        TaiOneToken_MINT,
+        this.wallet.publicKey
+      );
+
+      // 获取用户钱包的TOT代币账户
+      const destinationTokenAccount = await getAssociatedTokenAddress(
+        TaiOneToken_MINT,
+        recipientPubkey
+      );
+
+      // 检查用户是否已有TOT代币账户
+      let needsAccountCreation = false;
+      try {
+        await getAccount(this.connection, destinationTokenAccount);
+        // 账户存在
+      } catch (error) {
+        // 账户不存在，需要创建
+        if (error.message && (error.message.includes('InvalidAccount') || error.message.includes('could not find account'))) {
+          needsAccountCreation = true;
+        } else {
+          throw error;
+        }
+      }
+
+      // 构建交易
+      const transaction = new Transaction();
+
+      // 如果需要，先创建用户的TOT代币账户
+      if (needsAccountCreation) {
+        console.log(`[TOT Transfer] 为用户创建TOT代币账户: ${userWalletAddress}`);
+        transaction.add(
+          createAssociatedTokenAccountInstruction(
+            this.wallet.publicKey, // 支付账户创建费用的账户
+            destinationTokenAccount,
+            recipientPubkey,
+            TaiOneToken_MINT
+          )
+        );
+      }
+
+      // 转换金额为最小单位（根据代币精度）
+      const rawAmount = Math.floor(totAmount * Math.pow(10, TAI_ONE_DECIMALS));
+
+      // 添加转账指令
+      transaction.add(
+        createTransferInstruction(
+          sourceTokenAccount,
+          destinationTokenAccount,
+          this.wallet.publicKey,
+          rawAmount,
+          []
+        )
+      );
+
+      // 获取最新的区块哈希
+      const { blockhash } = await this.connection.getLatestBlockhash('confirmed');
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = this.wallet.publicKey;
+
+      // 发送交易
+      const signature = await this.connection.sendTransaction(transaction, [this.wallet], {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed'
+      });
+
+      console.log(`[TOT Transfer] 交易已发送: ${signature}`);
+
+      // 等待确认
+      const confirmation = await this.connection.confirmTransaction(signature, 'confirmed');
+      
+      if (confirmation.value.err) {
+        throw new Error(`交易失败: ${JSON.stringify(confirmation.value.err)}`);
+      }
+
+      console.log(`✅ 已转账 ${totAmount} TOT 到 ${userWalletAddress}, Tx: ${signature}`);
+
+      return {
+        success: true,
+        txHash: signature,
+        amount: totAmount,
+        recipient: userWalletAddress,
+        accountCreated: needsAccountCreation
+      };
+    } catch (error) {
+      console.error(`❌ TOT转账失败 ${userWalletAddress}:`, error);
+      throw error;
+    }
+  }
 }
 
 // 创建单例
@@ -748,6 +857,9 @@ export const seizeAsset = (assetId, bidMessage, userAddress, treasuryAddress) =>
 
 export const getAuctionInfo = (assetId) =>
   solanaBlockchainService.getAuctionInfo(assetId);
+
+export const transferTOTToUser = (userWalletAddress, totAmount) =>
+  solanaBlockchainService.transferTOTToUser(userWalletAddress, totAmount);
 
 export const buildInvestmentTransaction = (projectId, amount, investorAddress, projectTreasuryAddress) =>
   solanaBlockchainService.buildInvestmentTransaction(projectId, amount, investorAddress, projectTreasuryAddress);

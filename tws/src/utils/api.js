@@ -1186,6 +1186,150 @@ export const getTaiOneTokenBalanceAPI = async (userAddress) => {
 };
 
 /**
+ * 消耗Token用于标记（祖籍或祖产）
+ * @param {string} type - 类型：'origin' 或 'property'
+ * @param {string} walletAddress - 用户钱包地址
+ * @returns {Promise<Object>}
+ */
+export const consumeTokenForMarking = async (type, walletAddress) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/ancestor/consume-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: JSON.stringify({ walletAddress, type })
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API consumeTokenForMarking error:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 标记祖籍
+ * @param {Object} data - 祖籍数据
+ * @returns {Promise<Object>}
+ */
+export const markAncestorOrigin = async (data) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/ancestor/mark-origin`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: JSON.stringify(data)
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API markAncestorOrigin error:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 标记祖产
+ * @param {Object} data - 祖产数据
+ * @returns {Promise<Object>}
+ */
+export const markAncestorProperty = async (data) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/ancestor/mark-property`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: JSON.stringify(data)
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API markAncestorProperty error:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 获取标记列表
+ * @param {string} walletAddress - 用户钱包地址
+ * @param {string} type - 类型：'origin' | 'property' | undefined（全部）
+ * @returns {Promise<Object>}
+ */
+export const getAncestorMarks = async (walletAddress, type) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const params = new URLSearchParams({ walletAddress });
+    if (type) {
+      params.append('type', type);
+    }
+    const response = await fetch(`${API_BASE_URL}/api/ancestor/list?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API getAncestorMarks error:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 获取单个标记详情
+ * @param {string} id - 标记ID
+ * @returns {Promise<Object>}
+ */
+export const getAncestorMark = async (id) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/ancestor/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API getAncestorMark error:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
+ * 上传证明文件
+ * @param {File} file - 要上传的文件
+ * @returns {Promise<Object>}
+ */
+export const uploadAncestorProof = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/ancestor/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: formData
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API uploadAncestorProof error:', error);
+    return { success: false, message: 'Network error' };
+  }
+};
+
+/**
  * 创建科技项目
  * @param {Object} projectData - 项目数据
  * @returns {Promise<Object>}
@@ -1463,6 +1607,345 @@ export const getPredictionMarkets = async () => {
     );
   } catch (error) {
     console.error('API getPredictionMarkets error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+// ==================== RWA交易API ====================
+
+/**
+ * 创建购买需求
+ */
+export const createBuyRequest = async (buyRequestData) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/buy-request`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(buyRequestData)
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API createBuyRequest error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取我的购买需求列表
+ */
+export const getBuyRequests = async () => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/buy-requests`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getBuyRequests error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取推荐房源
+ */
+export const getRecommendations = async (buyRequestId, buyRequest, limit = 10) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/recommend`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ buyRequestId, buyRequest, limit })
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getRecommendations error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 锁定资产
+ */
+export const lockAsset = async (assetId, txSignature) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/lock/${assetId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ txSignature })
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API lockAsset error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 确认购买
+ */
+export const confirmPurchase = async (assetId, txSignature) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/confirm/${assetId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ txSignature })
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API confirmPurchase error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 释放锁定
+ */
+export const releaseLock = async (assetId) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/release/${assetId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API releaseLock error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取我的锁定列表
+ */
+export const getMyLocks = async () => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/locks`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getMyLocks error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 创建卖单
+ */
+export const createSellOrder = async (orderData) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/sell-order`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(orderData)
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API createSellOrder error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 创建买单
+ */
+export const createBuyOrder = async (orderData) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/buy-order`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(orderData)
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API createBuyOrder error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取订单簿
+ */
+export const getOrderBook = async (city = null, limit = 20) => {
+  try {
+    const params = new URLSearchParams();
+    if (city) params.append('city', city);
+    params.append('limit', limit.toString());
+    
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/order-book?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getOrderBook error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取我的订单
+ */
+export const getMyOrders = async (orderType = null, status = null) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const params = new URLSearchParams();
+    if (orderType) params.append('orderType', orderType);
+    if (status) params.append('status', status);
+    
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/orders?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getMyOrders error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 取消订单
+ */
+export const cancelOrder = async (orderId) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/order/${orderId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API cancelOrder error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取交易历史
+ */
+export const getTradeHistory = async (userId = null, assetId = null, limit = 50) => {
+  try {
+    const params = new URLSearchParams();
+    if (userId) params.append('userId', userId);
+    if (assetId) params.append('assetId', assetId);
+    params.append('limit', limit.toString());
+    
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/trades?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getTradeHistory error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取交易统计
+ */
+export const getTradeStats = async (timeWindow = 24 * 60 * 60 * 1000) => {
+  try {
+    const params = new URLSearchParams();
+    params.append('timeWindow', timeWindow.toString());
+    
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/stats?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getTradeStats error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 赎回资产
+ */
+export const redeemAsset = async (assetId, reason = '') => {
+  try {
+    const token = localStorage.getItem('arsenal_token');
+    const response = await fetch(`${API_BASE_URL}/api/arsenal/redeem/${assetId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ reason })
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API redeemAsset error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取赎回历史
+ */
+export const getRedeemHistory = async () => {
+  try {
+    const token = localStorage.getItem('arsenal_token');
+    const response = await fetch(`${API_BASE_URL}/api/arsenal/redeem-history`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getRedeemHistory error:', error);
     return { success: false, message: error.message || '网络错误，请检查服务器连接' };
   }
 };
