@@ -342,8 +342,9 @@ export const NAMESPACES = {
   MARKET_PRICE: 'marketPrice', // 实时价格缓存
   MARKET_TRANSACTIONS: 'marketTransactions', // 已处理的交易签名（用于增量更新）
   MARKET_STATS: 'marketStats', // 市场统计信息
-  ANCESTOR_ORIGINS: 'ancestorOrigins', // 祖籍标记
-  ANCESTOR_PROPERTIES: 'ancestorProperties', // 祖产标记
+  ANCESTOR_ORIGINS: 'ancestorOrigins', // 祖籍标记（保留兼容）
+  ANCESTOR_PROPERTIES: 'ancestorProperties', // 祖产标记（保留兼容）
+  MAP_MARKS: 'mapMarks', // 统一地图标记（所有类型）
   BUY_REQUESTS: 'buyRequests', // 购买需求
   RWA_ORDERS: 'rwaOrders', // RWA订单
   RWA_TRADES: 'rwaTrades', // RWA交易记录

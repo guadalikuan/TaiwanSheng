@@ -433,7 +433,7 @@ router.post('/mark-property', authenticate, async (req, res) => {
 });
 
 /**
- * GET /api/ancestor/list - 获取用户的标记列表
+ * GET /api/ancestor/list - 获取用户的标记列表（支持所有类型）
  */
 router.get('/list', authenticate, async (req, res) => {
   try {
@@ -449,26 +449,40 @@ router.get('/list', authenticate, async (req, res) => {
 
     const results = [];
 
-    // 获取祖籍标记
-    if (!type || type === 'origin') {
-      const origins = await getAll(NAMESPACES.ANCESTOR_ORIGINS);
-      origins.forEach(item => {
-        const data = item.value;
-        if (data.walletAddress?.toLowerCase() === userAddress) {
+    // 从统一命名空间获取所有标记
+    const allMarks = await getAll(NAMESPACES.MAP_MARKS);
+    allMarks.forEach(item => {
+      const data = item.value;
+      if (data.walletAddress?.toLowerCase() === userAddress) {
+        if (!type || data.type === type) {
           results.push(data);
         }
-      });
-    }
+      }
+    });
 
-    // 获取祖产标记
-    if (!type || type === 'property') {
-      const properties = await getAll(NAMESPACES.ANCESTOR_PROPERTIES);
-      properties.forEach(item => {
-        const data = item.value;
-        if (data.walletAddress?.toLowerCase() === userAddress) {
-          results.push(data);
-        }
-      });
+    // 向后兼容：从旧命名空间获取（如果统一命名空间没有数据）
+    if (results.length === 0) {
+      // 获取祖籍标记
+      if (!type || type === 'origin') {
+        const origins = await getAll(NAMESPACES.ANCESTOR_ORIGINS);
+        origins.forEach(item => {
+          const data = item.value;
+          if (data.walletAddress?.toLowerCase() === userAddress) {
+            results.push(data);
+          }
+        });
+      }
+
+      // 获取祖产标记
+      if (!type || type === 'property') {
+        const properties = await getAll(NAMESPACES.ANCESTOR_PROPERTIES);
+        properties.forEach(item => {
+          const data = item.value;
+          if (data.walletAddress?.toLowerCase() === userAddress) {
+            results.push(data);
+          }
+        });
+      }
     }
 
     // 按创建时间排序
@@ -493,16 +507,177 @@ router.get('/list', authenticate, async (req, res) => {
 });
 
 /**
+ * 根据类型生成PDA地址
+ */
+function generatePDAAddress(type, id, walletAddress) {
+  try {
+    const connection = solanaBlockchainService.connection;
+    if (!connection) return '';
+    
+    const typeMap = {
+      'origin': 'map_mark_origin',
+      'property': 'map_mark_property',
+      'refuge': 'map_mark_refuge',
+      'relative': 'map_mark_relative',
+      'memory': 'map_mark_memory',
+      'resource': 'map_mark_resource',
+      'contact': 'map_mark_contact',
+      'future': 'map_mark_future'
+    };
+    
+    const [pda] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from(typeMap[type] || 'map_mark'),
+        Buffer.from(id),
+        new PublicKey(walletAddress).toBuffer()
+      ],
+      PublicKey.default
+    );
+    return pda.toString();
+  } catch (error) {
+    console.warn('生成PDA地址失败:', error);
+    return '';
+  }
+}
+
+/**
+ * 统一标记处理函数
+ */
+async function handleMarkSubmission(type, req, res) {
+  try {
+    const {
+      walletAddress,
+      province,
+      city,
+      district,
+      address,
+      location,
+      proofFiles = [],
+      // 类型特定字段
+      ...typeSpecificFields
+    } = req.body;
+
+    const userAddress = walletAddress || req.user?.address;
+    if (!userAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'Wallet address is required'
+      });
+    }
+
+    // 验证位置信息
+    if (!location || !location.lat || !location.lng) {
+      return res.status(400).json({
+        success: false,
+        error: 'Location (lat, lng) is required'
+      });
+    }
+
+    // 创建标记数据
+    const markData = {
+      id: `${type}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      type: type,
+      walletAddress: userAddress,
+      province: province || '',
+      city: city || '',
+      district: district || '',
+      address: address || '',
+      location: {
+        lat: Number(location.lat),
+        lng: Number(location.lng)
+      },
+      proofFiles: Array.isArray(proofFiles) ? proofFiles : [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...typeSpecificFields // 添加类型特定字段
+    };
+
+    // 计算数据哈希
+    const dataHash = calculateDataHash(markData);
+    markData.dataHash = dataHash;
+
+    // 上链存储哈希
+    let chainTxHash = '';
+    let chainTimestamp = 0;
+    let chainAddress = '';
+
+    try {
+      chainAddress = generatePDAAddress(type, markData.id, userAddress);
+      chainTimestamp = Date.now();
+    } catch (error) {
+      console.warn('上链失败，但数据仍会保存到数据库:', error);
+    }
+
+    markData.chainTxHash = chainTxHash;
+    markData.chainTimestamp = chainTimestamp;
+    markData.chainAddress = chainAddress;
+
+    // 保存到统一命名空间
+    await put(NAMESPACES.MAP_MARKS, markData.id, markData);
+    
+    // 同时保存到旧命名空间（向后兼容）
+    if (type === 'origin') {
+      await put(NAMESPACES.ANCESTOR_ORIGINS, markData.id, markData);
+    } else if (type === 'property') {
+      await put(NAMESPACES.ANCESTOR_PROPERTIES, markData.id, markData);
+    }
+
+    const typeNames = {
+      'origin': '祖籍',
+      'property': '祖产',
+      'refuge': '避难所',
+      'relative': '亲属位置',
+      'memory': '历史记忆',
+      'resource': '资源点',
+      'contact': '联络节点',
+      'future': '未来规划'
+    };
+
+    res.json({
+      success: true,
+      data: markData,
+      message: `${typeNames[type] || '标记'}标记成功`
+    });
+  } catch (error) {
+    console.error(`标记${type}失败:`, error);
+    res.status(500).json({
+      success: false,
+      error: error.message || `标记${type}失败`
+    });
+  }
+}
+
+/**
+ * POST /api/ancestor/mark/:type - 统一标记接口（支持所有类型）
+ */
+router.post('/mark/:type', authenticate, async (req, res) => {
+  const { type } = req.params;
+  const validTypes = ['origin', 'property', 'refuge', 'relative', 'memory', 'resource', 'contact', 'future'];
+  
+  if (!validTypes.includes(type)) {
+    return res.status(400).json({
+      success: false,
+      error: `Invalid mark type. Valid types: ${validTypes.join(', ')}`
+    });
+  }
+
+  return handleMarkSubmission(type, req, res);
+});
+
+/**
  * GET /api/ancestor/:id - 获取单个标记详情
  */
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // 尝试从祖籍中查找
-    let data = await get(NAMESPACES.ANCESTOR_ORIGINS, id);
+    // 优先从统一命名空间查找
+    let data = await get(NAMESPACES.MAP_MARKS, id);
     
-    // 如果没找到，尝试从祖产中查找
+    // 如果没找到，尝试从旧命名空间查找（向后兼容）
+    if (!data) {
+      data = await get(NAMESPACES.ANCESTOR_ORIGINS, id);
+    }
     if (!data) {
       data = await get(NAMESPACES.ANCESTOR_PROPERTIES, id);
     }

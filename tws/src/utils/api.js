@@ -1283,6 +1283,57 @@ export const getAncestorMarks = async (walletAddress, type) => {
 };
 
 /**
+ * 统一标记接口（支持所有类型）
+ * @param {string} type - 标记类型：'origin' | 'property' | 'refuge' | 'relative' | 'memory' | 'resource' | 'contact' | 'future'
+ * @param {Object} data - 标记数据
+ * @returns {Promise<Object>}
+ */
+export const markMapLocation = async (type, data) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/ancestor/mark/${type}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: JSON.stringify(data)
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API markMapLocation error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取地图标记列表（统一接口，支持所有类型）
+ * @param {string} walletAddress - 用户钱包地址
+ * @param {string} type - 类型过滤（可选）
+ * @returns {Promise<Object>}
+ */
+export const getMapMarks = async (walletAddress, type) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const params = new URLSearchParams({ walletAddress });
+    if (type) {
+      params.append('type', type);
+    }
+    const response = await fetch(`${API_BASE_URL}/api/ancestor/list?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API getMapMarks error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
  * 获取单个标记详情
  * @param {string} id - 标记ID
  * @returns {Promise<Object>}

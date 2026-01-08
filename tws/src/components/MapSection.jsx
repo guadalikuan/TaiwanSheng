@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { MapPin, Home, Loader, Shield, Users, Clock, Package, Phone, Target } from 'lucide-react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { Transaction } from '@solana/web3.js';
 import { AMAP_CONFIG, loadAMapScript } from '../config/amap';
 import { generateUniqueId } from '../utils/uniqueId';
-import { getMapData, getHomepageAssets, getVisitLogs } from '../utils/api';
+import { getMapData, getHomepageAssets, getVisitLogs, getTaiOneTokenBalanceAPI, consumeTokenForMarking } from '../utils/api';
 import { useSSE } from '../contexts/SSEContext';
 import { useServerStatus } from '../contexts/ServerStatusContext';
 import { getIpLocation } from '../utils/ipLocation';
@@ -51,6 +54,8 @@ const validateAndFixCoordinates = (lat, lng, region = 'mainland') => {
 const MapSection = () => {
   const navigate = useNavigate();
   const { isOnline } = useServerStatus();
+  const { publicKey, sendTransaction, connected } = useWallet();
+  const { connection } = useConnection();
   const [twNodeCount, setTwNodeCount] = useState(12458);
   const [twLogs, setTwLogs] = useState([]);
   const [assetValue, setAssetValue] = useState(1425000000);
@@ -59,6 +64,8 @@ const MapSection = () => {
   const [walletLogs, setWalletLogs] = useState([]);
   const [blockHeight, setBlockHeight] = useState('8922104');
   const [loading, setLoading] = useState(true);
+  const [markLoading, setMarkLoading] = useState(false);
+  const [balance, setBalance] = useState(null);
 
   const taiwanMapContainerRef = useRef(null);
   const mainlandMapContainerRef = useRef(null);
@@ -129,6 +136,76 @@ const MapSection = () => {
     };
     loadData();
   }, [isOnline]);
+
+  // 检查余额
+  const checkBalance = async () => {
+    if (!publicKey) return;
+    try {
+      const result = await getTaiOneTokenBalanceAPI(publicKey.toString());
+      if (result.success) {
+        const bal = parseFloat(result.data?.balance || result.balance || 0) / 1e6;
+        setBalance(bal);
+      }
+    } catch (error) {
+      console.error('检查余额失败:', error);
+    }
+  };
+
+  React.useEffect(() => {
+    if (connected && publicKey) {
+      checkBalance();
+    }
+  }, [connected, publicKey]);
+
+  // 处理标记按钮点击
+  const handleMarkClick = async (type) => {
+    if (!connected || !publicKey) {
+      alert('请先连接钱包');
+      return;
+    }
+
+    if (balance === null) {
+      await checkBalance();
+    }
+
+    if (balance < 100) {
+      alert(`余额不足，需要至少100 TaiOneToken，当前余额：${balance?.toFixed(2) || 0}`);
+      return;
+    }
+
+    setMarkLoading(true);
+    try {
+      const result = await consumeTokenForMarking(type, publicKey.toString());
+      
+      if (!result.success) {
+        throw new Error(result.message || '消耗Token失败');
+      }
+
+      const transaction = Transaction.from(Buffer.from(result.transaction, 'base64'));
+      const signature = await sendTransaction(transaction, connection);
+      await connection.confirmTransaction(signature, 'confirmed');
+
+      // 导航到统一标记页面
+      navigate(`/mark/${type}`);
+    } catch (error) {
+      console.error('标记失败:', error);
+      alert('标记失败: ' + (error.message || '未知错误'));
+    } finally {
+      setMarkLoading(false);
+    }
+  };
+
+  // 标记类型配置
+  const markTypes = [
+    { type: 'origin', label: '标记大陆祖籍', icon: MapPin, color: 'red' },
+    { type: 'property', label: '标记大陆祖产', icon: Home, color: 'red' },
+    { type: 'refuge', label: '标记避难所', icon: Shield, color: 'orange' },
+    { type: 'relative', label: '标记亲属位置', icon: Users, color: 'blue' },
+    { type: 'memory', label: '标记历史记忆', icon: Clock, color: 'purple' },
+    { type: 'resource', label: '标记资源点', icon: Package, color: 'green' },
+    { type: 'contact', label: '标记联络节点', icon: Phone, color: 'cyan' },
+    { type: 'future', label: '标记未来规划', icon: Target, color: 'yellow' }
+  ];
 
   // 加载安全屋列表并在地图上显示标记
   const loadSafehouses = async () => {
@@ -909,6 +986,47 @@ const MapSection = () => {
             </div>
           </div>
         </article>
+      </div>
+
+      {/* 标记按钮区域 - 放在地图下方 */}
+      <div className="w-full px-8 pb-8 z-20">
+        <div className="flex flex-wrap justify-center gap-3">
+          {markTypes.map(({ type, label, icon: Icon, color }) => {
+            const colorClasses = {
+              red: 'bg-red-900/80 hover:bg-red-800 border-red-700',
+              orange: 'bg-orange-900/80 hover:bg-orange-800 border-orange-700',
+              blue: 'bg-blue-900/80 hover:bg-blue-800 border-blue-700',
+              purple: 'bg-purple-900/80 hover:bg-purple-800 border-purple-700',
+              green: 'bg-green-900/80 hover:bg-green-800 border-green-700',
+              cyan: 'bg-cyan-900/80 hover:bg-cyan-800 border-cyan-700',
+              yellow: 'bg-yellow-900/80 hover:bg-yellow-800 border-yellow-700'
+            };
+            
+            return (
+              <button
+                key={type}
+                onClick={() => handleMarkClick(type)}
+                disabled={markLoading || !connected}
+                className={`${colorClasses[color]} border text-white px-4 py-2 rounded-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-mono text-xs shadow-lg`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="hidden sm:inline">{label}</span>
+                <span className="text-yellow-400 text-[10px]">-100</span>
+                {markLoading && <Loader className="w-3 h-3 animate-spin" />}
+              </button>
+            );
+          })}
+        </div>
+        {connected && balance !== null && (
+          <div className="text-center text-xs font-mono text-slate-400 mt-2">
+            余额: <span className="text-yellow-400">{balance.toFixed(2)}</span> TaiOneToken
+          </div>
+        )}
+        {!connected && (
+          <div className="text-center text-xs font-mono text-slate-500 mt-2">
+            请先连接钱包以使用标记功能
+          </div>
+        )}
       </div>
     </div>
   );

@@ -27,27 +27,53 @@ const getPriceFromBirdeye = async (tokenAddress) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
     
-    const response = await fetch(`https://public-api.birdeye.so/v1/price?address=${tokenAddress}`, {
+    const apiKey = process.env.BIRDEYE_API_KEY || '';
+    const url = `https://public-api.birdeye.so/v1/price?address=${tokenAddress}`;
+    
+    console.log(`[MarketData] 尝试 Birdeye API: ${url}${apiKey ? ' (使用API Key)' : ' (无API Key)'}`);
+    
+    const response = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'X-API-KEY': process.env.BIRDEYE_API_KEY || '', // 可选：如果有API Key
+        ...(apiKey && { 'X-API-KEY': apiKey }),
         'Accept': 'application/json'
       }
     });
     
     clearTimeout(timeoutId);
     
-    if (response.ok) {
-      const data = await response.json();
-      if (data.data && data.data.value) {
-        return {
-          price: parseFloat(data.data.value),
-          source: 'birdeye'
-        };
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '无法读取错误信息');
+      console.warn(`[MarketData] Birdeye API 错误: ${response.status} ${response.statusText}`);
+      console.warn(`[MarketData] Birdeye 错误详情: ${errorText.slice(0, 200)}`);
+      
+      // 如果是401，说明需要API key
+      if (response.status === 401) {
+        console.warn('[MarketData] ⚠️ Birdeye API 需要 API Key');
+        console.warn('[MarketData] 💡 提示: 访问 https://birdeye.so/ 注册并获取 API Key，然后在 .env 中设置 BIRDEYE_API_KEY');
       }
+      
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (data.data && data.data.value) {
+      const price = parseFloat(data.data.value);
+      console.log(`[MarketData] ✅ Birdeye 返回价格: $${price}`);
+      return {
+        price: price,
+        source: 'birdeye'
+      };
+    } else {
+      console.warn(`[MarketData] Birdeye API 响应中未找到价格数据`);
+      console.warn(`[MarketData] 响应内容: ${JSON.stringify(data).slice(0, 300)}`);
     }
   } catch (error) {
-    // 静默失败，不输出错误
+    console.warn(`[MarketData] Birdeye API 请求失败: ${error.message}`);
+    if (error.name === 'AbortError') {
+      console.warn('[MarketData] Birdeye API 请求超时');
+    }
   }
   return null;
 };
@@ -58,7 +84,9 @@ const getPriceFromBirdeye = async (tokenAddress) => {
 const getPriceFromRaydium = async (tokenAddress) => {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超时（Raydium返回数据较大）
+    
+    console.log('[MarketData] 尝试 Raydium API: https://api.raydium.io/v2/main/pairs');
     
     // 获取所有交易对
     const response = await fetch('https://api.raydium.io/v2/main/pairs', {
@@ -70,22 +98,106 @@ const getPriceFromRaydium = async (tokenAddress) => {
     
     clearTimeout(timeoutId);
     
-    if (response.ok) {
-      const pairs = await response.json();
-      // 查找包含该代币的交易对
-      const pair = pairs.find(p => 
-        p.baseMint === tokenAddress || p.quoteMint === tokenAddress
-      );
-      
-      if (pair && pair.price) {
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '无法读取错误信息');
+      console.warn(`[MarketData] Raydium API 错误: ${response.status} ${response.statusText}`);
+      console.warn(`[MarketData] Raydium 错误详情: ${errorText.slice(0, 200)}`);
+      return null;
+    }
+    
+    const pairs = await response.json();
+    
+    // 检查响应格式
+    if (!Array.isArray(pairs)) {
+      console.warn(`[MarketData] Raydium API 返回格式异常，期望数组，实际: ${typeof pairs}`);
+      console.warn(`[MarketData] 响应内容: ${JSON.stringify(pairs).slice(0, 300)}`);
+      return null;
+    }
+    
+    console.log(`[MarketData] Raydium 返回 ${pairs.length} 个交易对，正在查找代币 ${tokenAddress}...`);
+    
+    // 查找包含该代币的交易对
+    const pair = pairs.find(p => 
+      p.baseMint === tokenAddress || p.quoteMint === tokenAddress
+    );
+    
+    if (pair) {
+      if (pair.price) {
+        const price = parseFloat(pair.price);
+        console.log(`[MarketData] ✅ Raydium 找到交易对，价格: $${price}`);
         return {
-          price: parseFloat(pair.price),
+          price: price,
           source: 'raydium'
         };
+      } else {
+        console.warn(`[MarketData] Raydium 找到交易对但无价格字段`);
+        console.warn(`[MarketData] 交易对数据: ${JSON.stringify(pair).slice(0, 300)}`);
       }
+    } else {
+      console.warn(`[MarketData] Raydium 未找到包含代币 ${tokenAddress} 的交易对`);
+      console.warn(`[MarketData] 💡 提示: 该代币可能还没有在 Raydium 上创建流动性池`);
     }
   } catch (error) {
-    // 静默失败，不输出错误
+    console.warn(`[MarketData] Raydium API 请求失败: ${error.message}`);
+    if (error.name === 'AbortError') {
+      console.warn('[MarketData] Raydium API 请求超时（数据量较大，可能需要更长时间）');
+    }
+  }
+  return null;
+};
+
+/**
+ * 从 DexScreener API 获取价格（备选方案3）
+ * DexScreener 支持 Solana 代币，无需 API Key
+ */
+const getPriceFromDexScreener = async (tokenAddress) => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    // DexScreener 使用 Solana 链标识
+    const url = `https://api.dexscreener.com/latest/dex/tokens/${tokenAddress}`;
+    console.log(`[MarketData] 尝试 DexScreener API: ${url}`);
+    
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      console.warn(`[MarketData] DexScreener API 错误: ${response.status} ${response.statusText}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    // DexScreener 返回格式: { pairs: [...] }
+    if (data.pairs && Array.isArray(data.pairs) && data.pairs.length > 0) {
+      // 找到流动性最高的交易对
+      const bestPair = data.pairs
+        .filter(p => p.priceUsd && parseFloat(p.priceUsd) > 0)
+        .sort((a, b) => parseFloat(b.liquidity?.usd || 0) - parseFloat(a.liquidity?.usd || 0))[0];
+      
+      if (bestPair && bestPair.priceUsd) {
+        const price = parseFloat(bestPair.priceUsd);
+        console.log(`[MarketData] ✅ DexScreener 返回价格: $${price} (来自 ${bestPair.dexId})`);
+        return {
+          price: price,
+          source: 'dexscreener'
+        };
+      }
+    } else {
+      console.warn(`[MarketData] DexScreener 未找到该代币的交易对`);
+    }
+  } catch (error) {
+    console.warn(`[MarketData] DexScreener API 请求失败: ${error.message}`);
+    if (error.name === 'AbortError') {
+      console.warn('[MarketData] DexScreener API 请求超时');
+    }
   }
   return null;
 };
@@ -96,6 +208,8 @@ const getPriceFromRaydium = async (tokenAddress) => {
 const getDefaultPrice = () => {
   // 可以从环境变量或配置文件读取
   const defaultPrice = parseFloat(process.env.DEFAULT_TOT_PRICE || '0.001');
+  console.log(`[MarketData] 使用默认价格: $${defaultPrice}`);
+  console.log(`[MarketData] 💡 提示: 可在 .env 中设置 DEFAULT_TOT_PRICE 来自定义默认价格`);
   return {
     price: defaultPrice,
     previousPrice: defaultPrice,
@@ -274,9 +388,11 @@ export const updatePriceFromJupiter = async (retryCount = 0) => {
     }
     
     // 如果Jupiter失败，尝试其他价格源
-    console.log('[MarketData] 尝试使用备选价格源...');
+    console.log('[MarketData] 🔄 尝试使用备选价格源...');
+    console.log(`[MarketData] 代币地址: ${TOKEN_MINT.toString()}`);
     
     // 尝试 Birdeye
+    console.log('[MarketData] [1/3] 尝试 Birdeye...');
     const birdeyePrice = await getPriceFromBirdeye(TOKEN_MINT.toString());
     if (birdeyePrice) {
       const priceData = {
@@ -287,15 +403,38 @@ export const updatePriceFromJupiter = async (retryCount = 0) => {
         source: 'birdeye'
       };
       await put(NAMESPACES.MARKET_PRICE, 'latest', priceData);
-      console.log('[MarketData] ✅ 使用 Birdeye 价格源');
+      console.log('[MarketData] ✅ 成功使用 Birdeye 价格源');
       pushUpdate('market', 'update', {
         type: 'price',
         ...priceData
       });
       return priceData;
     }
+    console.log('[MarketData] ❌ Birdeye 失败，尝试下一个...');
+    
+    // 尝试 DexScreener
+    console.log('[MarketData] [2/3] 尝试 DexScreener...');
+    const dexscreenerPrice = await getPriceFromDexScreener(TOKEN_MINT.toString());
+    if (dexscreenerPrice) {
+      const priceData = {
+        price: dexscreenerPrice.price,
+        previousPrice: dexscreenerPrice.price,
+        priceChange24h: 0,
+        timestamp: Date.now(),
+        source: 'dexscreener'
+      };
+      await put(NAMESPACES.MARKET_PRICE, 'latest', priceData);
+      console.log('[MarketData] ✅ 成功使用 DexScreener 价格源');
+      pushUpdate('market', 'update', {
+        type: 'price',
+        ...priceData
+      });
+      return priceData;
+    }
+    console.log('[MarketData] ❌ DexScreener 失败，尝试下一个...');
     
     // 尝试 Raydium
+    console.log('[MarketData] [3/3] 尝试 Raydium...');
     const raydiumPrice = await getPriceFromRaydium(TOKEN_MINT.toString());
     if (raydiumPrice) {
       const priceData = {
@@ -306,13 +445,14 @@ export const updatePriceFromJupiter = async (retryCount = 0) => {
         source: 'raydium'
       };
       await put(NAMESPACES.MARKET_PRICE, 'latest', priceData);
-      console.log('[MarketData] ✅ 使用 Raydium 价格源');
+      console.log('[MarketData] ✅ 成功使用 Raydium 价格源');
       pushUpdate('market', 'update', {
         type: 'price',
         ...priceData
       });
       return priceData;
     }
+    console.log('[MarketData] ❌ Raydium 失败，所有备选价格源均失败');
     
     // 尝试返回缓存的价格数据
     try {

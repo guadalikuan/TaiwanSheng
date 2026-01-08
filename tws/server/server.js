@@ -44,12 +44,35 @@ import { initTWSMainProject } from './utils/initTechProjects.js';
 import { getCurrentPrice, submitOrder, matchOrders } from './utils/orderMatchingEngine.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
 import http from 'http';
 import net from 'net';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// 加载 .env 文件（如果存在）
+const envPath = join(__dirname, '.env');
+if (existsSync(envPath)) {
+  try {
+    const envContent = readFileSync(envPath, 'utf-8');
+    envContent.split('\n').forEach(line => {
+      const trimmedLine = line.trim();
+      if (trimmedLine && !trimmedLine.startsWith('#')) {
+        const [key, ...valueParts] = trimmedLine.split('=');
+        if (key && valueParts.length > 0) {
+          const value = valueParts.join('=').trim();
+          if (!process.env[key]) {
+            process.env[key] = value;
+          }
+        }
+      }
+    });
+    console.log('✅ 已加载 .env 文件');
+  } catch (error) {
+    console.warn('⚠️ 加载 .env 文件失败:', error.message);
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;

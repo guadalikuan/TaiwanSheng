@@ -7,11 +7,25 @@ import {
   markAncestorOrigin, 
   markAncestorProperty, 
   getAncestorMarks, 
-  uploadAncestorProof 
+  uploadAncestorProof,
+  markMapLocation,
+  getMapMarks
 } from '../utils/api';
 
+// 标记类型配置
+const MARK_TYPE_CONFIG = {
+  origin: { label: '标记大陆祖籍', color: '#ef4444', icon: '📍' },
+  property: { label: '标记大陆祖产', color: '#ef4444', icon: '🏠' },
+  refuge: { label: '标记避难所', color: '#ea580c', icon: '🛡️' },
+  relative: { label: '标记亲属位置', color: '#3b82f6', icon: '👥' },
+  memory: { label: '标记历史记忆', color: '#a855f7', icon: '⏰' },
+  resource: { label: '标记资源点', color: '#22c55e', icon: '📦' },
+  contact: { label: '标记联络节点', color: '#06b6d4', icon: '📞' },
+  future: { label: '标记未来规划', color: '#eab308', icon: '🎯' }
+};
+
 const AncestorMarker = () => {
-  const { type } = useParams(); // 'origin' 或 'property'
+  const { type } = useParams(); // 支持所有8种类型
   const navigate = useNavigate();
   const { publicKey } = useWallet();
   const mapContainerRef = useRef(null);
@@ -24,8 +38,9 @@ const AncestorMarker = () => {
   const [marks, setMarks] = useState([]);
   const [showMarks, setShowMarks] = useState(true);
   const [selectedMark, setSelectedMark] = useState(null);
+  const [filterType, setFilterType] = useState(null); // 筛选类型
 
-  // 表单数据
+  // 表单数据 - 包含所有类型的字段
   const [formData, setFormData] = useState({
     province: '',
     city: '',
@@ -43,6 +58,43 @@ const AncestorMarker = () => {
     ownershipInfo: '',
     currentStatus: '',
     estimatedValue: '',
+    // 避难所字段
+    capacity: '',
+    securityLevel: '',
+    supplies: '',
+    facilityType: '',
+    accessMethod: '',
+    maintenanceStatus: '',
+    // 亲属字段
+    relationship: '',
+    name: '',
+    phone: '',
+    emergencyContact: '',
+    notes: '',
+    // 历史记忆字段
+    eventDescription: '',
+    eventDate: '',
+    importance: '',
+    relatedPeople: '',
+    historicalContext: '',
+    // 资源点字段
+    resourceType: '',
+    quantity: '',
+    accessMethod: '',
+    updateFrequency: '',
+    availability: '',
+    // 联络节点字段
+    contactName: '',
+    contactMethod: '',
+    securityLevel: '',
+    availableTime: '',
+    purpose: '',
+    // 未来规划字段
+    planType: '',
+    targetDate: '',
+    priority: '',
+    budget: '',
+    description: '',
     proofFiles: []
   });
 
@@ -92,7 +144,8 @@ const AncestorMarker = () => {
       currentMarkerRef.current.setMap(null);
     }
 
-    // 创建新标记
+    // 创建新标记（根据类型显示不同颜色）
+    const color = getMarkerColor(type);
     const marker = new window.AMap.Marker({
       position: [lng, lat],
       draggable: true,
@@ -101,7 +154,7 @@ const AncestorMarker = () => {
         size: new window.AMap.Size(40, 40),
         image: 'data:image/svg+xml;base64,' + btoa(`
           <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="20" cy="20" r="15" fill="#ef4444" stroke="#fff" stroke-width="2"/>
+            <circle cx="20" cy="20" r="15" fill="${color}" stroke="#fff" stroke-width="2"/>
             <circle cx="20" cy="20" r="8" fill="#fff"/>
           </svg>
         `),
@@ -124,9 +177,14 @@ const AncestorMarker = () => {
     if (!publicKey) return;
 
     try {
-      const result = await getAncestorMarks(publicKey.toString(), type);
+      const result = await getMapMarks(publicKey.toString(), filterType || type);
       if (result.success && result.data) {
         setMarks(result.data);
+        // 清除旧标记
+        existingMarkersRef.current.forEach(marker => {
+          try { marker.setMap(null); } catch (e) {}
+        });
+        existingMarkersRef.current = [];
         // 在地图上显示已标记的位置
         result.data.forEach(mark => {
           if (mark.location && mark.location.lat && mark.location.lng) {
@@ -139,10 +197,33 @@ const AncestorMarker = () => {
     }
   };
 
-  // 添加已存在的标记
+  // 当筛选类型改变时重新加载
+  useEffect(() => {
+    if (publicKey) {
+      loadExistingMarks();
+    }
+  }, [filterType, publicKey]);
+
+  // 获取标记颜色
+  const getMarkerColor = (markType) => {
+    const colors = {
+      origin: '#ef4444',
+      property: '#ef4444',
+      refuge: '#ea580c',
+      relative: '#3b82f6',
+      memory: '#a855f7',
+      resource: '#22c55e',
+      contact: '#06b6d4',
+      future: '#eab308'
+    };
+    return colors[markType] || '#10b981';
+  };
+
+  // 添加已存在的标记（根据类型显示不同颜色）
   const addExistingMarker = (mark) => {
     if (!mapRef.current || !window.AMap) return;
 
+    const color = getMarkerColor(mark.type);
     const marker = new window.AMap.Marker({
       position: [mark.location.lng, mark.location.lat],
       draggable: false,
@@ -150,7 +231,7 @@ const AncestorMarker = () => {
         size: new window.AMap.Size(30, 30),
         image: 'data:image/svg+xml;base64,' + btoa(`
           <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="15" cy="15" r="12" fill="#10b981" stroke="#fff" stroke-width="2"/>
+            <circle cx="15" cy="15" r="12" fill="${color}" stroke="#fff" stroke-width="2"/>
             <circle cx="15" cy="15" r="6" fill="#fff"/>
           </svg>
         `),
@@ -211,7 +292,7 @@ const AncestorMarker = () => {
     }));
   };
 
-  // 提交表单
+  // 提交表单（统一接口）
   const handleSubmit = async () => {
     if (!publicKey) {
       alert('请先连接钱包');
@@ -235,34 +316,64 @@ const AncestorMarker = () => {
         proofFiles: formData.proofFiles
       };
 
+      // 根据类型添加特定字段
       if (type === 'origin') {
         submitData.familyName = formData.familyName;
         submitData.generation = formData.generation;
         submitData.ancestorName = formData.ancestorName;
         submitData.migrationHistory = formData.migrationHistory;
-        
-        const result = await markAncestorOrigin(submitData);
-        if (result.success) {
-          alert('祖籍标记成功！');
-          navigate('/app');
-        } else {
-          throw new Error(result.message || '标记失败');
-        }
-      } else {
+      } else if (type === 'property') {
         submitData.propertyType = formData.propertyType;
         submitData.area = formData.area ? Number(formData.area) : 0;
         submitData.propertyName = formData.propertyName;
         submitData.ownershipInfo = formData.ownershipInfo;
         submitData.currentStatus = formData.currentStatus;
         submitData.estimatedValue = formData.estimatedValue ? Number(formData.estimatedValue) : 0;
-        
-        const result = await markAncestorProperty(submitData);
-        if (result.success) {
-          alert('祖产标记成功！');
-          navigate('/app');
-        } else {
-          throw new Error(result.message || '标记失败');
-        }
+      } else if (type === 'refuge') {
+        submitData.capacity = formData.capacity ? Number(formData.capacity) : 0;
+        submitData.securityLevel = formData.securityLevel;
+        submitData.supplies = formData.supplies;
+        submitData.facilityType = formData.facilityType;
+        submitData.accessMethod = formData.accessMethod;
+        submitData.maintenanceStatus = formData.maintenanceStatus;
+      } else if (type === 'relative') {
+        submitData.relationship = formData.relationship;
+        submitData.name = formData.name;
+        submitData.phone = formData.phone;
+        submitData.emergencyContact = formData.emergencyContact;
+        submitData.notes = formData.notes;
+      } else if (type === 'memory') {
+        submitData.eventDescription = formData.eventDescription;
+        submitData.eventDate = formData.eventDate;
+        submitData.importance = formData.importance;
+        submitData.relatedPeople = formData.relatedPeople;
+        submitData.historicalContext = formData.historicalContext;
+      } else if (type === 'resource') {
+        submitData.resourceType = formData.resourceType;
+        submitData.quantity = formData.quantity;
+        submitData.accessMethod = formData.accessMethod;
+        submitData.updateFrequency = formData.updateFrequency;
+        submitData.availability = formData.availability;
+      } else if (type === 'contact') {
+        submitData.contactName = formData.contactName;
+        submitData.contactMethod = formData.contactMethod;
+        submitData.securityLevel = formData.securityLevel;
+        submitData.availableTime = formData.availableTime;
+        submitData.purpose = formData.purpose;
+      } else if (type === 'future') {
+        submitData.planType = formData.planType;
+        submitData.targetDate = formData.targetDate;
+        submitData.priority = formData.priority;
+        submitData.budget = formData.budget ? Number(formData.budget) : 0;
+        submitData.description = formData.description;
+      }
+      
+      const result = await markMapLocation(type, submitData);
+      if (result.success) {
+        alert(`${MARK_TYPE_CONFIG[type]?.label || '标记'}成功！`);
+        navigate('/#map');
+      } else {
+        throw new Error(result.message || '标记失败');
       }
     } catch (error) {
       console.error('提交失败:', error);
@@ -272,7 +383,7 @@ const AncestorMarker = () => {
     }
   };
 
-  const isOrigin = type === 'origin';
+  const typeConfig = MARK_TYPE_CONFIG[type] || MARK_TYPE_CONFIG.origin;
 
   return (
     <div className="min-h-screen bg-black text-gray-300 flex flex-col">
@@ -286,7 +397,7 @@ const AncestorMarker = () => {
             <X className="w-5 h-5" />
           </button>
           <h1 className="text-lg font-mono text-white">
-            {isOrigin ? '标记大陆祖籍' : '标记大陆祖产'}
+            {typeConfig.label || '标记位置'}
           </h1>
         </div>
         <div className="text-xs font-mono text-gray-500">
@@ -403,8 +514,52 @@ const AncestorMarker = () => {
               </>
             )}
 
-            {/* 祖产字段 */}
-            {!isOrigin && (
+            {/* 动态类型特定字段 */}
+            {type === 'origin' && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-xs font-mono text-gray-500">姓氏</label>
+                  <input
+                    type="text"
+                    value={formData.familyName}
+                    onChange={(e) => setFormData({ ...formData, familyName: e.target.value })}
+                    className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"
+                    placeholder="可选"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-mono text-gray-500">世代</label>
+                  <input
+                    type="text"
+                    value={formData.generation}
+                    onChange={(e) => setFormData({ ...formData, generation: e.target.value })}
+                    className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"
+                    placeholder="可选"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-mono text-gray-500">祖先姓名</label>
+                  <input
+                    type="text"
+                    value={formData.ancestorName}
+                    onChange={(e) => setFormData({ ...formData, ancestorName: e.target.value })}
+                    className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"
+                    placeholder="可选"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-mono text-gray-500">迁徙历史</label>
+                  <textarea
+                    value={formData.migrationHistory}
+                    onChange={(e) => setFormData({ ...formData, migrationHistory: e.target.value })}
+                    className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500 h-20 resize-none"
+                    placeholder="可选"
+                  />
+                </div>
+              </>
+            )}
+
+            {type === 'property' && (
               <>
                 <div className="space-y-2">
                   <label className="text-xs font-mono text-gray-500">房产类型</label>
@@ -478,6 +633,67 @@ const AncestorMarker = () => {
                     placeholder="可选"
                   />
                 </div>
+              </>
+            )}
+
+            {type === 'refuge' && (
+              <>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">容量（人数）</label><input type="number" value={formData.capacity} onChange={(e) => setFormData({ ...formData, capacity: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">安全等级</label><select value={formData.securityLevel} onChange={(e) => setFormData({ ...formData, securityLevel: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"><option value="">请选择（可选）</option><option value="A">A级</option><option value="B">B级</option><option value="C">C级</option><option value="D">D级</option></select></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">储备物资</label><textarea value={formData.supplies} onChange={(e) => setFormData({ ...formData, supplies: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500 h-20 resize-none" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">设施类型</label><select value={formData.facilityType} onChange={(e) => setFormData({ ...formData, facilityType: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"><option value="">请选择（可选）</option><option value="地堡">地堡</option><option value="避难所">避难所</option><option value="安全屋">安全屋</option></select></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">进入方式</label><input type="text" value={formData.accessMethod} onChange={(e) => setFormData({ ...formData, accessMethod: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">维护状态</label><input type="text" value={formData.maintenanceStatus} onChange={(e) => setFormData({ ...formData, maintenanceStatus: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+              </>
+            )}
+
+            {type === 'relative' && (
+              <>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">关系</label><select value={formData.relationship} onChange={(e) => setFormData({ ...formData, relationship: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"><option value="">请选择（可选）</option><option value="父母">父母</option><option value="兄弟姐妹">兄弟姐妹</option><option value="子女">子女</option><option value="其他">其他</option></select></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">姓名</label><input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">联系电话</label><input type="text" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">紧急联系人</label><input type="text" value={formData.emergencyContact} onChange={(e) => setFormData({ ...formData, emergencyContact: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">备注</label><textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500 h-20 resize-none" placeholder="可选" /></div>
+              </>
+            )}
+
+            {type === 'memory' && (
+              <>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">事件描述</label><textarea value={formData.eventDescription} onChange={(e) => setFormData({ ...formData, eventDescription: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500 h-20 resize-none" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">事件时间</label><input type="text" value={formData.eventDate} onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">重要性</label><select value={formData.importance} onChange={(e) => setFormData({ ...formData, importance: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"><option value="">请选择（可选）</option><option value="高">高</option><option value="中">中</option><option value="低">低</option></select></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">相关人物</label><input type="text" value={formData.relatedPeople} onChange={(e) => setFormData({ ...formData, relatedPeople: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">历史背景</label><textarea value={formData.historicalContext} onChange={(e) => setFormData({ ...formData, historicalContext: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500 h-20 resize-none" placeholder="可选" /></div>
+              </>
+            )}
+
+            {type === 'resource' && (
+              <>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">资源类型</label><select value={formData.resourceType} onChange={(e) => setFormData({ ...formData, resourceType: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"><option value="">请选择（可选）</option><option value="水源">水源</option><option value="食物">食物</option><option value="医疗">医疗</option><option value="燃料">燃料</option><option value="其他">其他</option></select></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">数量</label><input type="text" value={formData.quantity} onChange={(e) => setFormData({ ...formData, quantity: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">获取方式</label><input type="text" value={formData.accessMethod} onChange={(e) => setFormData({ ...formData, accessMethod: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">更新频率</label><input type="text" value={formData.updateFrequency} onChange={(e) => setFormData({ ...formData, updateFrequency: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">可用性</label><select value={formData.availability} onChange={(e) => setFormData({ ...formData, availability: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"><option value="">请选择（可选）</option><option value="充足">充足</option><option value="有限">有限</option><option value="紧缺">紧缺</option></select></div>
+              </>
+            )}
+
+            {type === 'contact' && (
+              <>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">联系人姓名</label><input type="text" value={formData.contactName} onChange={(e) => setFormData({ ...formData, contactName: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">联系方式</label><select value={formData.contactMethod} onChange={(e) => setFormData({ ...formData, contactMethod: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"><option value="">请选择（可选）</option><option value="电话">电话</option><option value="微信">微信</option><option value="邮件">邮件</option><option value="其他">其他</option></select></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">安全等级</label><select value={formData.securityLevel} onChange={(e) => setFormData({ ...formData, securityLevel: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"><option value="">请选择（可选）</option><option value="高">高</option><option value="中">中</option><option value="低">低</option></select></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">可用时间</label><input type="text" value={formData.availableTime} onChange={(e) => setFormData({ ...formData, availableTime: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">用途</label><input type="text" value={formData.purpose} onChange={(e) => setFormData({ ...formData, purpose: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+              </>
+            )}
+
+            {type === 'future' && (
+              <>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">计划类型</label><select value={formData.planType} onChange={(e) => setFormData({ ...formData, planType: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"><option value="">请选择（可选）</option><option value="投资">投资</option><option value="旅行">旅行</option><option value="定居">定居</option><option value="其他">其他</option></select></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">目标时间</label><input type="text" value={formData.targetDate} onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">优先级</label><select value={formData.priority} onChange={(e) => setFormData({ ...formData, priority: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"><option value="">请选择（可选）</option><option value="高">高</option><option value="中">中</option><option value="低">低</option></select></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">预算（万元）</label><input type="number" value={formData.budget} onChange={(e) => setFormData({ ...formData, budget: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500" placeholder="可选" /></div>
+                <div className="space-y-2"><label className="text-xs font-mono text-gray-500">计划描述</label><textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500 h-20 resize-none" placeholder="可选" /></div>
               </>
             )}
 

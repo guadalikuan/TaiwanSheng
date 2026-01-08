@@ -109,7 +109,7 @@ const SimplifiedAgentView = () => {
       </div>
 
       {/* 标记按钮区域 */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <h3 className="text-xs font-bold text-gray-400 font-mono flex items-center gap-2">
           <Terminal className="w-3 h-3" /> ANCESTOR MARKING
         </h3>
@@ -117,48 +117,48 @@ const SimplifiedAgentView = () => {
           <button
             onClick={() => handleMarkClick('origin')}
             disabled={loading || !connected || (balance !== null && balance < 100)}
-            className="border rounded p-4 bg-gray-900 border-red-900/50 hover:border-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between group transition-all"
+            className="border rounded-lg p-4 bg-gray-900 border-red-900/50 hover:border-red-700 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between group transition-all w-full"
           >
             <div className="flex items-center gap-3">
-              <MapPin className="w-5 h-5 text-red-500" />
+              <MapPin className="w-5 h-5 text-red-500 flex-shrink-0" />
               <div className="text-left">
-                <div className="text-sm font-mono text-white">标记大陆祖籍</div>
+                <div className="text-sm font-mono text-white font-semibold">标记大陆祖籍</div>
                 <div className="text-xs font-mono text-gray-400">消耗 100 TaiOneToken</div>
               </div>
             </div>
             {loading ? (
-              <Loader className="w-4 h-4 animate-spin text-gray-400" />
+              <Loader className="w-4 h-4 animate-spin text-gray-400 flex-shrink-0" />
             ) : (
-              <div className="text-xs font-mono text-yellow-500">-100 TWS</div>
+              <div className="text-xs font-mono text-yellow-500 flex-shrink-0">-100 TWS</div>
             )}
           </button>
           <button
             onClick={() => handleMarkClick('property')}
             disabled={loading || !connected || (balance !== null && balance < 100)}
-            className="border rounded p-4 bg-gray-900 border-red-900/50 hover:border-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between group transition-all"
+            className="border rounded-lg p-4 bg-gray-900 border-red-900/50 hover:border-red-700 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between group transition-all w-full"
           >
             <div className="flex items-center gap-3">
-              <Home className="w-5 h-5 text-red-500" />
+              <Home className="w-5 h-5 text-red-500 flex-shrink-0" />
               <div className="text-left">
-                <div className="text-sm font-mono text-white">标记大陆祖产</div>
+                <div className="text-sm font-mono text-white font-semibold">标记大陆祖产</div>
                 <div className="text-xs font-mono text-gray-400">消耗 100 TaiOneToken</div>
               </div>
             </div>
             {loading ? (
-              <Loader className="w-4 h-4 animate-spin text-gray-400" />
+              <Loader className="w-4 h-4 animate-spin text-gray-400 flex-shrink-0" />
             ) : (
-              <div className="text-xs font-mono text-yellow-500">-100 TWS</div>
+              <div className="text-xs font-mono text-yellow-500 flex-shrink-0">-100 TWS</div>
             )}
           </button>
         </div>
         {connected && balance !== null && (
-          <div className="text-xs font-mono text-gray-500 text-center">
-            当前余额: {balance.toFixed(2)} TaiOneToken
+          <div className="text-xs font-mono text-gray-500 text-center pt-1">
+            当前余额: <span className="text-yellow-500">{balance.toFixed(2)}</span> TaiOneToken
           </div>
         )}
         {!connected && (
-          <div className="text-xs font-mono text-gray-500 text-center">
-            请先连接钱包
+          <div className="text-xs font-mono text-gray-500 text-center pt-1">
+            请先连接钱包以使用标记功能
           </div>
         )}
       </div>

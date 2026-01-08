@@ -105,8 +105,7 @@ const App = () => (
     <Route path="/auction/:assetId" element={<AuctionPage />} />
     <Route path="/auctions" element={<AuctionListPage />} />
     <Route path="/auctions/create" element={<AuctionCreatePage />} />
-    <Route path="/mark-origin" element={<AncestorMarker />} />
-    <Route path="/mark-property" element={<AncestorMarker />} />
+    <Route path="/mark/:type" element={<AncestorMarker />} />
     {/* RWA交易路由 */}
     <Route path="/rwa/buy-request" element={<RWABuyRequest />} />
     <Route path="/rwa/recommendations" element={<RWARecommendations />} />
