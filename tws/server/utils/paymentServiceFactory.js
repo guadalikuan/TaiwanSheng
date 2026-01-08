@@ -170,5 +170,5 @@ class PaymentServiceFactory {
 }
 
 export default PaymentServiceFactory;
-export { PaymentService, PAYMENT_METHODS };
+export { PaymentService };
 

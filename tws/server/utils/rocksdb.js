@@ -42,12 +42,16 @@ export const initRocksDB = async () => {
     // 检查是否是数据库损坏错误（可能在 error.message 或 error.cause 中）
     const errorMessage = error.message || '';
     const causeMessage = error.cause?.message || '';
+    const errorString = JSON.stringify(error);
     const isCorruptionError = 
       errorMessage.includes('Corruption') || 
       errorMessage.includes('CURRENT file corrupted') ||
       causeMessage.includes('Corruption') ||
       causeMessage.includes('CURRENT file corrupted') ||
-      error.name === 'OpenError';
+      errorString.includes('Corruption') ||
+      errorString.includes('CURRENT file corrupted') ||
+      error.name === 'OpenError' ||
+      (error.cause && (error.cause.message?.includes('Corruption') || error.cause.message?.includes('CURRENT file corrupted')));
     
     if (isCorruptionError) {
       console.error('❌ RocksDB database corrupted. Attempting to repair...');
@@ -344,7 +348,9 @@ export const NAMESPACES = {
   RWA_ORDERS: 'rwaOrders', // RWA订单
   RWA_TRADES: 'rwaTrades', // RWA交易记录
   RWA_LOCKS: 'rwaLocks', // 锁定记录
-  TOT_PURCHASE_ORDERS: 'totPurchaseOrders' // TOT购买订单
+  TOT_PURCHASE_ORDERS: 'totPurchaseOrders', // TOT购买订单
+  SHARE_HOLDINGS: 'rwaShareHoldings', // 份额持有记录
+  ETF_BASKETS: 'rwaEtfBaskets' // ETF篮子
 };
 
 export default {

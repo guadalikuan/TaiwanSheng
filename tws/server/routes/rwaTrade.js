@@ -36,6 +36,25 @@ import {
   processPayment,
   verifyPaymentTransaction
 } from '../utils/rwaPaymentHandler.js';
+import {
+  recordShareHolding,
+  getUserAssetShares,
+  getUserHoldings,
+  getAssetHolders,
+  calculateUserTotalValue,
+  formatShares,
+  SHARE_PRECISION
+} from '../utils/rwaShareTracker.js';
+import {
+  createEtfBasket,
+  getEtfBasket,
+  getAllEtfBaskets,
+  recommendEtfByCities,
+  calculateEtfAllocation,
+  autoGenerateEtf,
+  updateEtfBasket,
+  deleteEtfBasket
+} from '../utils/rwaEtfManager.js';
 import blockchainService from '../utils/blockchain.js';
 
 const router = express.Router();
@@ -872,6 +891,395 @@ router.get('/stats', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to get trade stats',
+      message: error.message
+    });
+  }
+});
+
+// ==================== 份额购买API ====================
+
+// POST /api/rwa-trade/buy-shares - 直接购买指定资产的份额
+router.post('/buy-shares', authenticate, async (req, res) => {
+  try {
+    const { assetId, shares, txSignature } = req.body;
+    const userId = req.user?.address || req.user?.username || req.user?.id;
+    
+    if (!assetId || !shares) {
+      return res.status(400).json({
+        success: false,
+        error: 'assetId and shares are required'
+      });
+    }
+    
+    if (shares < SHARE_PRECISION) {
+      return res.status(400).json({
+        success: false,
+        error: `Shares must be at least ${SHARE_PRECISION}`
+      });
+    }
+    
+    // 获取资产数据
+    const assetData = await getAssetById(assetId);
+    if (!assetData.sanitized && !assetData.raw) {
+      return res.status(404).json({
+        success: false,
+        error: 'Asset not found'
+      });
+    }
+    
+    const asset = assetData.sanitized || assetData.raw;
+    
+    // 计算资产总价和总份额
+    const totalPrice = asset.financials?.totalTokens || asset.tokenPrice || asset.debtAmount || 0;
+    const totalShares = asset.totalShares || 10000; // 默认10000份
+    const pricePerShare = totalPrice / totalShares;
+    const requiredAmount = formatShares(shares) * pricePerShare;
+    
+    // 检查余额
+    const balanceCheck = await checkBalance(userId, requiredAmount);
+    if (!balanceCheck.sufficient) {
+      return res.status(400).json({
+        success: false,
+        error: 'Insufficient balance',
+        message: balanceCheck.message || `需要 ${requiredAmount} TOT，当前余额 ${balanceCheck.balance} TOT`
+      });
+    }
+    
+    // 处理支付
+    const paymentResult = await processPayment({
+      userAddress: userId,
+      amount: requiredAmount,
+      txSignature,
+      paymentType: 'share_purchase',
+      to: 'platform',
+      extra: { assetId, shares: formatShares(shares) }
+    });
+    
+    if (!paymentResult.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Payment failed',
+        message: paymentResult.message
+      });
+    }
+    
+    // 记录份额持有
+    const holding = await recordShareHolding(userId, assetId, formatShares(shares));
+    
+    res.json({
+      success: true,
+      message: 'Shares purchased successfully',
+      holding,
+      shares: formatShares(shares),
+      pricePerShare,
+      totalAmount: requiredAmount,
+      txHash: paymentResult.txHash
+    });
+  } catch (error) {
+    console.error('Error buying shares:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to buy shares',
+      message: error.message
+    });
+  }
+});
+
+// ==================== ETF购买API ====================
+
+// POST /api/rwa-trade/etf/buy - 购买ETF
+router.post('/etf/buy', authenticate, async (req, res) => {
+  try {
+    const { etfId, investmentAmount, txSignature } = req.body;
+    const userId = req.user?.address || req.user?.username || req.user?.id;
+    
+    if (!etfId || !investmentAmount) {
+      return res.status(400).json({
+        success: false,
+        error: 'etfId and investmentAmount are required'
+      });
+    }
+    
+    // 获取ETF篮子
+    const etf = await getEtfBasket(etfId);
+    if (!etf) {
+      return res.status(404).json({
+        success: false,
+        error: 'ETF not found'
+      });
+    }
+    
+    // 检查最小投资额
+    if (investmentAmount < etf.minInvestment) {
+      return res.status(400).json({
+        success: false,
+        error: `Minimum investment is ${etf.minInvestment} TOT`
+      });
+    }
+    
+    // 计算分配
+    const allocations = await calculateEtfAllocation(etfId, investmentAmount);
+    
+    // 检查余额
+    const balanceCheck = await checkBalance(userId, investmentAmount);
+    if (!balanceCheck.sufficient) {
+      return res.status(400).json({
+        success: false,
+        error: 'Insufficient balance',
+        message: balanceCheck.message || `需要 ${investmentAmount} TOT，当前余额 ${balanceCheck.balance} TOT`
+      });
+    }
+    
+    // 处理支付
+    const paymentResult = await processPayment({
+      userAddress: userId,
+      amount: investmentAmount,
+      txSignature,
+      paymentType: 'etf_purchase',
+      to: 'platform',
+      extra: { etfId, investmentAmount }
+    });
+    
+    if (!paymentResult.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Payment failed',
+        message: paymentResult.message
+      });
+    }
+    
+    // 为每个资产购买对应份额
+    const purchaseResults = [];
+    for (const allocation of allocations) {
+      try {
+        // 获取资产信息以计算份额
+        const assetData = await getAssetById(allocation.assetId);
+        if (!assetData.sanitized && !assetData.raw) {
+          console.error(`Asset ${allocation.assetId} not found`);
+          continue;
+        }
+        
+        const asset = assetData.sanitized || assetData.raw;
+        const totalPrice = asset.financials?.totalTokens || asset.tokenPrice || asset.debtAmount || 0;
+        const totalShares = asset.totalShares || 10000;
+        const pricePerShare = totalPrice / totalShares;
+        
+        // 计算应购买的份额
+        const shares = formatShares(allocation.investmentAmount / pricePerShare);
+        
+        // 记录份额持有
+        const holding = await recordShareHolding(userId, allocation.assetId, shares);
+        
+        purchaseResults.push({
+          assetId: allocation.assetId,
+          shares,
+          investmentAmount: allocation.investmentAmount,
+          pricePerShare,
+          holding
+        });
+      } catch (error) {
+        console.error(`Error purchasing asset ${allocation.assetId}:`, error);
+        // 继续处理其他资产
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'ETF purchase completed',
+      etf: etf,
+      allocations: purchaseResults,
+      txHash: paymentResult.txHash
+    });
+  } catch (error) {
+    console.error('Error buying ETF:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to buy ETF',
+      message: error.message
+    });
+  }
+});
+
+// ==================== ETF管理API ====================
+
+// POST /api/rwa-trade/etf/create - 创建ETF（管理员）
+router.post('/etf/create', authenticate, requireRole(ROLES.ADMIN), async (req, res) => {
+  try {
+    const etf = await createEtfBasket(req.body);
+    
+    res.json({
+      success: true,
+      etf
+    });
+  } catch (error) {
+    console.error('Error creating ETF:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create ETF',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/rwa-trade/etf/list - 获取ETF列表
+router.get('/etf/list', async (req, res) => {
+  try {
+    const { cities } = req.query;
+    const cityList = cities ? cities.split(',') : [];
+    
+    const etfs = cityList.length > 0 
+      ? await recommendEtfByCities(cityList)
+      : await getAllEtfBaskets();
+    
+    res.json({
+      success: true,
+      count: etfs.length,
+      etfs
+    });
+  } catch (error) {
+    console.error('Error getting ETF list:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get ETF list',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/rwa-trade/etf/:id - 获取ETF详情
+router.get('/etf/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const etf = await getEtfBasket(id);
+    
+    if (!etf) {
+      return res.status(404).json({
+        success: false,
+        error: 'ETF not found'
+      });
+    }
+    
+    // 获取ETF中每个资产的详细信息
+    const assets = await Promise.all(
+      etf.assetIds.map(async (assetId) => {
+        try {
+          const assetData = await getAssetById(assetId);
+          return assetData.sanitized || assetData.raw || null;
+        } catch (error) {
+          return null;
+        }
+      })
+    );
+    
+    res.json({
+      success: true,
+      etf: {
+        ...etf,
+        assets: assets.filter(a => a !== null)
+      }
+    });
+  } catch (error) {
+    console.error('Error getting ETF:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get ETF',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/rwa-trade/etf/auto-generate - 自动生成ETF（根据城市）
+router.post('/etf/auto-generate', authenticate, requireRole(ROLES.ADMIN), async (req, res) => {
+  try {
+    const { cities, assetCount = 5 } = req.body;
+    
+    if (!cities || !Array.isArray(cities) || cities.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'cities array is required'
+      });
+    }
+    
+    const etf = await autoGenerateEtf(cities, assetCount);
+    
+    res.json({
+      success: true,
+      etf
+    });
+  } catch (error) {
+    console.error('Error auto-generating ETF:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to auto-generate ETF',
+      message: error.message
+    });
+  }
+});
+
+// ==================== 份额查询API ====================
+
+// GET /api/rwa-trade/holdings - 获取我的持有份额
+router.get('/holdings', authenticate, async (req, res) => {
+  try {
+    const userId = req.user?.address || req.user?.username || req.user?.id;
+    const holdings = await getUserHoldings(userId);
+    const totalValue = await calculateUserTotalValue(userId);
+    
+    res.json({
+      success: true,
+      count: holdings.length,
+      holdings,
+      totalValue
+    });
+  } catch (error) {
+    console.error('Error getting holdings:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get holdings',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/rwa-trade/holdings/:assetId - 获取特定资产的持有份额
+router.get('/holdings/:assetId', authenticate, async (req, res) => {
+  try {
+    const { assetId } = req.params;
+    const userId = req.user?.address || req.user?.username || req.user?.id;
+    
+    const shares = await getUserAssetShares(userId, assetId);
+    
+    res.json({
+      success: true,
+      assetId,
+      shares
+    });
+  } catch (error) {
+    console.error('Error getting asset holdings:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get asset holdings',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/rwa-trade/asset/:assetId/holders - 获取资产的所有持有者
+router.get('/asset/:assetId/holders', async (req, res) => {
+  try {
+    const { assetId } = req.params;
+    const holders = await getAssetHolders(assetId);
+    
+    res.json({
+      success: true,
+      count: holders.length,
+      holders
+    });
+  } catch (error) {
+    console.error('Error getting asset holders:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get asset holders',
       message: error.message
     });
   }

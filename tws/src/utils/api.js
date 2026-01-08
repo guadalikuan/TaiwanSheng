@@ -1950,3 +1950,188 @@ export const getRedeemHistory = async () => {
   }
 };
 
+// ==================== RWA份额和ETF API ====================
+
+/**
+ * 购买份额
+ */
+export const buyShares = async (assetId, shares, txSignature) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/buy-shares`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ assetId, shares, txSignature })
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API buyShares error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 购买ETF
+ */
+export const buyEtf = async (etfId, investmentAmount, txSignature) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/etf/buy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ etfId, investmentAmount, txSignature })
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API buyEtf error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取ETF列表
+ */
+export const getEtfList = async (cities = []) => {
+  try {
+    const params = new URLSearchParams();
+    if (cities.length > 0) {
+      params.append('cities', cities.join(','));
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/etf/list?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getEtfList error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取ETF详情
+ */
+export const getEtfDetail = async (etfId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/etf/${etfId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getEtfDetail error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 创建ETF（管理员）
+ */
+export const createEtf = async (etfData) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/etf/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(etfData)
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API createEtf error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 自动生成ETF
+ */
+export const autoGenerateEtf = async (cities, assetCount = 5) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/etf/auto-generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ cities, assetCount })
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API autoGenerateEtf error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取我的持有份额
+ */
+export const getMyHoldings = async () => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/holdings`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getMyHoldings error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取特定资产的持有份额
+ */
+export const getAssetHoldings = async (assetId) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/holdings/${assetId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getAssetHoldings error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取资产的所有持有者
+ */
+export const getAssetHolders = async (assetId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/asset/${assetId}/holders`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API getAssetHolders error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+

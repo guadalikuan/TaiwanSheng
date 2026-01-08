@@ -7,6 +7,7 @@ import { getOrderBook, getOrder, updateOrder, getAssetSellOrders } from './rwaOr
 import { put, NAMESPACES } from './rocksdb.js';
 import { getAssetById } from './storage.js';
 import { updateAssetStatus } from './storage.js';
+import { recordShareHolding, formatShares } from './rwaShareTracker.js';
 
 /**
  * 执行撮合
@@ -158,6 +159,7 @@ const executeMatch = async (buyOrder, sellOrder) => {
       sellerId: freshSellOrder.userId,
       price: matchPrice,
       amount: matchAmount,
+      shares: matchShares, // 新增：成交份额
       timestamp: Date.now(),
       txHash: null // 链上交易哈希（后续添加）
     };
@@ -165,29 +167,41 @@ const executeMatch = async (buyOrder, sellOrder) => {
     // 保存交易记录
     await put(NAMESPACES.RWA_TRADES, trade.id, trade);
     
+    // 记录份额持有（买方增加，卖方减少）
+    if (freshSellOrder.assetId && matchShares > 0) {
+      await recordShareHolding(trade.buyerId, trade.assetId, matchShares);
+      await recordShareHolding(trade.sellerId, trade.assetId, -matchShares);
+    }
+    
     // 更新订单状态
     const newBuyFilled = (freshBuyOrder.filledAmount || 0) + matchAmount;
     const newSellFilled = (freshSellOrder.filledAmount || 0) + matchAmount;
+    const newBuyFilledShares = (freshBuyOrder.filledShares || 0) + matchShares;
+    const newSellFilledShares = (freshSellOrder.filledShares || 0) + matchShares;
     
     if (newBuyFilled >= (freshBuyOrder.amount || 1)) {
       await updateOrder(freshBuyOrder.id, { 
         status: 'filled',
-        filledAmount: newBuyFilled
+        filledAmount: newBuyFilled,
+        filledShares: newBuyFilledShares
       });
     } else {
       await updateOrder(freshBuyOrder.id, { 
-        filledAmount: newBuyFilled
+        filledAmount: newBuyFilled,
+        filledShares: newBuyFilledShares
       });
     }
     
     if (newSellFilled >= (freshSellOrder.amount || 1)) {
       await updateOrder(freshSellOrder.id, { 
         status: 'filled',
-        filledAmount: newSellFilled
+        filledAmount: newSellFilled,
+        filledShares: newSellFilledShares
       });
     } else {
       await updateOrder(freshSellOrder.id, { 
-        filledAmount: newSellFilled
+        filledAmount: newSellFilled,
+        filledShares: newSellFilledShares
       });
     }
     

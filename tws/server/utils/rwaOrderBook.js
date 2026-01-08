@@ -4,6 +4,7 @@
  */
 
 import { put, get, getAll, del, NAMESPACES } from './rocksdb.js';
+import { getAssetById } from './storage.js';
 
 /**
  * 创建订单
@@ -19,20 +20,50 @@ export const createOrder = async (order) => {
     throw new Error('Invalid order type: must be "buy" or "sell"');
   }
   
+  // 验证amount字段支持小数（最小0.0001）
+  if (order.amount !== undefined && order.amount < 0.0001 && order.amount !== 0) {
+    throw new Error('Amount must be at least 0.0001');
+  }
+  
   // 卖单必须指定assetId
   if (order.orderType === 'sell' && !order.assetId) {
     throw new Error('Sell order must specify assetId');
   }
   
-  // 买单必须指定preferredCity
-  if (order.orderType === 'buy' && !order.preferredCity) {
-    throw new Error('Buy order must specify preferredCity');
+  // 买单：如果指定了assetId，计算份额；否则需要preferredCity
+  if (order.orderType === 'buy') {
+    if (order.assetId) {
+      // 如果指定了资产ID，计算份额
+      try {
+        const assetData = await getAssetById(order.assetId);
+        if (assetData.sanitized || assetData.raw) {
+          const asset = assetData.sanitized || assetData.raw;
+          const totalPrice = asset.financials?.totalTokens || asset.tokenPrice || asset.debtAmount || 0;
+          const totalShares = asset.totalShares || 10000; // 默认10000份
+          const pricePerShare = totalPrice / totalShares;
+          
+          if (order.amount && order.amount > 0) {
+            // 如果提供了金额，计算份额
+            order.shares = order.amount / pricePerShare;
+          } else if (order.shares && order.shares > 0) {
+            // 如果提供了份额，计算金额
+            order.amount = order.shares * pricePerShare;
+          }
+        }
+      } catch (error) {
+        console.error('Error calculating shares for order:', error);
+        // 继续创建订单，但不计算份额
+      }
+    } else if (!order.preferredCity) {
+      throw new Error('Buy order must specify preferredCity or assetId');
+    }
   }
   
   const newOrder = {
     ...order,
     status: 'pending',
     filledAmount: 0,
+    filledShares: 0, // 新增：已成交份额
     createdAt: order.createdAt || Date.now(),
     expiresAt: order.expiresAt || (Date.now() + 7 * 24 * 60 * 60 * 1000) // 默认7天过期
   };
