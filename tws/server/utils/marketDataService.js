@@ -20,6 +20,92 @@ let priceUpdateInterval = null;
 let klineUpdateInterval = null;
 
 /**
+ * 从 Birdeye API 获取价格（备选方案）
+ */
+const getPriceFromBirdeye = async (tokenAddress) => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+    
+    const response = await fetch(`https://public-api.birdeye.so/v1/price?address=${tokenAddress}`, {
+      signal: controller.signal,
+      headers: {
+        'X-API-KEY': process.env.BIRDEYE_API_KEY || '', // 可选：如果有API Key
+        'Accept': 'application/json'
+      }
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.data && data.data.value) {
+        return {
+          price: parseFloat(data.data.value),
+          source: 'birdeye'
+        };
+      }
+    }
+  } catch (error) {
+    // 静默失败，不输出错误
+  }
+  return null;
+};
+
+/**
+ * 从 Raydium API 获取价格（备选方案）
+ */
+const getPriceFromRaydium = async (tokenAddress) => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+    
+    // 获取所有交易对
+    const response = await fetch('https://api.raydium.io/v2/main/pairs', {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      const pairs = await response.json();
+      // 查找包含该代币的交易对
+      const pair = pairs.find(p => 
+        p.baseMint === tokenAddress || p.quoteMint === tokenAddress
+      );
+      
+      if (pair && pair.price) {
+        return {
+          price: parseFloat(pair.price),
+          source: 'raydium'
+        };
+      }
+    }
+  } catch (error) {
+    // 静默失败，不输出错误
+  }
+  return null;
+};
+
+/**
+ * 手动设置默认价格（如果所有API都失败）
+ */
+const getDefaultPrice = () => {
+  // 可以从环境变量或配置文件读取
+  const defaultPrice = parseFloat(process.env.DEFAULT_TOT_PRICE || '0.001');
+  return {
+    price: defaultPrice,
+    previousPrice: defaultPrice,
+    priceChange24h: 0,
+    source: 'default',
+    timestamp: Date.now()
+  };
+};
+
+/**
  * 初始化市场数据服务
  */
 export const initializeMarketDataService = async () => {
@@ -49,14 +135,18 @@ export const initializeMarketDataService = async () => {
 
 /**
  * 从 Jupiter API 获取实时价格
+ * 改进版本：添加重试机制和更详细的错误处理
  */
-export const updatePriceFromJupiter = async () => {
+export const updatePriceFromJupiter = async (retryCount = 0) => {
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 2000; // 2秒
+  
   try {
     const tokenAddress = TOKEN_MINT.toString();
     
     // 添加超时控制（20秒）
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20秒超时
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
     
     try {
       const response = await fetch(`https://price.jup.ag/v3/price?ids=${tokenAddress}`, {
@@ -70,6 +160,24 @@ export const updatePriceFromJupiter = async () => {
       clearTimeout(timeoutId);
       
       if (!response.ok) {
+        // 如果是404，说明代币不在Jupiter数据库中
+        if (response.status === 404) {
+          console.warn(`[MarketData] 代币 ${tokenAddress} 不在Jupiter价格数据库中`);
+          // 尝试返回缓存数据
+          const cachedPrice = await get(NAMESPACES.MARKET_PRICE, 'latest');
+          if (cachedPrice) {
+            return cachedPrice;
+          }
+          return null;
+        }
+        
+        // 如果是429（限流），等待后重试
+        if (response.status === 429 && retryCount < MAX_RETRIES) {
+          console.warn(`[MarketData] Jupiter API 限流，${RETRY_DELAY}ms后重试 (${retryCount + 1}/${MAX_RETRIES})`);
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
+          return updatePriceFromJupiter(retryCount + 1);
+        }
+        
         throw new Error(`Jupiter API error: ${response.status} ${response.statusText}`);
       }
 
@@ -105,17 +213,39 @@ export const updatePriceFromJupiter = async () => {
           });
         }
 
+        // 如果之前有错误，现在成功了，记录成功信息
+        if (retryCount > 0) {
+          console.log('[MarketData] Jupiter API 连接已恢复');
+        }
+
         return priceData;
       }
 
-      return null;
+      // 如果响应中没有代币数据
+      console.warn(`[MarketData] Jupiter API 响应中未找到代币 ${tokenAddress} 的价格数据`);
+      const cachedPrice = await get(NAMESPACES.MARKET_PRICE, 'latest');
+      return cachedPrice || null;
+      
     } catch (fetchError) {
       clearTimeout(timeoutId);
       
-      // 如果是超时错误，提供更友好的错误信息
+      // 如果是超时错误，尝试重试
+      if ((fetchError.name === 'AbortError' || fetchError.code === 'UND_ERR_CONNECT_TIMEOUT') && retryCount < MAX_RETRIES) {
+        console.warn(`[MarketData] Jupiter API 请求超时，${RETRY_DELAY}ms后重试 (${retryCount + 1}/${MAX_RETRIES})`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
+        return updatePriceFromJupiter(retryCount + 1);
+      }
+      
+      // 如果是网络错误，尝试重试
+      if ((fetchError.code === 'ECONNREFUSED' || fetchError.code === 'ENOTFOUND' || fetchError.code === 'ETIMEDOUT') && retryCount < MAX_RETRIES) {
+        console.warn(`[MarketData] Jupiter API 网络错误，${RETRY_DELAY}ms后重试 (${retryCount + 1}/${MAX_RETRIES})`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
+        return updatePriceFromJupiter(retryCount + 1);
+      }
+      
+      // 超时或网络错误且重试次数用完
       if (fetchError.name === 'AbortError' || fetchError.code === 'UND_ERR_CONNECT_TIMEOUT') {
         console.warn('[MarketData] Jupiter API 请求超时，使用缓存数据');
-        // 尝试返回缓存的价格数据
         const cachedPrice = await get(NAMESPACES.MARKET_PRICE, 'latest');
         if (cachedPrice) {
           return cachedPrice;
@@ -127,23 +257,88 @@ export const updatePriceFromJupiter = async () => {
     }
   } catch (error) {
     // 只在开发环境或严重错误时记录详细日志
-    if (process.env.NODE_ENV === 'development' || error.message?.includes('无缓存数据')) {
-      console.error('[MarketData] 获取Jupiter价格失败:', error.message || error);
+    const isDev = process.env.NODE_ENV === 'development';
+    const isCritical = error.message?.includes('无缓存数据') || error.message?.includes('404');
+    
+    if (isDev || isCritical) {
+      console.error('[MarketData] 获取Jupiter价格失败:', {
+        message: error.message,
+        code: error.code,
+        name: error.name,
+        tokenAddress: TOKEN_MINT.toString(),
+        retryCount
+      });
     } else {
+      // 生产环境只输出警告，不输出详细错误
       console.warn('[MarketData] 获取Jupiter价格失败，使用缓存数据');
+    }
+    
+    // 如果Jupiter失败，尝试其他价格源
+    console.log('[MarketData] 尝试使用备选价格源...');
+    
+    // 尝试 Birdeye
+    const birdeyePrice = await getPriceFromBirdeye(TOKEN_MINT.toString());
+    if (birdeyePrice) {
+      const priceData = {
+        price: birdeyePrice.price,
+        previousPrice: birdeyePrice.price,
+        priceChange24h: 0,
+        timestamp: Date.now(),
+        source: 'birdeye'
+      };
+      await put(NAMESPACES.MARKET_PRICE, 'latest', priceData);
+      console.log('[MarketData] ✅ 使用 Birdeye 价格源');
+      pushUpdate('market', 'update', {
+        type: 'price',
+        ...priceData
+      });
+      return priceData;
+    }
+    
+    // 尝试 Raydium
+    const raydiumPrice = await getPriceFromRaydium(TOKEN_MINT.toString());
+    if (raydiumPrice) {
+      const priceData = {
+        price: raydiumPrice.price,
+        previousPrice: raydiumPrice.price,
+        priceChange24h: 0,
+        timestamp: Date.now(),
+        source: 'raydium'
+      };
+      await put(NAMESPACES.MARKET_PRICE, 'latest', priceData);
+      console.log('[MarketData] ✅ 使用 Raydium 价格源');
+      pushUpdate('market', 'update', {
+        type: 'price',
+        ...priceData
+      });
+      return priceData;
     }
     
     // 尝试返回缓存的价格数据
     try {
       const cachedPrice = await get(NAMESPACES.MARKET_PRICE, 'latest');
       if (cachedPrice) {
+        // 检查缓存是否过期（超过5分钟）
+        const cacheAge = Date.now() - cachedPrice.timestamp;
+        if (cacheAge > 5 * 60 * 1000) {
+          console.warn(`[MarketData] 缓存数据已过期 (${Math.floor(cacheAge / 1000)}秒前)`);
+          // 如果缓存过期且所有API都失败，使用默认价格
+          const defaultPrice = getDefaultPrice();
+          await put(NAMESPACES.MARKET_PRICE, 'latest', defaultPrice);
+          console.warn('[MarketData] ⚠️ 使用默认价格（所有价格源均失败）');
+          return defaultPrice;
+        }
         return cachedPrice;
       }
     } catch (cacheError) {
       // 忽略缓存读取错误
     }
     
-    return null;
+    // 如果所有方法都失败，使用默认价格
+    const defaultPrice = getDefaultPrice();
+    await put(NAMESPACES.MARKET_PRICE, 'latest', defaultPrice);
+    console.warn('[MarketData] ⚠️ 使用默认价格（所有价格源均失败且无缓存）');
+    return defaultPrice;
   }
 };
 

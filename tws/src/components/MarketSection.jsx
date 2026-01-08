@@ -8,6 +8,7 @@ import { useServerStatus } from '../contexts/ServerStatusContext';
 import { TaiOneToken_MINT } from '../utils/twscoin';
 import KlineChart from './KlineChart';
 import TOTPurchaseCard from './TOTPurchaseCard';
+import JupiterSwapCard from './JupiterSwapCard';
 
 const MarketSection = () => {
   const navigate = useNavigate();
@@ -721,12 +722,19 @@ const MarketSection = () => {
         </div>
       </div>
 
-      <div className="relative z-10 w-full md:w-1/4 bg-slate-900/30 backdrop-blur flex flex-col font-mono">
+      <div className="relative z-10 w-full md:w-1/4 bg-slate-900/30 backdrop-blur flex flex-col font-mono overflow-hidden">
         {/* 7-11 ibon 购买 TOT */}
-        <TOTPurchaseCard />
+        <div className="shrink-0">
+          <TOTPurchaseCard />
+        </div>
+
+        {/* Jupiter Swap */}
+        <div className="shrink-0">
+          <JupiterSwapCard />
+        </div>
 
         {/* Market Stats Section (Moved to bottom) */}
-        <div className="h-1/3 border-t border-slate-800 bg-black/20 p-2 flex flex-col">
+        <div className="flex-1 min-h-0 border-t border-slate-800 bg-black/20 p-2 flex flex-col overflow-hidden">
           <div className="text-[10px] text-slate-500 mb-2 flex justify-between">
             <span>MARKET STATS</span>
             <span className="text-green-500">REAL-TIME</span>
