@@ -80,13 +80,11 @@ const AncestorMarker = () => {
     // 资源点字段
     resourceType: '',
     quantity: '',
-    accessMethod: '',
     updateFrequency: '',
     availability: '',
     // 联络节点字段
     contactName: '',
     contactMethod: '',
-    securityLevel: '',
     availableTime: '',
     purpose: '',
     // 未来规划字段
