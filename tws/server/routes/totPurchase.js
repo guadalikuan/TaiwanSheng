@@ -15,7 +15,6 @@ import { parseCallback as parseAlipayCallback, isPaymentSuccess as isAlipaySucce
 import PaymentServiceFactory, { PAYMENT_METHODS } from '../utils/paymentServiceFactory.js';
 import { convertTwdToTot, getExchangeRate } from '../utils/exchangeRate.js';
 import { transferTOTToUser } from '../utils/solanaBlockchain.js';
-import { generateUniqueId } from '../utils/uniqueId.js';
 
 const router = express.Router();
 
