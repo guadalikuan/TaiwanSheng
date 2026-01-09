@@ -1433,7 +1433,7 @@ const MapSection = () => {
       <div className="absolute top-16 md:top-20 left-0 w-full h-16 z-20 bg-gradient-to-b from-slate-900 to-transparent flex justify-between items-center px-8 border-b border-slate-800/50">
         <div className="flex items-center space-x-4">
           <div className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
-          <span className="text-xs font-mono text-red-400 tracking-widest">LIVE GEO-INTEL FEED // SATELLITE LINK: ACTIVE</span>
+          <span className="text-xs font-mono text-red-400 tracking-widest">你的标记将挽救生命</span>
         </div>
         <div className="flex space-x-6 text-right">
           <div>
