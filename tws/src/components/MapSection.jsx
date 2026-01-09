@@ -9,8 +9,6 @@ import { getMapData, getHomepageAssets, getVisitLogs, getTaiOneTokenBalanceAPI, 
 import { useSSE } from '../contexts/SSEContext';
 import { useServerStatus } from '../contexts/ServerStatusContext';
 import { getIpLocation } from '../utils/ipLocation';
-import MapNewTagsBox from './MapNewTagsBox';
-import MapNewWalletsBox from './MapNewWalletsBox';
 import MapLanternOverlay from './MapLanternOverlay';
 import { WISHES } from './LanternCanvas';
 
@@ -86,6 +84,194 @@ const TAIWAN_LAUNCH_SITE = {
   name: 'Taipei Launch Site'
 };
 
+// 解放军对台军演区域数据（2010年以来）
+// 坐标基于GCJ-02坐标系（高德地图），围绕台湾岛（21.9°N-25.3°N, 119.3°E-122.0°E）
+const PLA_EXERCISE_DATA = [
+  {
+    id: 'exercise_2022_08',
+    name: '2022年8月环台军演',
+    date: '2022-08-02',
+    dateEnd: '2022-08-10',
+    description: '多兵种联合战备警巡和实战化演练',
+    // 六个演习区域（围绕台湾岛，使用GCJ-02坐标系）
+    areas: [
+      // 区域1：台湾海峡北部（靠近台北）
+      [
+        [119.3, 25.3],
+        [120.3, 25.3],
+        [120.3, 24.6],
+        [119.3, 24.6]
+      ],
+      // 区域2：台湾海峡中部（距离台湾本岛约9.5公里）
+      [
+        [119.8, 24.4],
+        [120.8, 24.4],
+        [120.8, 23.7],
+        [119.8, 23.7]
+      ],
+      // 区域3：台湾海峡南部（靠近高雄）
+      [
+        [119.5, 23.3],
+        [120.5, 23.3],
+        [120.5, 22.6],
+        [119.5, 22.6]
+      ],
+      // 区域4：东海区域（台湾东北）
+      [
+        [121.2, 25.0],
+        [122.2, 25.0],
+        [122.2, 24.3],
+        [121.2, 24.3]
+      ],
+      // 区域5：巴士海峡（台湾东南）
+      [
+        [120.2, 21.8],
+        [121.2, 21.8],
+        [121.2, 21.0],
+        [120.2, 21.0]
+      ],
+      // 区域6：菲律宾海（台湾东部）
+      [
+        [121.5, 22.8],
+        [122.8, 22.8],
+        [122.8, 21.8],
+        [121.5, 21.8]
+      ]
+    ],
+    color: '#ef4444', // 红色
+    strokeColor: '#dc2626',
+    fillOpacity: 0.15,
+    strokeOpacity: 0.7,
+    strokeWeight: 2
+  },
+  {
+    id: 'exercise_2025_04',
+    name: '2025年4月环台军演',
+    date: '2025-04-01',
+    dateEnd: '2025-04-02',
+    description: '海峡雷霆-2025A',
+    areas: [
+      // 台湾海峡中部
+      [
+        [119.5, 24.6],
+        [121.0, 24.6],
+        [121.0, 23.3],
+        [119.5, 23.3]
+      ],
+      // 台湾海峡南部
+      [
+        [119.3, 23.0],
+        [120.8, 23.0],
+        [120.8, 21.8],
+        [119.3, 21.8]
+      ]
+    ],
+    color: '#f97316', // 橙色
+    strokeColor: '#ea580c',
+    fillOpacity: 0.12,
+    strokeOpacity: 0.6,
+    strokeWeight: 2
+  },
+  {
+    id: 'exercise_2025_12',
+    name: '2025年12月环台军演',
+    date: '2025-12-29',
+    dateEnd: '2025-12-31',
+    description: '正义使命-2025',
+    areas: [
+      // 台湾海峡
+      [
+        [119.0, 25.0],
+        [121.3, 25.0],
+        [121.3, 22.3],
+        [119.0, 22.3]
+      ],
+      // 南海区域（靠近台湾西南）
+      [
+        [118.8, 21.8],
+        [120.3, 21.8],
+        [120.3, 20.8],
+        [118.8, 20.8]
+      ],
+      // 巴士海峡
+      [
+        [119.8, 21.3],
+        [121.3, 21.3],
+        [121.3, 20.6],
+        [119.8, 20.6]
+      ],
+      // 菲律宾海
+      [
+        [121.3, 23.3],
+        [123.3, 23.3],
+        [123.3, 21.3],
+        [121.3, 21.3]
+      ],
+      // 东海区域
+      [
+        [121.3, 25.8],
+        [122.8, 25.8],
+        [122.8, 24.3],
+        [121.3, 24.3]
+      ]
+    ],
+    color: '#eab308', // 黄色
+    strokeColor: '#ca8a04',
+    fillOpacity: 0.1,
+    strokeOpacity: 0.5,
+    strokeWeight: 2
+  },
+  {
+    id: 'exercise_2019_07',
+    name: '2019年7月东南海双军演',
+    date: '2019-07-28',
+    dateEnd: '2019-07-30',
+    description: '舟山群岛、东山岛海域',
+    areas: [
+      // 舟山群岛附近（东海，远离台湾但相关）
+      [
+        [121.0, 30.3],
+        [123.0, 30.3],
+        [123.0, 29.3],
+        [121.0, 29.3]
+      ],
+      // 东山岛附近（台湾海峡南部，靠近福建）
+      [
+        [117.0, 23.6],
+        [118.5, 23.6],
+        [118.5, 22.8],
+        [117.0, 22.8]
+      ]
+    ],
+    color: '#3b82f6', // 蓝色
+    strokeColor: '#2563eb',
+    fillOpacity: 0.12,
+    strokeOpacity: 0.6,
+    strokeWeight: 2
+  },
+  {
+    id: 'exercise_2016_07',
+    name: '2016年7月南海军演',
+    date: '2016-07-05',
+    dateEnd: '2016-07-11',
+    description: '南海大规模军演',
+    areas: [
+      // 南海区域（大范围，包含台湾西南）
+      [
+        [108.0, 20.0],
+        [120.0, 20.0],
+        [120.0, 12.0],
+        [108.0, 12.0]
+      ]
+    ],
+    color: '#8b5cf6', // 紫色
+    strokeColor: '#7c3aed',
+    fillOpacity: 0.08,
+    strokeOpacity: 0.5,
+    strokeWeight: 2
+  }
+];
+
 const validateAndFixCoordinates = (lat, lng, region = 'mainland') => {
   const bounds = region === 'taiwan' 
     ? { latMin: 21.9, latMax: 25.3, lngMin: 119.3, lngMax: 122.0 }
@@ -133,6 +319,13 @@ const MapSection = () => {
   const [missileVisibility, setMissileVisibility] = useState(
     MISSILE_DATA.reduce((acc, missile) => {
       acc[missile.id] = true; // 默认全部显示
+      return acc;
+    }, {})
+  );
+  const exercisePolygonsRef = useRef([]); // 军演区域多边形
+  const [exerciseVisibility, setExerciseVisibility] = useState(
+    PLA_EXERCISE_DATA.reduce((acc, exercise) => {
+      acc[exercise.id] = true; // 默认全部显示
       return acc;
     }, {})
   );
@@ -362,6 +555,114 @@ const MapSection = () => {
     });
   };
 
+  // 绘制军演区域
+  const drawExercisePolygons = () => {
+    if (!taiwanMapRef.current || !window.AMap) {
+      console.log('台湾地图未初始化，延迟重试绘制军演区域');
+      setTimeout(drawExercisePolygons, 1000);
+      return;
+    }
+
+    console.log('开始绘制军演区域，可见性状态:', exerciseVisibility);
+
+    // 清除旧的多边形（添加安全检查）
+    if (exercisePolygonsRef.current && exercisePolygonsRef.current.length > 0) {
+      exercisePolygonsRef.current.forEach((item) => {
+        try {
+          if (item && item.polygon) {
+            item.polygon.setMap(null);
+          }
+        } catch (e) {
+          console.warn('Failed to remove exercise polygon:', e);
+        }
+      });
+    }
+    exercisePolygonsRef.current = [];
+
+    // 为每次军演绘制区域
+    PLA_EXERCISE_DATA.forEach((exercise, exerciseIndex) => {
+      // 检查是否应该显示
+      if (!exerciseVisibility[exercise.id]) {
+        console.log(`跳过 ${exercise.name}，当前不可见`);
+        return;
+      }
+
+      // 为每个演习区域绘制多边形
+      exercise.areas.forEach((area, areaIndex) => {
+        try {
+          // 将坐标转换为 AMap.LngLat 对象数组
+          const path = area.map(coord => new window.AMap.LngLat(coord[0], coord[1]));
+
+          console.log(`绘制 ${exercise.name} 区域 ${areaIndex + 1}，坐标点数量: ${path.length}`);
+
+          // 创建多边形（符合军事标绘标准：虚线边框）
+          const polygon = new window.AMap.Polygon({
+            path: path,
+            fillColor: exercise.color,
+            fillOpacity: exercise.fillOpacity,
+            strokeColor: exercise.strokeColor,
+            strokeOpacity: exercise.strokeOpacity,
+            strokeWeight: exercise.strokeWeight,
+            strokeStyle: 'dashed', // 虚线边框，符合军事标绘标准
+            zIndex: 30 + exerciseIndex * 10 + areaIndex, // 确保不同多边形的层级
+            cursor: 'default'
+          });
+
+          // 添加到地图
+          polygon.setMap(taiwanMapRef.current);
+          exercisePolygonsRef.current.push({ polygon, exerciseId: exercise.id, areaIndex });
+
+          console.log(`成功绘制 ${exercise.name} 区域 ${areaIndex + 1}`);
+
+          // 添加信息窗口（显示演习信息）
+          polygon.on('click', () => {
+            const infoWindow = new window.AMap.InfoWindow({
+              content: `
+                <div style="padding: 10px; font-family: monospace; color: #fff; background: rgba(0,0,0,0.9); border: 2px solid ${exercise.color}; min-width: 200px;">
+                  <div style="font-weight: bold; margin-bottom: 6px; color: ${exercise.color}; font-size: 14px;">
+                    ${exercise.name}
+                  </div>
+                  <div style="font-size: 11px; margin-bottom: 4px; color: #ccc;">
+                    代号: ${exercise.description}
+                  </div>
+                  <div style="font-size: 11px; margin-bottom: 4px; color: #aaa;">
+                    时间: ${exercise.date} 至 ${exercise.dateEnd}
+                  </div>
+                  <div style="font-size: 10px; color: #888; margin-top: 6px; border-top: 1px solid #444; padding-top: 4px;">
+                    区域 ${areaIndex + 1} / ${exercise.areas.length}
+                  </div>
+                </div>
+              `,
+              offset: new window.AMap.Pixel(0, -10)
+            });
+            // 计算多边形中心点
+            const centerLng = area.reduce((sum, coord) => sum + coord[0], 0) / area.length;
+            const centerLat = area.reduce((sum, coord) => sum + coord[1], 0) / area.length;
+            infoWindow.open(taiwanMapRef.current, new window.AMap.LngLat(centerLng, centerLat));
+          });
+
+        } catch (error) {
+          console.error(`Failed to draw exercise polygon for ${exercise.name} area ${areaIndex + 1}:`, error);
+        }
+      });
+    });
+
+    console.log(`已绘制 ${exercisePolygonsRef.current.length} 个军演区域`);
+  };
+
+  // 切换军演区域的显示/隐藏
+  const toggleExerciseVisibility = (exerciseId) => {
+    console.log('切换军演可见性:', exerciseId, '当前状态:', exerciseVisibility[exerciseId]);
+    setExerciseVisibility(prev => {
+      const newVisibility = {
+        ...prev,
+        [exerciseId]: !prev[exerciseId]
+      };
+      console.log('新的可见性状态:', newVisibility);
+      return newVisibility;
+    });
+  };
+
   // 加载安全屋列表并在地图上显示标记
   const loadSafehouses = async () => {
     if (!mainlandMapRef.current || !window.AMap) {
@@ -446,6 +747,24 @@ const MapSection = () => {
         });
         taiwanMapRef.current = taiwanMap;
         console.log('Taiwan map initialized with official dark style');
+
+        // 在地图加载完成后绘制军演区域
+        if (taiwanMap && taiwanMap.on) {
+          taiwanMap.on('complete', () => {
+            console.log('taiwan map complete event fired');
+            setTimeout(() => {
+              console.log('准备绘制军演区域');
+              drawExercisePolygons();
+            }, 1500);
+          });
+        }
+        // 备用延迟绘制
+        setTimeout(() => {
+          if (taiwanMapRef.current) {
+            console.log('备用：准备绘制军演区域');
+            drawExercisePolygons();
+          }
+        }, 2500);
       } catch (e) {
         console.error('Failed to initialize Taiwan map:', e);
       }
@@ -543,6 +862,11 @@ const MapSection = () => {
         try { circle.setMap(null); } catch (e) {}
       });
       missileRangeCirclesRef.current = [];
+      // 清理军演区域多边形
+      exercisePolygonsRef.current.forEach(({ polygon }) => {
+        try { polygon.setMap(null); } catch (e) {}
+      });
+      exercisePolygonsRef.current = [];
     };
   }, []);
 
@@ -555,6 +879,16 @@ const MapSection = () => {
       console.log('地图未准备好，等待初始化');
     }
   }, [missileVisibility]);
+
+  // 当军演可见性改变时重新绘制
+  useEffect(() => {
+    if (taiwanMapRef.current && window.AMap) {
+      console.log('军演可见性变化，重新绘制');
+      drawExercisePolygons();
+    } else {
+      console.log('台湾地图未准备好，等待初始化');
+    }
+  }, [exerciseVisibility]);
 
   // 添加台湾地图标记 - v1.4.15 版本
   const addTaiwanMarker = (lat, lng, nodeId) => {
@@ -1116,23 +1450,6 @@ const MapSection = () => {
       <div className="flex-1 w-full h-full grid grid-cols-1 lg:grid-cols-2 gap-6 px-4 md:px-8 py-24">
         <article className="map-panel min-h-[420px]">
           <div className="mainland-map-container h-full relative">
-            <div className="pointer-events-none absolute top-4 left-4 bg-black/70 border border-yellow-900 px-4 py-3 rounded-lg max-w-xs text-yellow-200 z-10">
-              <div className="text-[10px] tracking-[0.3em] uppercase text-yellow-600">Safe Haven Inventory</div>
-              <div className="text-3xl font-bold text-yellow-300 mt-1">{formatAsset(assetValue)}</div>
-              <div className="grid grid-cols-2 gap-4 text-xs border-t border-yellow-900 mt-3 pt-2 font-mono text-slate-200">
-                <div>
-                  <p className="text-yellow-700 uppercase text-[10px]">Units Secured</p>
-                  <p className="text-xl text-white font-bold">{unitCount.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-yellow-700 uppercase text-[10px]">Block Height</p>
-                  <p className="text-white font-bold">#{blockHeight}</p>
-                </div>
-              </div>
-            </div>
-            <div className="absolute bottom-4 right-4 z-10 pointer-events-auto">
-              <MapNewTagsBox assetLogs={assetLogs} assetValue={assetValue} unitCount={unitCount} />
-            </div>
             {/* 导弹射程覆盖图例 */}
             <div className="pointer-events-auto absolute top-4 right-4 bg-black/90 border border-red-900 px-4 py-3 rounded-lg max-w-xs z-10">
               <div className="text-[10px] tracking-[0.2em] uppercase text-red-600 mb-3 font-mono font-bold">导弹射程覆盖</div>
@@ -1174,16 +1491,40 @@ const MapSection = () => {
         <article className="map-panel min-h-[420px]">
           <div className="tw-map-container h-full relative">
             <div className="tw-scan-line" />
-            <div className="pointer-events-none absolute top-4 left-4 bg-black/70 border border-green-900 px-4 py-3 rounded-lg max-w-xs z-10">
-              <div className="text-[10px] text-slate-500 tracking-[0.3em] uppercase">Operational Area: Taiwan</div>
-              <div className="text-2xl font-bold text-red-500 tracking-[0.3em] mt-1">Zone Coverage</div>
-              <div className="flex justify-between text-green-400 text-xs border-b border-white/10 pb-2 mt-2 font-mono">
-                <span>Active Nodes</span>
-                <span className="text-base font-bold">{twNodeCount.toLocaleString()}</span>
+            {/* 军演区域图例 - 与大陆地图导弹图例样式一致 */}
+            <div className="pointer-events-auto absolute top-4 right-4 bg-black/90 border border-blue-900 px-4 py-3 rounded-lg max-w-xs z-10 max-h-[60vh] overflow-y-auto">
+              <div className="text-[10px] tracking-[0.2em] uppercase text-blue-600 mb-3 font-mono font-bold">解放军对台军演区域</div>
+              {PLA_EXERCISE_DATA.map((exercise, index) => {
+                const isVisible = exerciseVisibility[exercise.id];
+                return (
+                  <div 
+                    key={exercise.id}
+                    onClick={() => toggleExerciseVisibility(exercise.id)}
+                    className="flex items-center gap-2 mb-2 text-xs cursor-pointer hover:bg-blue-900/30 px-2 py-1 rounded transition-colors"
+                  >
+                    <div 
+                      className="w-4 h-4 rounded border-2 flex-shrink-0"
+                      style={{
+                        backgroundColor: isVisible ? `${exercise.color}${Math.round(exercise.fillOpacity * 255).toString(16).padStart(2, '0')}` : 'transparent',
+                        borderColor: isVisible ? exercise.strokeColor : '#666',
+                        borderStyle: 'dashed',
+                        opacity: isVisible ? 1 : 0.4
+                      }}
+                    />
+                    <div className="flex-1 font-mono text-white">
+                      <div className={`text-[10px] ${isVisible ? '' : 'line-through opacity-50'}`}>{exercise.name}</div>
+                      <div className={`text-[9px] ${isVisible ? 'text-gray-400' : 'text-gray-600'}`}>{exercise.description}</div>
+                      <div className={`text-[8px] ${isVisible ? 'text-gray-500' : 'text-gray-700'}`}>{exercise.date}</div>
+                    </div>
+                    <div className="text-[8px] text-gray-500">
+                      {isVisible ? '●' : '○'}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="text-[8px] text-gray-600 mt-2 pt-2 border-t border-gray-800 font-mono">
+                点击切换显示/隐藏
               </div>
-            </div>
-            <div className="absolute bottom-4 right-4 z-10 pointer-events-auto">
-              <MapNewWalletsBox walletLogs={walletLogs} />
             </div>
             <div ref={taiwanMapContainerRef} className="amap-container w-full h-full rounded-lg overflow-hidden relative">
               {taiwanMapRef.current && (
