@@ -11,7 +11,10 @@ import {
   getMapData,
   updateMapData,
   addTaiwanLog,
-  addAssetLog
+  addAssetLog,
+  addMissileLaunchRecord,
+  getMissileLaunchHistory,
+  getMissileLaunchStats
 } from '../utils/homepageStorage.js';
 import { getBotUserStats } from '../utils/botUserManager.js';
 import { homepageRateLimiter } from '../middleware/security.js';
@@ -648,6 +651,102 @@ router.get('/visit-stats', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to get visit stats',
+      message: error.message
+    });
+  }
+});
+
+// 计算两点间距离（大圆距离公式，单位：公里）
+const calculateDistance = (lat1, lng1, lat2, lng2) => {
+  const R = 6371; // 地球半径（公里）
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
+
+// POST /api/homepage/map/missile-launch - 记录导弹发射
+router.post('/map/missile-launch', async (req, res) => {
+  try {
+    const { missileId, missileName, launchSite, target, walletAddress } = req.body;
+    
+    if (!missileId || !target || !walletAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: missileId, target, walletAddress'
+      });
+    }
+
+    // 计算飞行时间（简化：假设速度800km/h）
+    const distance = target.distance || calculateDistance(
+      launchSite.lat, launchSite.lng,
+      target.lat, target.lng
+    );
+    const flightTime = Math.round((distance / 800) * 3600); // 秒
+
+    // 保存发射记录
+    const launchRecord = {
+      id: `launch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      missileId,
+      missileName,
+      launchSite,
+      target: {
+        ...target,
+        city: 'Unknown' // 可以根据坐标获取城市名
+      },
+      distance,
+      flightTime,
+      status: 'success',
+      walletAddress
+    };
+
+    // 保存到存储
+    await addMissileLaunchRecord(launchRecord);
+
+    // SSE推送更新
+    const { pushUpdate } = await import('../utils/sseManager.js');
+    pushUpdate('map', {
+      type: 'missileLaunch',
+      data: launchRecord
+    });
+
+    res.json({
+      success: true,
+      data: launchRecord
+    });
+  } catch (error) {
+    console.error('Error recording missile launch:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to record launch',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/homepage/map/missile-launch-history - 获取导弹发射历史
+router.get('/map/missile-launch-history', async (req, res) => {
+  try {
+    const { walletAddress, limit = 20, missileId } = req.query;
+    const history = await getMissileLaunchHistory({ walletAddress, limit, missileId });
+    const stats = await getMissileLaunchStats(walletAddress);
+    
+    res.json({
+      success: true,
+      data: {
+        history,
+        stats
+      }
+    });
+  } catch (error) {
+    console.error('Error getting launch history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get history',
       message: error.message
     });
   }

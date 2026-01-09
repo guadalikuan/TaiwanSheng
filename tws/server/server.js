@@ -28,6 +28,7 @@ import marketRoutes from './routes/market.js';
 import ancestorRoutes from './routes/ancestor.js';
 import rwaTradeRoutes from './routes/rwaTrade.js';
 import totPurchaseRoutes from './routes/totPurchase.js';
+import mapActionsRoutes from './routes/mapActions.js';
 import { startBackgroundTasks } from './utils/backgroundTasks.js';
 import { startMarketDataTasks } from './utils/marketDataTasks.js';
 import { startMatchingScheduler } from './utils/rwaMatchingScheduler.js';
@@ -206,6 +207,8 @@ app.use('/api/market', marketRoutes);
 app.use('/api/ancestor', ancestorRoutes);
 app.use('/api/rwa-trade', rwaTradeRoutes);
 app.use('/api/tot-purchase', totPurchaseRoutes);
+app.use('/api/tot', mapActionsRoutes);
+app.use('/api/map-actions', mapActionsRoutes);
 
 // 调试：列出所有注册的路由
 console.log('📋 已注册的路由:');

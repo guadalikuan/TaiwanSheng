@@ -750,6 +750,97 @@ export const updateAiTimeAdjustment = (deltaMs) => {
   return 0;
 };
 
+// 添加导弹发射记录
+export const addMissileLaunchRecord = async (record) => {
+  try {
+    const data = readHomepageData();
+    if (!data.map) {
+      data.map = {};
+    }
+    if (!data.map.missileLaunches) {
+      data.map.missileLaunches = [];
+    }
+    
+    data.map.missileLaunches.unshift(record);
+    
+    // 只保留最近1000条记录
+    if (data.map.missileLaunches.length > 1000) {
+      data.map.missileLaunches = data.map.missileLaunches.slice(0, 1000);
+    }
+    
+    await writeHomepageData(data);
+    homepageCache = data;
+    return record;
+  } catch (error) {
+    console.error('Error adding missile launch record:', error);
+    throw error;
+  }
+};
+
+// 获取导弹发射历史
+export const getMissileLaunchHistory = async ({ walletAddress, limit, missileId }) => {
+  try {
+    const data = readHomepageData();
+    let history = data.map?.missileLaunches || [];
+    
+    // 过滤
+    if (walletAddress) {
+      history = history.filter(h => h.walletAddress === walletAddress);
+    }
+    if (missileId) {
+      history = history.filter(h => h.missileId === missileId);
+    }
+    
+    // 排序和限制
+    return history
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, parseInt(limit) || 20);
+  } catch (error) {
+    console.error('Error getting missile launch history:', error);
+    return [];
+  }
+};
+
+// 获取导弹发射统计
+export const getMissileLaunchStats = async (walletAddress) => {
+  try {
+    const data = readHomepageData();
+    let history = data.map?.missileLaunches || [];
+    
+    if (walletAddress) {
+      history = history.filter(h => h.walletAddress === walletAddress);
+    }
+    
+    const total = history.length;
+    const success = history.filter(h => h.status === 'success').length;
+    const maxDistance = Math.max(...history.map(h => h.distance || 0), 0);
+    
+    // 统计最常用的导弹
+    const missileCounts = {};
+    history.forEach(h => {
+      missileCounts[h.missileId] = (missileCounts[h.missileId] || 0) + 1;
+    });
+    const favoriteMissile = Object.keys(missileCounts).reduce((a, b) => 
+      missileCounts[a] > missileCounts[b] ? a : b, ''
+    );
+    
+    return {
+      totalLaunches: total,
+      successRate: total > 0 ? success / total : 0,
+      maxDistance,
+      favoriteMissile
+    };
+  } catch (error) {
+    console.error('Error getting missile launch stats:', error);
+    return {
+      totalLaunches: 0,
+      successRate: 0,
+      maxDistance: 0,
+      favoriteMissile: ''
+    };
+  }
+};
+
 export {
   readHomepageData,
   writeHomepageData,

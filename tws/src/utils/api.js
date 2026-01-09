@@ -2186,3 +2186,145 @@ export const getAssetHolders = async (assetId) => {
   }
 };
 
+/**
+ * 发射导弹（记录发射）
+ * @param {Object} launchData - 发射数据 { missileId, missileName, launchSite, target, walletAddress }
+ * @returns {Promise<Object>}
+ */
+export const postMissileLaunch = async (launchData) => {
+  try {
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/homepage/map/missile-launch`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(launchData)
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API postMissileLaunch error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取导弹发射历史
+ * @param {Object} params - 查询参数 { walletAddress, limit, missileId }
+ * @returns {Promise<Object>}
+ */
+export const getMissileLaunchHistory = async (params = {}) => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (params.walletAddress) queryParams.append('walletAddress', params.walletAddress);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.missileId) queryParams.append('missileId', params.missileId);
+    
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/homepage/map/missile-launch-history?${queryParams.toString()}`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API getMissileLaunchHistory error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 消耗Token用于导弹发射
+ * @param {string} walletAddress - 钱包地址
+ * @returns {Promise<Object>}
+ */
+export const consumeTokenForMissileLaunch = async (walletAddress) => {
+  try {
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/tot/consume`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress,
+          amount: 100, // 每次发射消耗100 TOT
+          reason: 'missile_launch'
+        })
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API consumeTokenForMissileLaunch error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 消耗Token用于地图功能操作
+ * @param {string} walletAddress - 钱包地址
+ * @param {string} actionType - 操作类型
+ * @param {number} amount - 消耗的TOT数量
+ * @param {string} reason - 原因/理由
+ * @returns {Promise<Object>}
+ */
+export const consumeTokenForAction = async (walletAddress, actionType, amount, reason) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/tot/consume`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          walletAddress,
+          amount,
+          reason: reason || actionType
+        })
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API consumeTokenForAction error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 记录地图功能操作
+ * @param {string} actionType - 操作类型
+ * @param {Object} data - 操作数据
+ * @returns {Promise<Object>}
+ */
+export const recordMapAction = async (actionType, data) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/map-actions/record`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          actionType,
+          ...data
+        })
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    console.error('API recordMapAction error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+

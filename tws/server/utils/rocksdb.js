@@ -324,6 +324,7 @@ export const close = async () => {
 
 // 命名空间常量
 export const NAMESPACES = {
+  MAP_ACTIONS: 'map_actions',
   USERS: 'users',
   RAW_ASSETS: 'rawAssets',
   SANITIZED_ASSETS: 'sanitizedAssets',
@@ -351,7 +352,8 @@ export const NAMESPACES = {
   RWA_LOCKS: 'rwaLocks', // 锁定记录
   TOT_PURCHASE_ORDERS: 'totPurchaseOrders', // TOT购买订单
   SHARE_HOLDINGS: 'rwaShareHoldings', // 份额持有记录
-  ETF_BASKETS: 'rwaEtfBaskets' // ETF篮子
+  ETF_BASKETS: 'rwaEtfBaskets', // ETF篮子
+  MAP_ACTIONS: 'mapActions' // 地图功能操作记录
 };
 
 export default {
