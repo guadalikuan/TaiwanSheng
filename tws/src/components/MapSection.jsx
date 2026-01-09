@@ -35,6 +35,57 @@ const mainlandNodes = [
 
 const formatAsset = (value) => `¥ ${(value / 100000000).toFixed(3)} B`;
 
+// 台湾导弹数据配置
+const MISSILE_DATA = [
+  {
+    id: 'hf2e',
+    name: '雄风-2E巡航导弹',
+    range: 1000, // 公里
+    color: '#ef4444', // 红色
+    strokeColor: '#dc2626',
+    fillOpacity: 0.15,
+    strokeOpacity: 0.6,
+    strokeWeight: 2
+  },
+  {
+    id: 'hf2e-er',
+    name: '雄风-2E增程型',
+    range: 1200, // 公里
+    color: '#f97316', // 橙色
+    strokeColor: '#ea580c',
+    fillOpacity: 0.12,
+    strokeOpacity: 0.5,
+    strokeWeight: 2
+  },
+  {
+    id: 'qintian',
+    name: '擎天远程超音速巡航导弹',
+    range: 2000, // 公里
+    color: '#eab308', // 黄色
+    strokeColor: '#ca8a04',
+    fillOpacity: 0.1,
+    strokeOpacity: 0.5,
+    strokeWeight: 2
+  },
+  {
+    id: 'yunfeng',
+    name: '云峰弹道导弹',
+    range: 2000, // 公里
+    color: '#fbbf24', // 浅黄色
+    strokeColor: '#f59e0b',
+    fillOpacity: 0.08,
+    strokeOpacity: 0.4,
+    strokeWeight: 2
+  }
+];
+
+// 台湾导弹发射基地位置（台北附近）
+const TAIWAN_LAUNCH_SITE = {
+  lat: 25.033,
+  lng: 121.5654,
+  name: 'Taipei Launch Site'
+};
+
 const validateAndFixCoordinates = (lat, lng, region = 'mainland') => {
   const bounds = region === 'taiwan' 
     ? { latMin: 21.9, latMax: 25.3, lngMin: 119.3, lngMax: 122.0 }
@@ -78,6 +129,13 @@ const MapSection = () => {
   const visitMarkersRef = useRef([]); // 访问记录标记
   const visitClustererRef = useRef(null); // MarkerClusterer实例
   const taiwanLanternOverlayRef = useRef(null);
+  const missileRangeCirclesRef = useRef([]); // 导弹射程覆盖圆形
+  const [missileVisibility, setMissileVisibility] = useState(
+    MISSILE_DATA.reduce((acc, missile) => {
+      acc[missile.id] = true; // 默认全部显示
+      return acc;
+    }, {})
+  );
 
   // 加载初始数据
   useEffect(() => {
@@ -207,6 +265,103 @@ const MapSection = () => {
     { type: 'future', label: '标记未来规划', icon: Target, color: 'yellow' }
   ];
 
+  // 绘制导弹射程覆盖范围
+  const drawMissileRangeCircles = () => {
+    if (!mainlandMapRef.current || !window.AMap) {
+      console.log('地图未初始化，延迟重试绘制导弹射程');
+      setTimeout(drawMissileRangeCircles, 1000);
+      return;
+    }
+
+    console.log('开始绘制导弹射程覆盖范围，可见性状态:', missileVisibility);
+
+    // 清除旧的圆形（添加安全检查）
+    if (missileRangeCirclesRef.current && missileRangeCirclesRef.current.length > 0) {
+      missileRangeCirclesRef.current.forEach((item) => {
+        try {
+          if (item && item.circle) {
+            item.circle.setMap(null);
+          }
+        } catch (e) {
+          console.warn('Failed to remove missile circle:', e);
+        }
+      });
+    }
+    missileRangeCirclesRef.current = [];
+
+    // 为每种导弹绘制射程圆
+    MISSILE_DATA.forEach((missile, index) => {
+      // 检查是否应该显示
+      if (!missileVisibility[missile.id]) {
+        console.log(`跳过 ${missile.name}，当前不可见`);
+        return;
+      }
+
+      try {
+        // 将公里转换为米（高德地图Circle使用米作为半径单位）
+        const radiusInMeters = missile.range * 1000;
+
+        console.log(`绘制 ${missile.name}，半径: ${radiusInMeters}米，中心: [${TAIWAN_LAUNCH_SITE.lng}, ${TAIWAN_LAUNCH_SITE.lat}]`);
+
+        // 创建圆形覆盖区域 - 使用 AMap.LngLat 对象
+        const circle = new window.AMap.Circle({
+          center: new window.AMap.LngLat(TAIWAN_LAUNCH_SITE.lng, TAIWAN_LAUNCH_SITE.lat),
+          radius: radiusInMeters,
+          fillColor: missile.color,
+          fillOpacity: missile.fillOpacity,
+          strokeColor: missile.strokeColor,
+          strokeOpacity: missile.strokeOpacity,
+          strokeWeight: missile.strokeWeight,
+          strokeStyle: 'dashed', // 使用虚线边框，符合军事标绘标准
+          zIndex: 50 + index, // 确保不同圆形的层级
+          cursor: 'default'
+        });
+
+        // 添加到地图
+        circle.setMap(mainlandMapRef.current);
+        missileRangeCirclesRef.current.push({ circle, missileId: missile.id });
+
+        console.log(`成功绘制 ${missile.name} 的射程覆盖范围`);
+
+        // 添加信息窗口（可选，显示导弹信息）
+        circle.on('click', () => {
+          const infoWindow = new window.AMap.InfoWindow({
+            content: `
+              <div style="padding: 8px; font-family: monospace; color: #fff; background: rgba(0,0,0,0.8); border: 1px solid ${missile.color};">
+                <div style="font-weight: bold; margin-bottom: 4px; color: ${missile.color};">
+                  ${missile.name}
+                </div>
+                <div style="font-size: 12px;">
+                  射程: <span style="color: ${missile.color};">${missile.range} 公里</span>
+                </div>
+              </div>
+            `,
+            offset: new window.AMap.Pixel(0, -10)
+          });
+          infoWindow.open(mainlandMapRef.current, new window.AMap.LngLat(TAIWAN_LAUNCH_SITE.lng, TAIWAN_LAUNCH_SITE.lat));
+        });
+
+      } catch (error) {
+        console.error(`Failed to draw missile range circle for ${missile.name}:`, error);
+      }
+    });
+
+    console.log(`已绘制 ${missileRangeCirclesRef.current.length} 个导弹射程覆盖范围`);
+  };
+
+  // 切换导弹覆盖范围的显示/隐藏
+  const toggleMissileVisibility = (missileId) => {
+    console.log('切换导弹可见性:', missileId, '当前状态:', missileVisibility[missileId]);
+    setMissileVisibility(prev => {
+      const newVisibility = {
+        ...prev,
+        [missileId]: !prev[missileId]
+      };
+      console.log('新的可见性状态:', newVisibility);
+      return newVisibility;
+    });
+  };
+
   // 加载安全屋列表并在地图上显示标记
   const loadSafehouses = async () => {
     if (!mainlandMapRef.current || !window.AMap) {
@@ -317,7 +472,10 @@ const MapSection = () => {
             // 加载安全屋列表
             setTimeout(() => {
               loadSafehouses();
-            }, 1000);
+              // 绘制导弹射程覆盖范围 - 确保地图完全准备好
+              console.log('准备绘制导弹射程覆盖范围');
+              drawMissileRangeCircles();
+            }, 1500); // 增加延迟确保地图完全加载
           });
         }
         // 备用：短延迟后再次尝试（防止 complete 事件未触发）
@@ -327,7 +485,10 @@ const MapSection = () => {
           }
           // 备用：延迟加载安全屋
           loadSafehouses();
-        }, 2000);
+          // 备用：绘制导弹射程覆盖范围
+          console.log('备用：准备绘制导弹射程覆盖范围');
+          drawMissileRangeCircles();
+        }, 2500); // 增加延迟
 
         // 加载访问记录（延迟执行，确保台湾地图已初始化）
         setTimeout(() => {
@@ -377,8 +538,23 @@ const MapSection = () => {
       mainlandMarkersRef.current = [];
       walletMarkersRef.current = [];
       visitMarkersRef.current = [];
+      // 清理导弹射程圆形
+      missileRangeCirclesRef.current.forEach(({ circle }) => {
+        try { circle.setMap(null); } catch (e) {}
+      });
+      missileRangeCirclesRef.current = [];
     };
   }, []);
+
+  // 当导弹可见性改变时重新绘制
+  useEffect(() => {
+    if (mainlandMapRef.current && window.AMap) {
+      console.log('导弹可见性变化，重新绘制');
+      drawMissileRangeCircles();
+    } else {
+      console.log('地图未准备好，等待初始化');
+    }
+  }, [missileVisibility]);
 
   // 添加台湾地图标记 - v1.4.15 版本
   const addTaiwanMarker = (lat, lng, nodeId) => {
@@ -956,6 +1132,40 @@ const MapSection = () => {
             </div>
             <div className="absolute bottom-4 right-4 z-10 pointer-events-auto">
               <MapNewTagsBox assetLogs={assetLogs} assetValue={assetValue} unitCount={unitCount} />
+            </div>
+            {/* 导弹射程覆盖图例 */}
+            <div className="pointer-events-auto absolute top-4 right-4 bg-black/90 border border-red-900 px-4 py-3 rounded-lg max-w-xs z-10">
+              <div className="text-[10px] tracking-[0.2em] uppercase text-red-600 mb-3 font-mono font-bold">导弹射程覆盖</div>
+              {MISSILE_DATA.map((missile, index) => {
+                const isVisible = missileVisibility[missile.id];
+                return (
+                  <div 
+                    key={missile.id}
+                    onClick={() => toggleMissileVisibility(missile.id)}
+                    className="flex items-center gap-2 mb-2 text-xs cursor-pointer hover:bg-red-900/30 px-2 py-1 rounded transition-colors"
+                  >
+                    <div 
+                      className="w-4 h-4 rounded-full border-2 flex-shrink-0"
+                      style={{
+                        backgroundColor: isVisible ? `${missile.color}${Math.round(missile.fillOpacity * 255).toString(16).padStart(2, '0')}` : 'transparent',
+                        borderColor: isVisible ? missile.strokeColor : '#666',
+                        borderStyle: 'dashed',
+                        opacity: isVisible ? 1 : 0.4
+                      }}
+                    />
+                    <div className="flex-1 font-mono text-white">
+                      <div className={`text-[10px] ${isVisible ? '' : 'line-through opacity-50'}`}>{missile.name}</div>
+                      <div className={`text-[9px] ${isVisible ? 'text-gray-400' : 'text-gray-600'}`}>{missile.range}km</div>
+                    </div>
+                    <div className="text-[8px] text-gray-500">
+                      {isVisible ? '●' : '○'}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="text-[8px] text-gray-600 mt-2 pt-2 border-t border-gray-800 font-mono">
+                点击切换显示/隐藏
+              </div>
             </div>
             <div ref={mainlandMapContainerRef} className="amap-container w-full h-full rounded-lg overflow-hidden" />
           </div>
