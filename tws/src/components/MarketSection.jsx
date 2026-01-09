@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Activity, ArrowUp, ArrowDown, Database, Globe, ShoppingBag } from 'lucide-react';
+import { Activity, ArrowUp, ArrowDown, Database, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { generateUniqueId } from '../utils/uniqueId';
 import { getMarketData } from '../utils/api';
@@ -593,13 +593,6 @@ const MarketSection = () => {
                 <div className={`w-2 h-2 rounded-full mr-2 ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
                 <span className="text-[10px] font-mono text-slate-300">{isOnline ? 'NETWORK ONLINE' : 'NETWORK OFFLINE'}</span>
               </div>
-              <button
-                onClick={() => navigate('/market')}
-                className="bg-yellow-600/20 border border-yellow-600/50 text-yellow-500 hover:bg-yellow-600 hover:text-black px-4 py-1.5 rounded text-xs font-mono tracking-widest transition-all flex items-center gap-2"
-              >
-                <ShoppingBag size={14} />
-                进入交易
-              </button>
             </div>
           </div>
           
