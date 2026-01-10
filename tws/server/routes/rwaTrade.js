@@ -56,6 +56,7 @@ import {
   deleteEtfBasket
 } from '../utils/rwaEtfManager.js';
 import blockchainService from '../utils/blockchain.js';
+import { mintStrategicAsset, verifyStrategicAssetPurchase } from '../utils/solanaBlockchain.js';
 
 const router = express.Router();
 
@@ -1280,6 +1281,137 @@ router.get('/asset/:assetId/holders', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to get asset holders',
+      message: error.message
+    });
+  }
+});
+
+// ==================== 战略资产购买API ====================
+
+// POST /api/rwa-trade/buy-strategic/:assetId - 购买战略资产（使用TOT支付，Solana链上交易）
+router.post('/buy-strategic/:assetId', authenticate, async (req, res) => {
+  try {
+    const { assetId } = req.params;
+    const { txSignature } = req.body;
+    const userId = req.user?.address || req.user?.username || req.user?.id;
+    
+    // 获取资产数据
+    const assetData = await getAssetById(assetId);
+    if (!assetData.sanitized && !assetData.raw) {
+      return res.status(404).json({
+        success: false,
+        error: 'Asset not found'
+      });
+    }
+    
+    const asset = assetData.sanitized || assetData.raw;
+    
+    // 检查资产类型是否为战略资产
+    const strategicAssetTypes = ['矿产', '仓库', '航船', '芯片'];
+    const assetType = asset.assetType || asset.type || '房产';
+    
+    if (!strategicAssetTypes.includes(assetType)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Not a strategic asset',
+        message: '此接口仅支持战略资产（矿产、仓库、航船、芯片）'
+      });
+    }
+    
+    // 计算资产价格
+    const assetPrice = asset.financials?.totalTokens || 
+                      asset.tokenPrice || 
+                      asset.price || 0;
+    
+    // 如果有交易签名，验证交易
+    if (txSignature) {
+      try {
+        // 验证交易
+        const verificationResult = await verifyStrategicAssetPurchase(
+          txSignature,
+          userId,
+          assetPrice
+        );
+        
+        if (!verificationResult.success) {
+          return res.status(400).json({
+            success: false,
+            error: 'Transaction verification failed',
+            message: '交易验证失败'
+          });
+        }
+        
+        // 更新资产状态
+        const updatedAsset = await updateAssetStatus(assetId, 'LOCKED', {
+          purchasedBy: userId,
+          purchasedAt: Date.now(),
+          purchasePrice: assetPrice,
+          purchaseTxHash: txSignature,
+          purchaseType: 'strategic_asset',
+          blockchain: 'solana'
+        });
+        
+        return res.json({
+          success: true,
+          message: 'Strategic asset purchase confirmed',
+          asset: updatedAsset,
+          blockchain: {
+            txHash: txSignature,
+            confirmed: verificationResult.confirmed,
+            blockTime: verificationResult.blockTime
+          }
+        });
+      } catch (error) {
+        console.error('Error verifying transaction:', error);
+        return res.status(400).json({
+          success: false,
+          error: 'Transaction verification error',
+          message: error.message
+        });
+      }
+    } else {
+      // 没有交易签名，构建交易并返回给前端
+      try {
+        // 检查余额
+        const balanceCheck = await checkBalance(userId, assetPrice);
+        if (!balanceCheck.sufficient) {
+          return res.status(400).json({
+            success: false,
+            error: 'Insufficient balance',
+            message: `需要 ${assetPrice} TOT，当前余额 ${balanceCheck.balance} TOT`
+          });
+        }
+        
+        // 构建交易
+        const transactionResult = await mintStrategicAsset(
+          assetData,
+          userId,
+          assetPrice
+        );
+        
+        return res.json({
+          success: true,
+          message: 'Transaction built, please sign',
+          transaction: transactionResult.transaction,
+          buyerAddress: transactionResult.buyerAddress,
+          platformAddress: transactionResult.platformAddress,
+          amount: transactionResult.amount,
+          assetId: transactionResult.assetId
+        });
+      } catch (error) {
+        console.error('Error building transaction:', error);
+        return res.status(400).json({
+          success: false,
+          error: 'Transaction build failed',
+          message: error.message
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error in buy-strategic:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to process strategic asset purchase',
       message: error.message
     });
   }

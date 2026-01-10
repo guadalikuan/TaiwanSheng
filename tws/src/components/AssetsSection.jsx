@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Database, ShieldCheck, ArrowRight, Lock, FileText, Globe, Zap, Key, Package, Github, Building2, Wheat, FlaskConical, Wine, Palette, Plus } from 'lucide-react';
+import { Database, ShieldCheck, ArrowRight, Lock, FileText, Globe, Zap, Key, Package, Github, Building2, Wheat, FlaskConical, Wine, Palette, Plus, Mountain, Warehouse, Ship, Cpu, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getHomepageAssets } from '../utils/api';
 import { useServerStatus } from '../contexts/ServerStatusContext';
@@ -20,6 +20,10 @@ const AssetsSection = () => {
     { id: '科创', icon: FlaskConical, color: 'text-purple-400' },
     { id: '酒水', icon: Wine, color: 'text-red-400' },
     { id: '文创', icon: Palette, color: 'text-yellow-400' },
+    { id: '矿产', icon: Mountain, color: 'text-orange-400' },
+    { id: '仓库', icon: Warehouse, color: 'text-gray-400' },
+    { id: '航船', icon: Ship, color: 'text-cyan-400' },
+    { id: '芯片', icon: Cpu, color: 'text-indigo-400' },
   ];
 
   // 載入資產列表（根据类型筛选）
@@ -89,7 +93,7 @@ const AssetsSection = () => {
         </div>
 
         {/* 资产类型选项卡 */}
-        <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar">
+        <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar items-center">
           {assetTypes.map((type) => {
             const Icon = type.icon;
             const isActive = activeTab === type.id;
@@ -110,6 +114,14 @@ const AssetsSection = () => {
               </button>
             );
           })}
+          {/* 查看全部按钮 */}
+          <button
+            onClick={() => navigate('/assets/all')}
+            className="flex items-center gap-2 px-6 py-3 rounded-lg font-mono text-sm transition-all whitespace-nowrap bg-slate-800/50 text-gold border-2 border-gold hover:bg-gold hover:text-black"
+          >
+            <Eye size={18} />
+            查看全部
+          </button>
         </div>
       </div>
 
@@ -163,6 +175,14 @@ const AssetsSection = () => {
                 <Wine className="text-red-700 opacity-20 w-16 h-16" />
               ) : activeTab === '文创' ? (
                 <Palette className="text-yellow-700 opacity-20 w-16 h-16" />
+              ) : activeTab === '矿产' ? (
+                <Mountain className="text-orange-700 opacity-20 w-16 h-16" />
+              ) : activeTab === '仓库' ? (
+                <Warehouse className="text-gray-700 opacity-20 w-16 h-16" />
+              ) : activeTab === '航船' ? (
+                <Ship className="text-cyan-700 opacity-20 w-16 h-16" />
+              ) : activeTab === '芯片' ? (
+                <Cpu className="text-indigo-700 opacity-20 w-16 h-16" />
               ) : (
                 <Database className="text-slate-700 opacity-20 w-16 h-16" />
               )}

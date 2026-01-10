@@ -891,6 +891,39 @@ export const getHomepageAssets = async (assetType = '房产') => {
 };
 
 /**
+ * 获取所有资产（支持搜索、筛选、排序、分页）
+ * @param {Object} filters - 筛选条件
+ * @returns {Promise<Object>}
+ */
+export const getAllAssets = async (filters = {}) => {
+  try {
+    const params = new URLSearchParams();
+    if (filters.type) params.append('type', filters.type);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.minPrice) params.append('minPrice', filters.minPrice);
+    if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
+    if (filters.minYield) params.append('minYield', filters.minYield);
+    if (filters.city) params.append('city', filters.city);
+    if (filters.search) params.append('search', filters.search);
+    if (filters.sort) params.append('sort', filters.sort);
+    if (filters.page) params.append('page', filters.page);
+    if (filters.limit) params.append('limit', filters.limit);
+
+    return await fetchWithRetry(
+      `${API_BASE_URL}/api/homepage/assets/all?${params.toString()}`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      },
+      3,
+      1000
+    );
+  } catch (error) {
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
  * 获取倒计时信息（开放API）
  * @returns {Promise<Object>}
  */
@@ -2041,6 +2074,31 @@ export const buyEtf = async (etfId, investmentAmount, txSignature) => {
     return await handleResponse(response);
   } catch (error) {
     console.error('API buyEtf error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 购买战略资产（使用TOT支付，Solana链上交易）
+ * @param {string} assetId - 资产ID
+ * @param {string} txSignature - 交易签名（可选，第一次调用不传，第二次调用时传入）
+ * @returns {Promise<Object>}
+ */
+export const buyStrategicAsset = async (assetId, txSignature = null) => {
+  try {
+    const token = localStorage.getItem('tws_token');
+    const response = await fetch(`${API_BASE_URL}/api/rwa-trade/buy-strategic/${assetId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      credentials: 'include',
+      body: JSON.stringify(txSignature ? { txSignature } : {})
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('API buyStrategicAsset error:', error);
     return { success: false, message: error.message || '网络错误，请检查服务器连接' };
   }
 };

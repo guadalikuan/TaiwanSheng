@@ -18,6 +18,7 @@ import MarketDetailPage from './components/MarketDetailPage';
 import MapNodeDetailPage from './components/MapNodeDetailPage';
 import AssetDetailPage from './components/AssetDetailPage';
 import MapAssetDetailPage from './components/MapAssetDetailPage';
+import AllAssetsPage from './components/AllAssetsPage';
 import ChanganLetter from './components/ChanganLetter';
 import TelegramHome from './telegramapp/TelegramHome';
 import Market from './telegramapp/Market';
@@ -75,6 +76,7 @@ const App = () => (
     <Route path="/map-node/:id" element={<MapNodeDetailPage />} />
     <Route path="/asset-detail/:id" element={<AssetDetailPage />} />
     <Route path="/map-asset/:id" element={<MapAssetDetailPage />} />
+    <Route path="/assets/all" element={<AllAssetsPage />} />
     <Route path="/letter" element={<ChanganLetter />} />
     <Route path="/tg" element={<TelegramHome />} /> 
     <Route path="/tg-market" element={<Market />} />

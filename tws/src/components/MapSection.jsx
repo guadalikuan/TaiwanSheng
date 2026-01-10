@@ -1533,7 +1533,7 @@ const MapSection = () => {
    }, []);
 
   return (
-    <div className="w-full h-full bg-slate-950 relative overflow-hidden flex flex-col pt-16 md:pt-20">
+    <div className="w-full h-full bg-slate-950 relative overflow-hidden flex flex-col" style={{ paddingTop: '4rem' }}>
       <div className="absolute top-16 md:top-20 left-0 w-full h-16 z-20 bg-gradient-to-b from-slate-900 to-transparent flex justify-between items-center px-8 border-b border-slate-800/50">
         <div className="flex items-center space-x-4">
           <div className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
@@ -1551,9 +1551,9 @@ const MapSection = () => {
         </div>
       </div>
 
-      <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-2 gap-4 px-4 md:px-8 pt-20 pb-2 min-h-0">
-        <article className="map-panel h-full min-h-0">
-          <div className="mainland-map-container h-full relative">
+      <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-2 gap-4 px-4 md:px-8 pt-16 pb-2" style={{ minHeight: 0 }}>
+        <article className="map-panel" style={{ height: '100%', minHeight: 0 }}>
+          <div className="mainland-map-container" style={{ height: '100%', position: 'relative' }}>
             {/* 导弹射程覆盖图例 */}
             <div className="pointer-events-auto absolute top-4 right-4 bg-black/90 border border-red-900 px-4 py-3 rounded-lg max-w-xs z-10">
               <div className="text-[10px] tracking-[0.2em] uppercase text-red-600 mb-3 font-mono font-bold">导弹射程覆盖</div>
@@ -1588,12 +1588,12 @@ const MapSection = () => {
                 点击切换显示/隐藏
               </div>
             </div>
-            <div ref={mainlandMapContainerRef} className="amap-container w-full h-full rounded-lg overflow-hidden" />
+            <div ref={mainlandMapContainerRef} className="amap-container w-full h-full rounded-lg overflow-hidden" style={{ height: '100%' }} />
           </div>
         </article>
 
-        <article className="map-panel h-full min-h-0">
-          <div className="tw-map-container h-full relative">
+        <article className="map-panel" style={{ height: '100%', minHeight: 0 }}>
+          <div className="tw-map-container" style={{ height: '100%', position: 'relative' }}>
             <div className="tw-scan-line" />
             
             {/* 军演区域图例 */}
@@ -1631,7 +1631,7 @@ const MapSection = () => {
                 点击切换显示/隐藏
               </div>
             </div>
-            <div ref={taiwanMapContainerRef} className="amap-container w-full h-full rounded-lg overflow-hidden relative">
+            <div ref={taiwanMapContainerRef} className="amap-container w-full h-full rounded-lg overflow-hidden relative" style={{ height: '100%' }}>
               {taiwanMapRef.current && (
                 <MapLanternOverlay
                   ref={taiwanLanternOverlayRef}

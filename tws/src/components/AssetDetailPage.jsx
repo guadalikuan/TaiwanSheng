@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, DollarSign, TrendingUp, Lock, Unlock, FileText, Calendar } from 'lucide-react';
+import { ArrowLeft, MapPin, DollarSign, TrendingUp, Lock, Unlock, FileText, Calendar, Shield, Zap, AlertTriangle } from 'lucide-react';
 import { getAssetById } from '../utils/api';
+import StrategicAssetPurchase from './StrategicAssetPurchase';
 
 const AssetDetailPage = () => {
   const navigate = useNavigate();
@@ -162,6 +163,98 @@ const AssetDetailPage = () => {
             </div>
           </div>
         </div>
+
+        {/* 战备属性（仅战略资产显示） */}
+        {['矿产', '仓库', '航船', '芯片'].includes(asset.assetType || asset.type || '') && asset.strategicAttributes && (
+          <div className="bg-slate-900/50 border border-cyan-800 rounded-lg p-6 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Shield className="text-cyan-400" size={24} />
+              <h3 className="text-xl font-bold font-mono">战备属性</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield size={16} className="text-cyan-400" />
+                  <span className="text-slate-400 text-xs font-mono uppercase">防御等级</span>
+                </div>
+                <div className={`text-lg font-bold font-mono ${
+                  asset.strategicAttributes.defenseRating === 'HIGH'
+                    ? 'text-green-400'
+                    : asset.strategicAttributes.defenseRating === 'MED'
+                    ? 'text-yellow-400'
+                    : 'text-red-400'
+                }`}>
+                  {asset.strategicAttributes.defenseRating || 'MED'}
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap size={16} className="text-yellow-400" />
+                  <span className="text-slate-400 text-xs font-mono uppercase">战略价值</span>
+                </div>
+                <div className="text-lg font-bold font-mono text-yellow-400">
+                  {asset.strategicAttributes.strategicValue || 0} / 100
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle size={16} className="text-orange-400" />
+                  <span className="text-slate-400 text-xs font-mono uppercase">战备状态</span>
+                </div>
+                <div className={`text-lg font-bold font-mono ${
+                  asset.strategicAttributes.readinessLevel === 'READY'
+                    ? 'text-green-400'
+                    : 'text-yellow-400'
+                }`}>
+                  {asset.strategicAttributes.readinessLevel === 'READY' ? '就绪' : '准备中'}
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText size={16} className="text-purple-400" />
+                  <span className="text-slate-400 text-xs font-mono uppercase">关键基础设施</span>
+                </div>
+                <div className={`text-lg font-bold font-mono ${
+                  asset.strategicAttributes.criticalInfrastructure
+                    ? 'text-red-400'
+                    : 'text-slate-500'
+                }`}>
+                  {asset.strategicAttributes.criticalInfrastructure ? '是' : '否'}
+                </div>
+              </div>
+            </div>
+
+            {asset.strategicAttributes.supplyChain && asset.strategicAttributes.supplyChain.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-slate-800">
+                <div className="text-slate-400 text-xs font-mono uppercase mb-2">供应链依赖</div>
+                <div className="flex flex-wrap gap-2">
+                  {asset.strategicAttributes.supplyChain.map((chain, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-slate-800 text-slate-300 rounded text-xs font-mono"
+                    >
+                      {chain}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 战略资产购买组件 */}
+        {['矿产', '仓库', '航船', '芯片'].includes(asset.assetType || asset.type || '') && (
+          <StrategicAssetPurchase 
+            asset={asset} 
+            onPurchaseSuccess={(result) => {
+              // 购买成功后刷新资产数据
+              window.location.reload();
+            }}
+          />
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-4">

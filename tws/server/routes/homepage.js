@@ -412,6 +412,258 @@ router.get('/assets', async (req, res) => {
   }
 });
 
+// GET /api/homepage/assets/all - 获取所有资产（支持搜索、筛选、排序、分页）
+router.get('/assets/all', async (req, res) => {
+  try {
+    const {
+      type,           // 资产类型
+      status,          // 状态筛选
+      minPrice,        // 最低价格
+      maxPrice,        // 最高价格
+      minYield,        // 最低收益率
+      city,            // 城市筛选
+      search,          // 搜索关键词（名称/代号）
+      sort = 'time',   // 排序：price_asc, price_desc, yield_asc, yield_desc, time
+      page = 1,        // 页码
+      limit = 20       // 每页数量
+    } = req.query;
+
+    const { getApprovedAssets, getAllAssets, getAssetsByStatus, getAssetsByType } = await import('../utils/storage.js');
+    const { getAll, NAMESPACES } = await import('../utils/rocksdb.js');
+
+    // 获取所有资产
+    let allAssets = [];
+
+    // 根据类型获取资产
+    if (type && type !== '全部') {
+      if (type === '房产') {
+        allAssets = await getApprovedAssets();
+        const mintingAssets = await getAssetsByStatus('MINTING');
+        allAssets = [...allAssets, ...mintingAssets];
+      } else if (type === '科创') {
+        const techProjects = await getAll(NAMESPACES.TECH_PROJECTS);
+        allAssets = techProjects
+          .map(p => p.value)
+          .filter(p => p.status === 'FUNDING' || p.status === 'FUNDED')
+          .map(project => ({
+            id: project.id,
+            codeName: project.codeName,
+            title: project.projectName,
+            assetType: '科创',
+            price: project.targetAmount,
+            yield: project.yield || '15%',
+            status: project.status === 'FUNDING' ? 'AVAILABLE' : 'RESERVED',
+            location: project.location || '科技园区',
+            city: project.location || '科技园区',
+            tokenPrice: project.targetAmount,
+            financials: {
+              totalTokens: project.targetAmount,
+              yield: project.yield || '15% APY'
+            }
+          }));
+      } else {
+        allAssets = await getAssetsByType(type);
+      }
+    } else {
+      // 获取所有类型的资产
+      const propertyAssets = await getApprovedAssets();
+      const mintingAssets = await getAssetsByStatus('MINTING');
+      const techProjects = await getAll(NAMESPACES.TECH_PROJECTS);
+      const techAssets = techProjects
+        .map(p => p.value)
+        .filter(p => p.status === 'FUNDING' || p.status === 'FUNDED')
+        .map(project => ({
+          id: project.id,
+          codeName: project.codeName,
+          title: project.projectName,
+          assetType: '科创',
+          price: project.targetAmount,
+          yield: project.yield || '15%',
+          status: project.status === 'FUNDING' ? 'AVAILABLE' : 'RESERVED',
+          location: project.location || '科技园区',
+          city: project.location || '科技园区',
+          tokenPrice: project.targetAmount,
+          financials: {
+            totalTokens: project.targetAmount,
+            yield: project.yield || '15% APY'
+          }
+        }));
+
+      // 获取其他类型的资产
+      const otherTypes = ['农田', '酒水', '文创', '矿产', '仓库', '航船', '芯片'];
+      const otherAssets = [];
+      for (const assetType of otherTypes) {
+        const assets = await getAssetsByType(assetType);
+        otherAssets.push(...assets);
+      }
+
+      allAssets = [...propertyAssets, ...mintingAssets, ...techAssets, ...otherAssets];
+    }
+
+    // 获取所有资产数据以匹配原始数据
+    const allAssetsData = await getAllAssets();
+
+    // 转换为统一格式
+    let formattedAssets = allAssets.map((asset, index) => {
+      const sanitized = asset;
+      
+      // 尝试从原始数据中获取城市信息
+      let cityName = 'UNKNOWN';
+      if (sanitized.internalRef) {
+        const rawAsset = allAssetsData.raw.find(r => r.id === sanitized.internalRef);
+        if (rawAsset && rawAsset.city) {
+          cityName = rawAsset.city;
+        }
+      }
+      
+      if (cityName === 'UNKNOWN' && sanitized.locationTag) {
+        const locationMap = {
+          'CN-NW-CAPITAL': '西安',
+          'CN-NW-SUB': '咸阳',
+          'CN-IND-HUB': '宝鸡',
+          'CN-QINLING-MTN': '商洛',
+          'CN-INT-RES': '汉中'
+        };
+        cityName = locationMap[sanitized.locationTag] || sanitized.locationTag;
+      }
+
+      if (cityName === 'UNKNOWN' && sanitized.city) {
+        cityName = sanitized.city;
+      }
+
+      // 从yield字符串中提取百分比数字
+      let yieldPercent = 10;
+      if (sanitized.financials && sanitized.financials.yield) {
+        const yieldMatch = sanitized.financials.yield.match(/(\d+\.?\d*)%/);
+        if (yieldMatch) {
+          yieldPercent = parseFloat(yieldMatch[1]);
+        }
+      }
+
+      // 计算价格
+      const price = sanitized.tokenPrice || (sanitized.financials && sanitized.financials.totalTokens) || sanitized.price || 0;
+      const numericPrice = typeof price === 'string' ? parseFloat(price.replace(/[^0-9.]/g, '')) : price;
+
+      // 从securityLevel转换为risk等级
+      const riskMap = {
+        5: 'LOW',
+        4: 'LOW',
+        3: 'MED',
+        2: 'HIGH',
+        1: 'HIGH'
+      };
+      const risk = riskMap[sanitized.securityLevel] || 'MED';
+
+      return {
+        id: sanitized.id || `asset_${index + 1}`,
+        city: cityName,
+        title: sanitized.codeName || sanitized.title || 'Unknown Asset',
+        type: sanitized.zoneClass || sanitized.specs?.type || sanitized.assetType || 'Residential',
+        assetType: sanitized.assetType || '房产',
+        price: numericPrice,
+        priceDisplay: `${numericPrice.toLocaleString()} USDT`,
+        yield: yieldPercent,
+        yieldDisplay: `${yieldPercent.toFixed(0)}%`,
+        status: sanitized.status === 'AVAILABLE' ? 'AVAILABLE' : (sanitized.status === 'MINTING' ? 'MINTING' : (sanitized.status === 'RESERVED' ? 'RESERVED' : 'LOCKED')),
+        risk: risk,
+        createdAt: sanitized.createdAt || sanitized.mintedAt || Date.now()
+      };
+    });
+
+    // 应用筛选
+    if (status) {
+      formattedAssets = formattedAssets.filter(a => a.status === status);
+    }
+
+    if (city) {
+      formattedAssets = formattedAssets.filter(a => a.city && a.city.includes(city));
+    }
+
+    if (minPrice) {
+      const min = parseFloat(minPrice);
+      formattedAssets = formattedAssets.filter(a => a.price >= min);
+    }
+
+    if (maxPrice) {
+      const max = parseFloat(maxPrice);
+      formattedAssets = formattedAssets.filter(a => a.price <= max);
+    }
+
+    if (minYield) {
+      const min = parseFloat(minYield);
+      formattedAssets = formattedAssets.filter(a => a.yield >= min);
+    }
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      formattedAssets = formattedAssets.filter(a => 
+        a.title.toLowerCase().includes(searchLower) ||
+        a.city.toLowerCase().includes(searchLower) ||
+        (a.id && a.id.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // 应用排序
+    switch (sort) {
+      case 'price_asc':
+        formattedAssets.sort((a, b) => a.price - b.price);
+        break;
+      case 'price_desc':
+        formattedAssets.sort((a, b) => b.price - a.price);
+        break;
+      case 'yield_asc':
+        formattedAssets.sort((a, b) => a.yield - b.yield);
+        break;
+      case 'yield_desc':
+        formattedAssets.sort((a, b) => b.yield - a.yield);
+        break;
+      case 'time':
+      default:
+        formattedAssets.sort((a, b) => b.createdAt - a.createdAt);
+        break;
+    }
+
+    // 分页
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 20;
+    const total = formattedAssets.length;
+    const totalPages = Math.ceil(total / limitNum);
+    const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = startIndex + limitNum;
+    const paginatedAssets = formattedAssets.slice(startIndex, endIndex);
+
+    res.json({
+      success: true,
+      data: {
+        assets: paginatedAssets,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages
+        },
+        filters: {
+          type: type || '全部',
+          status,
+          minPrice,
+          maxPrice,
+          minYield,
+          city,
+          search,
+          sort
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error getting all assets:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get assets',
+      message: error.message
+    });
+  }
+});
+
 // GET /api/homepage/all - 一次性获取所有屏数据（可选优化）
 router.get('/all', async (req, res) => {
   try {
