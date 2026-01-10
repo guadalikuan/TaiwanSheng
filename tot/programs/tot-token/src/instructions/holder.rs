@@ -39,7 +39,11 @@ pub fn initialize_holder_handler(ctx: Context<InitializeHolder>) -> Result<()> {
     let clock = Clock::get()?;
 
     holder_info.owner = ctx.accounts.holder_wallet.key();
-    holder_info.token_account = Pubkey::default(); // 后续可设置
+    // token_account初始化为default，在用户首次接收代币时自动设置
+    // 注意：由于transfer.rs中接收者持有者账户是Option类型，且没有自动初始化机制，
+    // 当前设计允许token_account在初始化时为空，后续在首次接收代币时设置。
+    // 如果需要在初始化时设置，需要在transfer指令中添加自动初始化逻辑。
+    holder_info.token_account = Pubkey::default();
     holder_info.first_hold_time = clock.unix_timestamp;
     holder_info.last_transaction_time = clock.unix_timestamp;
     holder_info.weighted_hold_days = 0;
@@ -82,6 +86,8 @@ pub fn freeze_holder_handler(
     reason_code: u8,
 ) -> Result<()> {
     let holder_info = &mut ctx.accounts.holder_info;
+    let clock = Clock::get()?;
+    let timestamp = clock.unix_timestamp;
     
     require!(!holder_info.is_frozen, TotError::HolderFrozen);
     
@@ -93,7 +99,7 @@ pub fn freeze_holder_handler(
     emit!(AccountFrozen {
         holder: holder_info.owner,
         reason_code,
-        timestamp: Clock::get()?.unix_timestamp,
+        timestamp,
     });
 
     Ok(())
@@ -124,6 +130,8 @@ pub struct UnfreezeHolder<'info> {
 /// 解冻持有者处理器
 pub fn unfreeze_holder_handler(ctx: Context<UnfreezeHolder>) -> Result<()> {
     let holder_info = &mut ctx.accounts.holder_info;
+    let clock = Clock::get()?;
+    let timestamp = clock.unix_timestamp;
     
     require!(holder_info.is_frozen, TotError::HolderNotFrozen);
     
@@ -134,7 +142,7 @@ pub fn unfreeze_holder_handler(ctx: Context<UnfreezeHolder>) -> Result<()> {
     
     emit!(AccountUnfrozen {
         holder: holder_info.owner,
-        timestamp: Clock::get()?.unix_timestamp,
+        timestamp,
     });
 
     Ok(())

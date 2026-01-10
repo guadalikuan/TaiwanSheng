@@ -50,11 +50,35 @@ pub fn calculate_amount_after_tax(amount: u64, tax_bps: u16) -> Result<(u64, u64
 pub fn apply_discount_to_tax(base_tax_bps: u16, discount_bps: u16) -> Result<u16> {
     let discount_amount = calculate_bps(base_tax_bps as u64, discount_bps)?;
     let discounted_tax = safe_sub(base_tax_bps as u64, discount_amount)?;
+    // 安全转换：由于base_tax_bps是u16，discounted_tax不会超过u16最大值
+    // 但为了防御性编程，添加显式检查
+    require!(
+        discounted_tax <= u16::MAX as u64,
+        TotError::MathOverflow
+    );
     Ok(discounted_tax as u16)
 }
 
 /// 计算持有天数
-/// 从首次购买时间到当前时间的天数
+/// 
+/// 从首次购买时间到当前时间的天数。
+/// 
+/// # 参数
+/// * `first_buy_time` - 首次购买时间（Unix时间戳）
+/// * `current_time` - 当前时间（Unix时间戳）
+/// 
+/// # 返回值
+/// * `u64` - 持有天数（向下取整）
+/// 
+/// # 边界情况
+/// * 如果`current_time <= first_buy_time`，返回0
+/// * 如果时间差小于86400秒（1天），返回0
+/// 
+/// # 示例
+/// ```rust
+/// let days = calculate_holding_days(1000000000, 1000086400); // 返回1
+/// let days = calculate_holding_days(1000000000, 1000000000); // 返回0
+/// ```
 pub fn calculate_holding_days(first_buy_time: i64, current_time: i64) -> u64 {
     if current_time <= first_buy_time {
         return 0;

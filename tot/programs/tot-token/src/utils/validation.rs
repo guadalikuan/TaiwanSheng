@@ -132,7 +132,7 @@ pub fn validate_bps(bps: u16, max_bps: u16) -> Result<()> {
 
 /// 验证时间戳
 /// 
-/// 检查时间戳是否有效（必须大于0）。
+/// 检查时间戳是否有效（必须在合理范围内）。
 /// 
 /// # 参数
 /// * `timestamp` - Unix时间戳
@@ -142,12 +142,21 @@ pub fn validate_bps(bps: u16, max_bps: u16) -> Result<()> {
 /// 
 /// # 验证规则
 /// - 时间戳必须 > 0
+/// - 时间戳必须在合理范围内（1970-2100年）
+///   - 最小值: 0 (1970-01-01 00:00:00 UTC)
+///   - 最大值: 4102444800 (2100-01-01 00:00:00 UTC)
 /// 
 /// # 使用场景
 /// - 验证解锁时间
 /// - 验证释放时间
 pub fn validate_timestamp(timestamp: i64) -> Result<()> {
     require!(timestamp > 0, TotError::InvalidTimestamp);
+    // 检查时间戳是否在合理范围内（1970-2100年）
+    // 2100-01-01 00:00:00 UTC 的时间戳是 4102444800
+    require!(
+        timestamp <= 4102444800,
+        TotError::InvalidTimestamp
+    );
     Ok(())
 }
 

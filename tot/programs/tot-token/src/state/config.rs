@@ -9,7 +9,8 @@
 // ============================================
 
 use anchor_lang::prelude::*;
-use crate::state::tax::TaxConfig;
+// 注意：config.rs中只存储tax_config的地址（Pubkey），不直接使用TaxConfig类型
+// 因此不需要导入TaxConfig，这样可以减少模块间的依赖耦合
 
 /// 全局配置账户
 /// 

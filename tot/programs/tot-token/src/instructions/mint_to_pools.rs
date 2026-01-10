@@ -123,19 +123,28 @@ pub fn handler(ctx: Context<MintToPools>) -> Result<()> {
             ),
             *amount,
         )?;
-        
-        msg!("铸造 {} 到 {}", amount, token_account.key());
     }
+    
+    // 验证总供应量是否正确
+    // 确保所有代币都已成功铸造到池子
+    require!(
+        mint.supply == TOTAL_SUPPLY,
+        TotError::InvalidMint
+    );
     
     // 更新配置
     config.total_minted = TOTAL_SUPPLY;
     
-    msg!("总供应量铸造完成: {}", TOTAL_SUPPLY);
-    msg!("胜利日基金: {}", allocation::VICTORY_FUND);
-    msg!("历史重铸池: {}", allocation::HISTORY_LP);
-    msg!("认知作战池: {}", allocation::CYBER_ARMY);
-    msg!("外资统战池: {}", allocation::GLOBAL_ALLIANCE);
-    msg!("资产锚定池: {}", allocation::ASSET_ANCHOR);
+    // 合并所有消息为一个，减少gas消耗
+    msg!(
+        "铸造完成: 总供应量={}, 胜利日基金={}, 历史重铸池={}, 认知作战池={}, 外资统战池={}, 资产锚定池={}",
+        TOTAL_SUPPLY,
+        allocation::VICTORY_FUND,
+        allocation::HISTORY_LP,
+        allocation::CYBER_ARMY,
+        allocation::GLOBAL_ALLIANCE,
+        allocation::ASSET_ANCHOR
+    );
     
     Ok(())
 }

@@ -33,8 +33,38 @@ pub mod state;      // 状态账户模块
 pub mod instructions; // 指令实现模块
 pub mod utils;      // 工具函数模块
 
-use instructions::*;
-use state::*;
+// 精确导入，只导入实际使用的类型，避免通配符导入导致的紧密耦合
+use instructions::{
+    // 初始化相关
+    Initialize,
+    // 池子相关
+    InitPool,
+    MintToPools,
+    // 持有者相关
+    InitializeHolder,
+    FreezeHolder,
+    UnfreezeHolder,
+    // 税收相关
+    InitializeTaxConfig,
+    UpdateTaxConfig,
+    ManageTaxExempt,
+    // 转账相关
+    TransferWithTax,
+    // 管理员相关
+    UpdateAuthority,
+    SetPaused,
+    EmergencyWithdraw,
+    // 查询相关
+    CalculateTax,
+    GetHolderStats,
+    DiscountTier,
+};
+use state::{
+    // 初始化参数在state模块中定义
+    InitializeParams,
+    // 池子类型在state模块中定义，lib.rs中直接使用
+    PoolType,
+};
 
 /// 程序ID声明
 /// 这是TOT代币程序的唯一标识符，部署后不可更改
@@ -885,6 +915,11 @@ pub struct HolderStats {
     pub is_frozen: bool,
     
     /// 税率折扣等级
-    /// 字符串描述，如 "Diamond (75% discount)"、"Gold (50% discount)" 等
-    pub tax_discount_tier: String,
+    /// 枚举类型，客户端可以根据枚举值转换为字符串显示
+    /// - None: 无折扣
+    /// - Bronze: 10%折扣 (30-90天)
+    /// - Silver: 25%折扣 (90-180天)
+    /// - Gold: 50%折扣 (180-365天)
+    /// - Diamond: 75%折扣 (365+天)
+    pub tax_discount_tier: crate::instructions::query::DiscountTier,
 }

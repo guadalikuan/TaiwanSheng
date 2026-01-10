@@ -91,6 +91,7 @@ pub fn update_tax_config_handler(
 ) -> Result<()> {
     let tax_config = &mut ctx.accounts.tax_config;
     let clock = Clock::get()?;
+    let timestamp = clock.unix_timestamp;
 
     if let Some(base) = base_tax_bps {
         validate_tax_rate(base)?;
@@ -120,14 +121,14 @@ pub fn update_tax_config_handler(
         tax_config.panic_tax_bps = panic_tax;
     }
 
-    tax_config.last_updated = clock.unix_timestamp;
+    tax_config.last_updated = timestamp;
 
     emit!(TaxConfigUpdated {
         base_tax_bps: tax_config.base_tax_bps,
         alpha: tax_config.alpha,
         beta: tax_config.beta,
         gamma_bps: tax_config.gamma_bps,
-        timestamp: clock.unix_timestamp,
+        timestamp,
     });
 
     Ok(())
@@ -161,13 +162,16 @@ pub fn add_tax_exempt_handler(
     address: Pubkey,
 ) -> Result<()> {
     let tax_config = &mut ctx.accounts.tax_config;
+    let clock = Clock::get()?;
+    let timestamp = clock.unix_timestamp;
+    
     tax_config.add_exempt(address)?;
 
     msg!("Added tax exempt address: {}", address);
     
     emit!(TaxExemptAdded {
         address,
-        timestamp: Clock::get()?.unix_timestamp,
+        timestamp,
     });
 
     Ok(())
@@ -179,13 +183,16 @@ pub fn remove_tax_exempt_handler(
     address: Pubkey,
 ) -> Result<()> {
     let tax_config = &mut ctx.accounts.tax_config;
+    let clock = Clock::get()?;
+    let timestamp = clock.unix_timestamp;
+    
     tax_config.remove_exempt(&address)?;
 
     msg!("Removed tax exempt address: {}", address);
     
     emit!(TaxExemptRemoved {
         address,
-        timestamp: Clock::get()?.unix_timestamp,
+        timestamp,
     });
 
     Ok(())

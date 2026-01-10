@@ -420,17 +420,41 @@ impl PoolAccount {
     ///     // 可以释放releasable数量的代币
     /// }
     /// ```
+    /// 
+    /// # 注意事项
+    /// 
+    /// 如果未来添加池子释放指令，需要在释放指令中添加以下验证：
+    /// ```rust
+    /// // 在池子释放指令中
+    /// let releasable = pool_account.calculate_releasable(clock.unix_timestamp)?;
+    /// require!(
+    ///     amount <= releasable,
+    ///     TotError::InsufficientPoolBalance
+    /// );
+    /// require!(
+    ///     amount <= pool_token_account.amount,
+    ///     TotError::InsufficientPoolBalance
+    /// );
+    /// 
+    /// // 更新已释放量
+    /// pool_account.released_amount = pool_account.released_amount
+    ///     .checked_add(amount)
+    ///     .ok_or(error!(TotError::MathOverflow))?;
+    /// ```
     pub fn calculate_releasable(&self, current_time: i64) -> Result<u64> {
         // 步骤1: 检查是否已解锁（时间锁验证）
         if !self.is_unlocked(current_time) {
             return Ok(0);
         }
         
+        // 计算剩余可释放量（在多个地方使用，提前计算以节省gas）
+        let remaining = self.initial_allocation
+            .checked_sub(self.released_amount)
+            .ok_or(anchor_lang::error!(crate::errors::TotError::MathOverflow))?;
+        
         // 步骤2: 如果没有线性释放（vesting_period == 0），返回全部剩余
         if self.vesting_period == 0 {
-            return Ok(self.initial_allocation
-                .checked_sub(self.released_amount)
-                .ok_or(anchor_lang::error!(crate::errors::TotError::MathOverflow))?);
+            return Ok(remaining);
         }
         
         // 步骤3: 如果还未开始释放，返回0
@@ -445,9 +469,7 @@ impl PoolAccount {
         
         // 步骤5: 如果已过释放周期，返回全部剩余
         if elapsed >= self.vesting_period {
-            return Ok(self.initial_allocation
-                .checked_sub(self.released_amount)
-                .ok_or(anchor_lang::error!(crate::errors::TotError::MathOverflow))?);
+            return Ok(remaining);
         }
         
         // 步骤6: 计算应该释放的总量（线性释放公式）
@@ -459,9 +481,20 @@ impl PoolAccount {
             .ok_or(anchor_lang::error!(crate::errors::TotError::MathOverflow))? as u64;
         
         // 步骤7: 计算可释放量 = 应该释放的总量 - 已释放量
-        let releasable = total_should_release
-            .checked_sub(self.released_amount)
-            .ok_or(anchor_lang::error!(crate::errors::TotError::MathUnderflow))?;
+        // 如果已释放量超过应释放总量，说明数据不一致
+        // 这种情况可能发生在：
+        // 1. 之前的释放指令没有正确更新released_amount
+        // 2. 时间计算出现异常
+        // 为了系统的健壮性，返回0而不是错误，允许系统继续运行
+        let releasable = if total_should_release >= self.released_amount {
+            total_should_release
+                .checked_sub(self.released_amount)
+                .ok_or(anchor_lang::error!(crate::errors::TotError::MathUnderflow))?
+        } else {
+            // 数据不一致：已释放量超过应释放总量
+            // 返回0以保持系统健壮性，允许后续操作继续
+            0
+        };
         
         Ok(releasable)
     }

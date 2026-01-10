@@ -18,7 +18,8 @@ cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts --reporter mochawesome --reporter-options reportDir=tests/reports/mochawesome,reportFilename=test-results,json=true,html=false"
+test:report = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts --reporter mochawesome --reporter-options reportDir=tests/reports/mochawesome,reportFilename=test-results,json=true,html=false && npm run test:generate-report"
 
 [test]
 startup_wait = 10000
