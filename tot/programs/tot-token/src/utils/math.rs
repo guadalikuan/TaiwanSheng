@@ -50,6 +50,12 @@ pub fn calculate_amount_after_tax(amount: u64, tax_bps: u16) -> Result<(u64, u64
 pub fn apply_discount_to_tax(base_tax_bps: u16, discount_bps: u16) -> Result<u16> {
     let discount_amount = calculate_bps(base_tax_bps as u64, discount_bps)?;
     let discounted_tax = safe_sub(base_tax_bps as u64, discount_amount)?;
+    // 安全转换：由于base_tax_bps是u16，discounted_tax不会超过u16最大值
+    // 但为了防御性编程，添加显式检查
+    require!(
+        discounted_tax <= u16::MAX as u64,
+        TotError::MathOverflow
+    );
     Ok(discounted_tax as u16)
 }
 

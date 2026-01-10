@@ -112,11 +112,17 @@ pub struct EmergencyWithdraw<'info> {
     pub config: Account<'info, TotConfig>,
 
     /// 源账户（池子）
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = source_account.mint == mint.key() @ TotError::InvalidMint
+    )]
     pub source_account: InterfaceAccount<'info, TokenAccount>,
 
     /// 目标账户
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = destination_account.mint == mint.key() @ TotError::InvalidMint
+    )]
     pub destination_account: InterfaceAccount<'info, TokenAccount>,
 
     /// Mint

@@ -33,8 +33,38 @@ pub mod state;      // 状态账户模块
 pub mod instructions; // 指令实现模块
 pub mod utils;      // 工具函数模块
 
-use instructions::*;
-use state::*;
+// 精确导入，只导入实际使用的类型，避免通配符导入导致的紧密耦合
+use instructions::{
+    // 初始化相关
+    Initialize,
+    // 池子相关
+    InitPool,
+    MintToPools,
+    // 持有者相关
+    InitializeHolder,
+    FreezeHolder,
+    UnfreezeHolder,
+    // 税收相关
+    InitializeTaxConfig,
+    UpdateTaxConfig,
+    ManageTaxExempt,
+    // 转账相关
+    TransferWithTax,
+    // 管理员相关
+    UpdateAuthority,
+    SetPaused,
+    EmergencyWithdraw,
+    // 查询相关
+    CalculateTax,
+    GetHolderStats,
+    DiscountTier,
+};
+use state::{
+    // 初始化参数在state模块中定义
+    InitializeParams,
+    // 池子类型在state模块中定义，lib.rs中直接使用
+    PoolType,
+};
 
 /// 程序ID声明
 /// 这是TOT代币程序的唯一标识符，部署后不可更改

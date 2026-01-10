@@ -244,14 +244,7 @@ pub fn transfer_with_tax_handler(
         tax_config,
     )?;
 
-    // 输出税率计算信息（用于调试和审计）
-    msg!(
-        "Transfer: {} tokens, Tax: {} ({}bps), Net: {}",
-        amount,
-        tax_calculation.tax_amount,
-        tax_calculation.final_tax_bps,
-        tax_calculation.net_amount
-    );
+    // 税率计算信息将在事件中记录，这里不输出msg!以节省gas
 
     // ========================================
     // 余额验证（在转账前验证，避免无效转账浪费gas）
@@ -334,8 +327,6 @@ pub fn transfer_with_tax_handler(
 
             // 执行销毁操作
             token_interface::burn(burn_ctx, tax_dist.to_burn)?;
-            
-            msg!("Burned: {} tokens", tax_dist.to_burn);
         }
 
         // 分配2: 转入税收收集账户（60%：流动性 + 社区 + 营销）
@@ -361,9 +352,15 @@ pub fn transfer_with_tax_handler(
                 remaining_tax,
                 mint_decimals,
             )?;
-
-            msg!("Tax collected: {} tokens", remaining_tax);
         }
+        
+        // 合并所有税收分配信息到一个msg!调用，减少gas消耗
+        msg!(
+            "Tax distribution: burned={}, collected={}, total={}",
+            tax_dist.to_burn,
+            remaining_tax,
+            tax_calculation.tax_amount
+        );
     }
 
     // ========================================
