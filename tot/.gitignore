@@ -1,0 +1,41 @@
+﻿# Rust
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# Anchor
+.anchor/
+target/
+.DS_Store
+test-ledger/
+
+# Node
+node_modules/
+dist/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build artifacts
+*.so
+*.dylib
+*.dll
+
+# Solana
+keypairs/
+*.json
+!package.json
+!tsconfig.json

@@ -1,0 +1,10 @@
+[workspace]
+members = [
+    "programs/tot-token",
+    "programs/transfer-hook",
+]
+resolver = "2"
+
+[workspace.dependencies]
+anchor-lang = "0.29.0"
+anchor-spl = "0.29.0"

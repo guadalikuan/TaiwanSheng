@@ -1,0 +1,22 @@
+[package]
+name = "transfer-hook"
+version = "0.1.0"
+description = "Transfer Hook for TOT Token"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "transfer_hook"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = { workspace = true, features = ["init-if-needed"] }
+anchor-spl = { workspace = true, features = ["token-2022"] }
+spl-transfer-hook-interface = "0.6"
+spl-tlv-account-resolution = "0.6"
