@@ -137,77 +137,112 @@ pub fn transfer_with_tax_handler(
     let tax_config = &ctx.accounts.tax_config;
     let sender_holder = &mut ctx.accounts.sender_holder_info;
     let clock = Clock::get()?;
+    let timestamp = clock.unix_timestamp;
+
+    // 缓存常用值以减少重复访问
+    let sender_key = ctx.accounts.sender.key();
+    let receiver_owner = ctx.accounts.receiver_token_account.owner;
+    let mint_decimals = ctx.accounts.mint.decimals;
+
+    // ========================================
+    // 免税检查（提前检查以节省gas）
+    // ========================================
+    // 
+    // 检查发送者或接收者是否为免税地址。
+    // 如果任一地址免税，则不收取任何税收。
+    // 提前检查可以避免不必要的验证计算。
+    
+    let sender_exempt = tax_config.is_exempt(&sender_key);
+    let receiver_exempt = tax_config.is_exempt(&receiver_owner);
+    let is_exempt = sender_exempt || receiver_exempt;
 
     // ========================================
     // 验证阶段
     // ========================================
     
-    // 验证1: 检查系统是否暂停
-    // 如果系统处于恐慌模式且是卖出操作，拒绝执行
-    // 这是保护机制，防止在市场异常时的大规模抛售
-    require!(!config.panic_mode || !is_sell, TotError::SystemPaused);
-
-    // 验证2: 检查发送者账户是否被冻结
-    // 被冻结的账户无法进行转账操作
-    require!(!sender_holder.is_frozen, TotError::AccountFrozen);
-
-    // 验证3: 检查转账金额是否有效（必须大于0）
+    // 验证1: 检查转账金额是否有效（必须大于0）
+    // 这是所有转账都需要的基本验证
     validate_transfer_amount(amount)?;
 
-    // ========================================
-    // 免税检查
-    // ========================================
-    // 
-    // 检查发送者或接收者是否为免税地址。
-    // 如果任一地址免税，则不收取任何税收。
+    // 如果免税，只进行基本验证，然后直接转账
+    if is_exempt {
+        // 免税转账路径：只进行基本验证，跳过税收计算
+        // 直接执行全额转账
+        let transfer_ctx = CpiContext::new(
+            ctx.accounts.token_program.to_account_info(),
+            TransferChecked {
+                from: ctx.accounts.sender_token_account.to_account_info(),
+                mint: ctx.accounts.mint.to_account_info(),
+                to: ctx.accounts.receiver_token_account.to_account_info(),
+                authority: ctx.accounts.sender.to_account_info(),
+            },
+        );
+
+        token_interface::transfer_checked(
+            transfer_ctx,
+            amount,  // 全额转账，无税收
+            mint_decimals,
+        )?;
+
+        // 发出免税转账事件
+        emit!(TransferWithTaxEvent {
+            from: sender_key,
+            to: receiver_owner,
+            amount,
+            tax_amount: 0,
+            net_amount: amount,
+            tax_rate_bps: 0,
+            burned: 0,
+            timestamp,
+        });
+
+        return Ok(());
+    }
+
+    // 非免税转账路径：进行完整验证和税收计算
+    // 缓存常用字段值以减少重复访问
+    let panic_mode = config.panic_mode;
+    let sender_frozen = sender_holder.is_frozen;
     
-    let sender_exempt = tax_config.is_exempt(&ctx.accounts.sender.key());
-    let receiver_exempt = ctx.accounts.receiver_token_account.owner == Pubkey::default()
-        || tax_config.is_exempt(&ctx.accounts.receiver_token_account.owner);
+    // 验证2: 检查系统是否暂停
+    // 如果系统处于恐慌模式且是卖出操作，拒绝执行
+    // 这是保护机制，防止在市场异常时的大规模抛售
+    require!(!panic_mode || !is_sell, TotError::SystemPaused);
+
+    // 验证3: 检查发送者账户是否被冻结
+    // 被冻结的账户无法进行转账操作
+    require!(!sender_frozen, TotError::HolderFrozen);
+
+    // 验证4: 检查接收者账户是否被冻结（如果存在）
+    // 如果接收者持有者账户存在，需要检查是否被冻结
+    if let Some(ref receiver_holder) = ctx.accounts.receiver_holder_info {
+        require!(!receiver_holder.is_frozen, TotError::HolderFrozen);
+    }
 
     // ========================================
     // 税率计算
     // ========================================
     // 
-    // 根据是否免税，选择不同的计算路径：
-    // - 免税: 直接返回0税率
-    // - 非免税: 使用动态税率公式计算
-    
-    let tax_calculation = if sender_exempt || receiver_exempt {
-        // 路径1: 免税转账
-        // 发送者或接收者在免税列表中，不收取任何税收
-        TaxCalculation {
-            base_tax_bps: 0,
-            holding_discount_bps: 0,
-            whale_tax_bps: 0,
-            final_tax_bps: 0,
-            tax_amount: 0,
-            net_amount: amount, // 全额转账，无税收
-        }
-    } else {
-        // 路径2: 正常转账，计算动态税率
-        // 
-        // 使用TOT动态重力场税收模型计算税率：
-        // Tax = Base + (P_impact / L) × α + 1/(T_hold + 1)^β × γ
-        // 
-        // 参数说明:
-        // - amount: 转账金额
-        // - sender_holder: 发送者持有者信息（用于计算持有时间折扣）
-        // - mint.supply: 总供应量（用于计算大额交易惩罚）
-        // - clock.unix_timestamp: 当前时间（用于计算持有天数）
-        // - false: 不是买入操作
-        // - is_sell: 是否为卖出操作（影响大额交易惩罚的计算）
-        // - tax_config: 税率配置（包含所有税率参数）
-        TaxCalculator::calculate_tax(
-            amount,
-            Some(sender_holder),
-            ctx.accounts.mint.supply,
-            clock.unix_timestamp,
-            false, // 普通转账不是买入
-            is_sell,
-            tax_config,
-        )?
-    };
+    // 使用TOT动态重力场税收模型计算税率：
+    // Tax = Base + (P_impact / L) × α + 1/(T_hold + 1)^β × γ
+    // 
+    // 参数说明:
+    // - amount: 转账金额
+    // - sender_holder: 发送者持有者信息（用于计算持有时间折扣）
+    // - mint.supply: 总供应量（用于计算大额交易惩罚）
+    // - timestamp: 当前时间（用于计算持有天数）
+    // - false: 不是买入操作
+    // - is_sell: 是否为卖出操作（影响大额交易惩罚的计算）
+    // - tax_config: 税率配置（包含所有税率参数）
+    let tax_calculation = TaxCalculator::calculate_tax(
+        amount,
+        Some(sender_holder),
+        ctx.accounts.mint.supply,
+        timestamp,
+        false, // 普通转账不是买入
+        is_sell,
+        tax_config,
+    )?;
 
     // 输出税率计算信息（用于调试和审计）
     msg!(
@@ -216,6 +251,20 @@ pub fn transfer_with_tax_handler(
         tax_calculation.tax_amount,
         tax_calculation.final_tax_bps,
         tax_calculation.net_amount
+    );
+
+    // ========================================
+    // 余额验证（在转账前验证，避免无效转账浪费gas）
+    // ========================================
+    // 
+    // 验证发送者账户余额是否足够支付总金额（转账金额 + 税收）。
+    // 如果余额不足，在转账前就返回错误，避免浪费gas。
+    // 
+    // 注意：amount = net_amount + tax_amount
+    // 如果余额 >= amount，转账后剩余余额一定 >= tax_amount
+    require!(
+        ctx.accounts.sender_token_account.amount >= amount,
+        TotError::InsufficientBalance
     );
 
     // ========================================
@@ -240,7 +289,7 @@ pub fn transfer_with_tax_handler(
         token_interface::transfer_checked(
             transfer_ctx,
             tax_calculation.net_amount,  // 转账净金额（扣除税收后）
-            ctx.accounts.mint.decimals,  // 代币精度
+            mint_decimals,  // 代币精度
         )?;
     }
 
@@ -254,13 +303,26 @@ pub fn transfer_with_tax_handler(
     // - 20% 社区奖励
     // - 10% 营销费用
     
+    // 计算税收分配（用于事件记录）
+    // 即使tax_amount为0，也计算分配以便在事件中记录
+    let tax_distribution = if tax_calculation.tax_amount > 0 {
+        Some(TaxDistribution::calculate(tax_calculation.tax_amount)?)
+    } else {
+        None
+    };
+    
     if tax_calculation.tax_amount > 0 {
-        // 计算税收分配比例
-        let tax_distribution = TaxDistribution::calculate(tax_calculation.tax_amount);
+        // 余额已在转账前验证，无需再次验证
+        // 因为 amount = net_amount + tax_amount，如果余额 >= amount，
+        // 转账后剩余余额一定 >= tax_amount
+        
+        // 使用已计算的税收分配
+        // 由于已经验证tax_amount > 0，tax_distribution一定存在
+        let tax_dist = tax_distribution.as_ref().expect("Tax distribution should exist when tax_amount > 0");
 
         // 分配1: 销毁部分（40%）
         // 销毁代币会减少总供应量，实现通缩机制
-        if tax_distribution.to_burn > 0 {
+        if tax_dist.to_burn > 0 {
             let burn_ctx = CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
                 Burn {
@@ -271,15 +333,15 @@ pub fn transfer_with_tax_handler(
             );
 
             // 执行销毁操作
-            token_interface::burn(burn_ctx, tax_distribution.to_burn)?;
+            token_interface::burn(burn_ctx, tax_dist.to_burn)?;
             
-            msg!("Burned: {} tokens", tax_distribution.to_burn);
+            msg!("Burned: {} tokens", tax_dist.to_burn);
         }
 
         // 分配2: 转入税收收集账户（60%：流动性 + 社区 + 营销）
         // 剩余税收 = 总税收 - 销毁部分
         let remaining_tax = tax_calculation.tax_amount
-            .saturating_sub(tax_distribution.to_burn);
+            .saturating_sub(tax_dist.to_burn);
 
         if remaining_tax > 0 {
             let tax_transfer_ctx = CpiContext::new(
@@ -297,7 +359,7 @@ pub fn transfer_with_tax_handler(
             token_interface::transfer_checked(
                 tax_transfer_ctx,
                 remaining_tax,
-                ctx.accounts.mint.decimals,
+                mint_decimals,
             )?;
 
             msg!("Tax collected: {} tokens", remaining_tax);
@@ -312,7 +374,7 @@ pub fn transfer_with_tax_handler(
     // 这些统计用于计算持有时间折扣。
     
     if is_sell {
-        sender_holder.record_sell(amount, tax_calculation.tax_amount, clock.unix_timestamp)?;
+        sender_holder.record_sell(amount, tax_calculation.tax_amount, timestamp)?;
     }
 
     // ========================================
@@ -323,14 +385,14 @@ pub fn transfer_with_tax_handler(
     // 事件包含完整的转账信息，包括税收详情。
     
     emit!(TransferWithTaxEvent {
-        from: ctx.accounts.sender.key(),
-        to: ctx.accounts.receiver_token_account.owner,
+        from: sender_key,
+        to: receiver_owner,
         amount,
         tax_amount: tax_calculation.tax_amount,
         net_amount: tax_calculation.net_amount,
         tax_rate_bps: tax_calculation.final_tax_bps,
-        burned: TaxDistribution::calculate(tax_calculation.tax_amount).to_burn,
-        timestamp: clock.unix_timestamp,
+        burned: tax_distribution.as_ref().map(|d| d.to_burn).unwrap_or(0),
+        timestamp,
     });
 
     Ok(())

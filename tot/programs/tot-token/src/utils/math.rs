@@ -54,7 +54,25 @@ pub fn apply_discount_to_tax(base_tax_bps: u16, discount_bps: u16) -> Result<u16
 }
 
 /// 计算持有天数
-/// 从首次购买时间到当前时间的天数
+/// 
+/// 从首次购买时间到当前时间的天数。
+/// 
+/// # 参数
+/// * `first_buy_time` - 首次购买时间（Unix时间戳）
+/// * `current_time` - 当前时间（Unix时间戳）
+/// 
+/// # 返回值
+/// * `u64` - 持有天数（向下取整）
+/// 
+/// # 边界情况
+/// * 如果`current_time <= first_buy_time`，返回0
+/// * 如果时间差小于86400秒（1天），返回0
+/// 
+/// # 示例
+/// ```rust
+/// let days = calculate_holding_days(1000000000, 1000086400); // 返回1
+/// let days = calculate_holding_days(1000000000, 1000000000); // 返回0
+/// ```
 pub fn calculate_holding_days(first_buy_time: i64, current_time: i64) -> u64 {
     if current_time <= first_buy_time {
         return 0;

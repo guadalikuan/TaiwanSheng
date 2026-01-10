@@ -10,6 +10,18 @@ use crate::state::holder::HolderAccount;
 use crate::constants::seeds;
 use crate::utils::tax_calculator::*;
 
+/// 税率折扣等级枚举
+/// 
+/// 使用枚举替代String类型，减少序列化开销和gas消耗
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, PartialEq, Eq)]
+pub enum DiscountTier {
+    None,
+    Bronze,    // 10% discount (30-90 days)
+    Silver,    // 25% discount (90-180 days)
+    Gold,      // 50% discount (180-365 days)
+    Diamond,   // 75% discount (365+ days)
+}
+
 /// 计算税率（只读查询）
 #[derive(Accounts)]
 pub struct CalculateTax<'info> {
@@ -87,7 +99,7 @@ pub struct HolderStats {
     pub total_sold: u64,
     pub total_tax_paid: u64,
     pub is_frozen: bool,
-    pub tax_discount_tier: String,
+    pub tax_discount_tier: DiscountTier,
 }
 
 /// 获取持有者统计处理器
@@ -96,19 +108,27 @@ pub fn get_holder_stats_handler(
 ) -> Result<HolderStats> {
     let holder = &ctx.accounts.holder_info;
     let clock = Clock::get()?;
+    let timestamp = clock.unix_timestamp;  // 缓存timestamp以提高一致性
     
-    let holding_days = holder.get_holding_days(clock.unix_timestamp);
+    let holding_days = holder.get_holding_days(timestamp);
 
+    // 折扣等级判断（从高到低）
+    // 使用枚举替代String，减少序列化开销和gas消耗
+    // 365+天: Diamond (75%折扣)
+    // 180-364天: Gold (50%折扣)
+    // 90-179天: Silver (25%折扣)
+    // 30-89天: Bronze (10%折扣)
+    // 0-29天: None (无折扣)
     let tax_discount_tier = if holding_days >= 365 {
-        "Diamond (75% discount)".to_string()
+        DiscountTier::Diamond
     } else if holding_days >= 180 {
-        "Gold (50% discount)".to_string()
+        DiscountTier::Gold
     } else if holding_days >= 90 {
-        "Silver (25% discount)".to_string()
+        DiscountTier::Silver
     } else if holding_days >= 30 {
-        "Bronze (10% discount)".to_string()
+        DiscountTier::Bronze
     } else {
-        "None".to_string()
+        DiscountTier::None
     };
 
     Ok(HolderStats {

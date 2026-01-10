@@ -35,6 +35,8 @@ pub fn update_authority_handler(
 ) -> Result<()> {
     let config = &mut ctx.accounts.config;
     let old_authority = config.authority;
+    let clock = Clock::get()?;
+    let timestamp = clock.unix_timestamp;
     
     require!(
         new_authority != Pubkey::default(),
@@ -52,7 +54,7 @@ pub fn update_authority_handler(
     emit!(AuthorityUpdated {
         old_authority,
         new_authority,
-        timestamp: Clock::get()?.unix_timestamp,
+        timestamp,
     });
 
     Ok(())
@@ -80,13 +82,16 @@ pub fn set_paused_handler(
     paused: bool,
 ) -> Result<()> {
     let config = &mut ctx.accounts.config;
+    let clock = Clock::get()?;
+    let timestamp = clock.unix_timestamp;
+    
     config.panic_mode = paused;
 
     msg!("System paused status: {}", paused);
 
     emit!(SystemPausedEvent {
         paused,
-        timestamp: Clock::get()?.unix_timestamp,
+        timestamp,
     });
 
     Ok(())
@@ -122,12 +127,34 @@ pub struct EmergencyWithdraw<'info> {
 }
 
 /// 紧急提取处理器
+/// 
+/// 设计说明：
+/// - 当前实现允许从任何代币账户提取，不限制为池子账户
+/// - 如果未来需要限制为池子账户，可以添加PDA验证：
+///   ```rust
+///   // 验证源账户是否为池子PDA
+///   let (pool_pda, _) = Pubkey::find_program_address(
+///       &[seeds::POOL_SEED, &[pool_type as u8]],
+///       ctx.program_id
+///   );
+///   require!(
+///       pool_account.token_account == ctx.accounts.source_account.key(),
+///       TotError::InvalidTransferDestination
+///   );
+///   ```
+/// - 当前设计允许在紧急情况下从任何账户提取，提供更大的灵活性
 pub fn emergency_withdraw_handler(
     ctx: Context<EmergencyWithdraw>,
     amount: u64,
 ) -> Result<()> {
     // 紧急提取需要系统处于暂停状态
     require!(ctx.accounts.config.panic_mode, TotError::SystemNotPaused);
+    
+    // 验证源账户余额是否足够
+    require!(
+        ctx.accounts.source_account.amount >= amount,
+        TotError::InsufficientBalance
+    );
 
     let transfer_ctx = CpiContext::new(
         ctx.accounts.token_program.to_account_info(),
@@ -145,13 +172,16 @@ pub fn emergency_withdraw_handler(
         ctx.accounts.mint.decimals,
     )?;
 
+    let clock = Clock::get()?;
+    let timestamp = clock.unix_timestamp;
+
     msg!("Emergency withdrawal: {} tokens", amount);
 
     emit!(EmergencyWithdrawEvent {
         from: ctx.accounts.source_account.key(),
         to: ctx.accounts.destination_account.key(),
         amount,
-        timestamp: Clock::get()?.unix_timestamp,
+        timestamp,
     });
 
     Ok(())

@@ -404,10 +404,26 @@ impl TaxCalculator {
         // 计算交易占比（basis points）
         // 公式: 占比 = (交易金额 / 总供应量) × 10000
         // 使用u128避免溢出
-        let ratio_bps = (amount as u128)
+        let ratio_bps_u128 = (amount as u128)
             .checked_mul(10000)
             .and_then(|v| v.checked_div(total_supply as u128))
-            .unwrap_or(0) as u16;
+            .ok_or(error!(TotError::MathOverflow))?;
+
+        // 安全转换为u16
+        // 理论上ratio_bps最大值为 (u64::MAX * 10000) / 1，远大于u16的最大值65535
+        // 但实际使用中，ratio_bps不应该超过10000（100%），因为不能转账超过总供应量
+        // 如果超过10000，说明数据异常，返回错误
+        // 如果超过u16最大值但小于等于10000，限制为65535（虽然这种情况理论上不会发生）
+        let ratio_bps = if ratio_bps_u128 > 10000 {
+            // 超过100%的交易占比，数据异常
+            return Err(error!(TotError::MathOverflow));
+        } else if ratio_bps_u128 > 65535 {
+            // 虽然理论上不会发生，但为了安全，限制为u16最大值
+            // 这种情况表示交易占比在655.35%到1000%之间，实际不会发生
+            65535u16
+        } else {
+            ratio_bps_u128 as u16
+        };
 
         // 根据占比确定附加税率（分段函数）
         // 这是对理论公式 (P_impact / L) × α 的简化实现
@@ -465,21 +481,25 @@ impl TaxDistribution {
     /// - 30% 流动性池
     /// - 20% 社区奖励
     /// - 10% 营销
-    pub fn calculate(total_tax: u64) -> Self {
-        let to_burn = calculate_bps(total_tax, tax::TAX_TO_BURN_BPS).unwrap_or(0);
-        let to_liquidity = calculate_bps(total_tax, tax::TAX_TO_LIQUIDITY_BPS).unwrap_or(0);
-        let to_community = calculate_bps(total_tax, tax::TAX_TO_COMMUNITY_BPS).unwrap_or(0);
+    /// 
+    /// # 返回值
+    /// * `Result<Self>` - 成功返回分配结果，溢出时返回错误
+    pub fn calculate(total_tax: u64) -> Result<Self> {
+        let to_burn = calculate_bps(total_tax, tax::TAX_TO_BURN_BPS)?;
+        let to_liquidity = calculate_bps(total_tax, tax::TAX_TO_LIQUIDITY_BPS)?;
+        let to_community = calculate_bps(total_tax, tax::TAX_TO_COMMUNITY_BPS)?;
         let to_marketing = total_tax
-            .saturating_sub(to_burn)
-            .saturating_sub(to_liquidity)
-            .saturating_sub(to_community);
+            .checked_sub(to_burn)
+            .and_then(|v| v.checked_sub(to_liquidity))
+            .and_then(|v| v.checked_sub(to_community))
+            .ok_or(error!(TotError::MathOverflow))?;
 
-        Self {
+        Ok(Self {
             to_burn,
             to_liquidity,
             to_community,
             to_marketing,
-        }
+        })
     }
 }
 
@@ -543,7 +563,7 @@ mod tests {
     #[test]
     fn test_tax_distribution() {
         let total_tax = 1000u64;
-        let dist = TaxDistribution::calculate(total_tax);
+        let dist = TaxDistribution::calculate(total_tax).unwrap();
 
         assert_eq!(dist.to_burn, 400); // 40%
         assert_eq!(dist.to_liquidity, 300); // 30%

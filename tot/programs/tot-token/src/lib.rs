@@ -885,6 +885,11 @@ pub struct HolderStats {
     pub is_frozen: bool,
     
     /// 税率折扣等级
-    /// 字符串描述，如 "Diamond (75% discount)"、"Gold (50% discount)" 等
-    pub tax_discount_tier: String,
+    /// 枚举类型，客户端可以根据枚举值转换为字符串显示
+    /// - None: 无折扣
+    /// - Bronze: 10%折扣 (30-90天)
+    /// - Silver: 25%折扣 (90-180天)
+    /// - Gold: 50%折扣 (180-365天)
+    /// - Diamond: 75%折扣 (365+天)
+    pub tax_discount_tier: crate::instructions::query::DiscountTier,
 }

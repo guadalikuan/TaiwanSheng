@@ -116,10 +116,14 @@ pub fn handler(ctx: Context<InitPool>, pool_type: PoolType) -> Result<()> {
     pool_account.multisig_signers = [Pubkey::default(); 5]; // 后续可设置
     pool_account.bump = ctx.bumps.pool_account;
     
-    msg!("池子 {:?} 初始化完成", pool_type);
-    msg!("分配量: {}", allocation);
-    msg!("解锁时间: {}", unlock_time);
-    msg!("代币账户: {}", pool_account.token_account);
+    // 合并所有消息为一个，减少gas消耗
+    msg!(
+        "池子初始化完成: 类型={:?}, 分配量={}, 解锁时间={}, 代币账户={}",
+        pool_type,
+        allocation,
+        unlock_time,
+        pool_account.token_account
+    );
     
     Ok(())
 }
