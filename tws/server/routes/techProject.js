@@ -176,26 +176,26 @@ router.post('/:id/build-transaction', authenticate, async (req, res) => {
       });
     }
 
-    // 生成项目收款地址并构建交易
-    const { generateProjectTreasury, buildInvestmentTransaction } = await import('../utils/solanaBlockchain.js');
-    const solanaService = (await import('../utils/solanaBlockchain.js')).default;
-    const treasury = await solanaService.generateProjectTreasury(id);
-
-    // 构建交易
-    const result = await solanaService.buildInvestmentTransaction(
-      id,
-      amount,
-      investorAddress,
-      treasury.address
-    );
-
-    // 序列化交易
-    const serialized = result.transaction.serialize({ requireAllSignatures: false }).toString('base64');
+    // 构建投资交易（使用tot合约的consume_to_treasury，免税）
+    const { consumeToTreasury } = await import('../utils/solanaBlockchain.js');
+    
+    let investmentTransaction = null;
+    try {
+      const investmentResult = await consumeToTreasury(investorAddress, amount, 2); // ConsumeType::Other
+      investmentTransaction = investmentResult.transaction;
+    } catch (error) {
+      console.error('构建投资交易失败:', error);
+      return res.status(400).json({
+        success: false,
+        error: '构建投资交易失败',
+        message: error.message
+      });
+    }
 
     res.json({
       success: true,
-      transaction: serialized,
-      treasuryAddress: result.treasuryAddress
+      transaction: investmentTransaction, // 投资交易（需要用户签名）
+      amount: amount
     });
   } catch (error) {
     console.error('Error building transaction:', error);
@@ -300,6 +300,15 @@ router.post('/:id/invest', authenticate, async (req, res) => {
     // 保存投资记录和更新项目
     await put(NAMESPACES.INVESTMENTS, investment.id, investment);
     await put(NAMESPACES.TECH_PROJECTS, id, project);
+
+    // 记录推荐佣金（不影响主流程）
+    try {
+      const { recordCommission } = await import('../utils/referral.js');
+      await recordCommission(walletAddress, Number(amount), 0.05, { immediateTransfer: true });
+      console.log(`✅ 推荐佣金已记录: ${walletAddress}, 金额: ${Number(amount) * 0.05} TOT`);
+    } catch (commissionError) {
+      console.error('推荐佣金记录失败（不影响主流程）:', commissionError);
+    }
 
     // 记录用户行为
     const { logAction } = await import('../utils/actionLogger.js');

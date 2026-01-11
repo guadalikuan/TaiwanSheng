@@ -16,32 +16,51 @@ TOT是一个具备"准国家级金融管制能力"的加密资产，基于Solana
 
 ```
 tot/
-├── Anchor.toml                          # Anchor项目配置
-├── Cargo.toml                           # 工作空间配置
-├── programs/
-│   ├── tot-token/                       # 主代币程序
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── lib.rs                   # 程序入口
-│   │       ├── constants.rs             # 常量定义
-│   │       ├── errors.rs                 # 错误定义
-│   │       ├── state/                    # 状态账户
-│   │       ├── instructions/             # 指令实现
-│   │       └── utils/                    # 工具模块
-│   └── transfer-hook/                   # Transfer Hook程序
-│       ├── Cargo.toml
-│       └── src/
-│           ├── lib.rs
-│           ├── state.rs
-│           └── errors.rs
-├── scripts/
+├── src/                                 # Rust源代码和配置文件
+│   ├── lib.rs                           # 主程序入口
+│   ├── constants.rs                    # 常量定义
+│   ├── errors.rs                        # 错误定义
+│   ├── state/                           # 状态账户模块
+│   │   ├── mod.rs
+│   │   ├── config.rs
+│   │   ├── pool.rs
+│   │   ├── holder.rs
+│   │   ├── tax.rs
+│   │   └── hook.rs                      # Transfer Hook配置
+│   ├── instructions/                   # 指令实现模块
+│   │   ├── mod.rs
+│   │   ├── initialize.rs
+│   │   ├── init_pool.rs
+│   │   ├── mint_to_pools.rs
+│   │   ├── holder.rs
+│   │   ├── tax.rs
+│   │   ├── transfer.rs
+│   │   ├── admin.rs
+│   │   ├── query.rs
+│   │   └── hook.rs                      # Transfer Hook指令
+│   ├── utils/                           # 工具函数模块
+│   │   ├── mod.rs
+│   │   ├── math.rs
+│   │   ├── tax_calculator.rs
+│   │   └── validation.rs
+│   ├── metadata/                        # 代币元数据
+│   │   └── metadata.json
+│   ├── scripts/                         # 工具脚本
+│   │   └── setup-env.ps1               # 环境设置脚本
+│   ├── Anchor.toml                      # Anchor项目配置
+│   ├── Cargo.toml                       # Rust工作空间和程序配置
+│   └── package.json                     # Node.js项目配置
+├── client/                              # TypeScript客户端代码
 │   ├── deploy.ts                        # 部署脚本
 │   ├── initialize.ts                   # 初始化脚本
 │   └── mint_to_pools.ts                # 铸造脚本
-├── tests/
-│   └── tot-token.ts                     # 测试文件
-├── metadata/
-│   └── metadata.json                    # 代币元数据
+├── tests/                               # 测试文件
+│   ├── *.test.ts                        # 测试用例文件
+│   ├── helpers/                         # 测试辅助函数
+│   ├── fixtures/                        # 测试数据
+│   └── reports/                         # 测试报告
+├── tsconfig.json                        # TypeScript配置文件
+├── .gitignore                           # Git忽略配置
 └── README.md                            # 项目说明
 ```
 
@@ -73,6 +92,34 @@ cd tot
 npm install
 ```
 
+### 配置文件位置说明
+
+**重要**: 项目配置文件（`Anchor.toml`, `Cargo.toml`, `package.json`）位于 `src/` 目录中。
+
+为了确保 Anchor CLI 和 npm 工具能够正常工作，建议在项目根目录创建符号链接：
+
+**Windows (需要管理员权限)**:
+```powershell
+# 以管理员身份运行PowerShell
+New-Item -ItemType SymbolicLink -Path "Anchor.toml" -Target "src\Anchor.toml"
+New-Item -ItemType SymbolicLink -Path "Cargo.toml" -Target "src\Cargo.toml"
+New-Item -ItemType SymbolicLink -Path "package.json" -Target "src\package.json"
+```
+
+**Linux/Mac**:
+```bash
+ln -s src/Anchor.toml Anchor.toml
+ln -s src/Cargo.toml Cargo.toml
+ln -s src/package.json package.json
+```
+
+**替代方案**: 如果无法创建符号链接，可以从 `src/` 目录运行命令：
+```bash
+cd src
+anchor build
+npm test
+```
+
 ### 配置环境
 
 ```bash
@@ -86,7 +133,11 @@ solana airdrop 2
 ### 构建项目
 
 ```bash
-# 构建所有程序
+# 构建所有程序（从项目根目录）
+anchor build
+
+# 或者从src/目录运行
+cd src
 anchor build
 ```
 
@@ -118,7 +169,7 @@ npm run mint
 - Transfer Fee（交易税）
 - Permanent Delegate（永久代理权）
 - Freeze Authority（冻结权）
-- Transfer Hook（转账钩子）
+- Transfer Hook（转账钩子，已合并到主程序）
 - Metadata Pointer（元数据指针）
 
 ### 2. 五大池子分配
@@ -178,10 +229,18 @@ Tax_sell = Base + (P_impact / L) × α + 1/(T_hold + 1)^β × γ
 
 ### 添加新指令
 
-1. 在`programs/tot-token/src/instructions/`创建新文件
+1. 在`src/instructions/`创建新文件
 2. 实现指令处理器
-3. 在`instructions/mod.rs`中导出
-4. 在`lib.rs`中添加程序入口
+3. 在`src/instructions/mod.rs`中导出
+4. 在`src/lib.rs`的`#[program]`模块中添加程序入口
+
+### Transfer Hook功能
+
+Transfer Hook功能已合并到主程序中，主程序ID同时作为transfer hook program ID。主程序同时处理：
+- 主程序的指令（initialize, mint_to_pools, transfer_with_tax等）
+- Transfer Hook的execute指令（由Token-2022程序自动调用）
+
+在初始化时，主程序ID会自动设置为transfer hook program ID。
 
 ### 运行测试
 

@@ -20,6 +20,7 @@ import { generateContractByAssetId } from '../utils/contractGenerator.js';
 import { getAssetById, updateRawAsset, getAssetReviewHistory } from '../utils/storage.js';
 import { readFileSync } from 'fs';
 import blockchainService from '../utils/blockchain.js';
+import { mintAssetOnChain } from '../utils/solanaBlockchain.js';
 import { addAssetLog, readHomepageData, writeHomepageData } from '../utils/homepageStorage.js';
 import { generateAssetLog } from '../utils/nodeNameGenerator.js';
 
@@ -325,25 +326,52 @@ router.put('/approve/:id', authenticate, requireRole(ROLES.REVIEWER, ROLES.ADMIN
       // 资产池添加失败不影响审核通过
     }
     
-    // 如果启用自动上链，则触发区块链铸造
+    // 如果启用自动上链，则触发Solana tot合约铸造
     let mintResult = null;
-    if (autoMint && process.env.CONTRACT_ADDRESS) {
+    if (autoMint) {
       try {
         const toAddress = mintToAddress || req.user?.address || process.env.PLATFORM_WALLET;
         if (toAddress) {
-          mintResult = await blockchainService.mintAsset(assetData, toAddress);
-          console.log('✅ 资产已自动上链:', mintResult);
-          
-          // 更新资产的上链状态
-          if (mintResult && mintResult.success) {
-            await updateAssetStatus(id, 'AVAILABLE', {
-              nftMinted: true,
-              nftTokenId: mintResult.tokenId,
-              nftTxHash: mintResult.txHash,
-              nftMintedAt: Date.now(),
-              nftMintedTo: toAddress,
-              nftBlockNumber: mintResult.blockNumber
-            });
+          // 使用Solana tot合约的mint_asset指令
+          try {
+            mintResult = await mintAssetOnChain(assetData, toAddress);
+            console.log('✅ 资产已自动上链到Solana:', mintResult);
+            
+            // 更新资产的上链状态
+            if (mintResult && mintResult.success) {
+              await updateAssetStatus(id, 'AVAILABLE', {
+                nftMinted: true,
+                nftTokenId: mintResult.assetAccount, // Solana使用账户地址作为标识
+                nftTxHash: mintResult.txHash,
+                nftMintedAt: Date.now(),
+                nftMintedTo: toAddress,
+                nftBlockNumber: null // Solana没有block number
+              });
+            }
+          } catch (solanaError) {
+            // 如果Solana上链失败，尝试fallback到以太坊合约（如果配置了）
+            if (process.env.CONTRACT_ADDRESS) {
+              console.warn('⚠️ Solana上链失败，尝试使用以太坊合约:', solanaError.message);
+              try {
+                mintResult = await blockchainService.mintAsset(assetData, toAddress);
+                console.log('✅ 资产已自动上链到以太坊:', mintResult);
+                
+                if (mintResult && mintResult.success) {
+                  await updateAssetStatus(id, 'AVAILABLE', {
+                    nftMinted: true,
+                    nftTokenId: mintResult.tokenId,
+                    nftTxHash: mintResult.txHash,
+                    nftMintedAt: Date.now(),
+                    nftMintedTo: toAddress,
+                    nftBlockNumber: mintResult.blockNumber
+                  });
+                }
+              } catch (ethError) {
+                console.error('⚠️ 以太坊上链也失败:', ethError);
+              }
+            } else {
+              throw solanaError;
+            }
           }
         }
       } catch (mintError) {

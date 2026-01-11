@@ -6,79 +6,50 @@
 import express from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { put, get, NAMESPACES } from '../utils/rocksdb.js';
-import { Connection, PublicKey, Transaction } from '@solana/web3.js';
-import { getAssociatedTokenAddress, createTransferInstruction, getAccount } from '@solana/spl-token';
-import solanaBlockchainService from '../utils/solanaBlockchain.js';
-import config from '../solana.config.js';
-
-const TAI_ONE_TOKEN_MINT = new PublicKey(config.TAI_ONE_TOKEN.MINT);
-const TAI_ONE_DECIMALS = config.TAI_ONE_TOKEN.DECIMALS;
-
-// 财库地址（接收Token消耗）
-const TREASURY_ADDRESS = 'TaiOneTreasury111111111111111111111111111111';
+import { Transaction } from '@solana/web3.js';
+import { consumeToTreasury } from '../utils/solanaBlockchain.js';
 
 /**
- * 构建消耗TOT的交易
+ * 根据reason确定消费类型
+ * @param {string} reason - 消费原因
+ * @returns {number} 消费类型（0=地图操作, 1=祖籍标记, 2=其他）
+ */
+function getConsumeType(reason) {
+  if (!reason) return 0; // 默认地图操作
+  
+  const reasonLower = reason.toLowerCase();
+  if (reasonLower.includes('ancestor') || reasonLower.includes('祖籍')) {
+    return 1; // 祖籍标记
+  } else if (reasonLower.includes('map') || reasonLower.includes('地图') || reasonLower === 'map_action') {
+    return 0; // 地图操作
+  } else {
+    return 2; // 其他
+  }
+}
+
+/**
+ * 构建消耗TOT的交易（使用TOT合约）
  * @param {string} userAddress - 用户钱包地址
  * @param {number} amount - 消耗的TOT数量
- * @returns {Promise<Transaction>}
+ * @param {string} reason - 消费原因（用于确定消费类型）
+ * @returns {Promise<Object>} 交易结果（包含序列化的交易）
  */
-async function buildConsumeTokenTransaction(userAddress, amount) {
+async function buildConsumeTokenTransaction(userAddress, amount, reason = 'map_action') {
   try {
-    const connection = solanaBlockchainService.connection;
-    if (!connection) {
-      throw new Error('Solana connection not initialized');
-    }
-
-    const userPubkey = new PublicKey(userAddress);
-    const treasuryPubkey = new PublicKey(TREASURY_ADDRESS);
-
-    // 获取用户的TOT代币账户
-    const userTokenAccount = await getAssociatedTokenAddress(
-      TAI_ONE_TOKEN_MINT,
-      userPubkey
-    );
-
-    // 获取财库的TOT代币账户
-    const treasuryTokenAccount = await getAssociatedTokenAddress(
-      TAI_ONE_TOKEN_MINT,
-      treasuryPubkey
-    );
-
-    // 检查用户余额
-    const amountRaw = BigInt(Math.floor(amount * Math.pow(10, TAI_ONE_DECIMALS)));
-    try {
-      const account = await getAccount(connection, userTokenAccount);
-      if (BigInt(account.amount.toString()) < amountRaw) {
-        throw new Error(`余额不足，需要 ${amount} TOT`);
-      }
-    } catch (error) {
-      if (error.message.includes('余额不足')) {
-        throw error;
-      }
-      throw new Error('用户Token账户不存在或余额不足');
-    }
-
-    // 构建交易
-    const transaction = new Transaction();
-    transaction.add(
-      createTransferInstruction(
-        userTokenAccount,
-        treasuryTokenAccount,
-        userPubkey,
-        amountRaw,
-        [],
-        TAI_ONE_TOKEN_MINT
-      )
-    );
-
-    transaction.feePayer = userPubkey;
-    const { blockhash } = await connection.getLatestBlockhash('confirmed');
-    transaction.recentBlockhash = blockhash;
-
+    // 确定消费类型
+    const consumeType = getConsumeType(reason);
+    
+    // 调用TOT合约的consume_to_treasury指令
+    const result = await consumeToTreasury(userAddress, amount, consumeType);
+    
+    // 反序列化交易以便返回
+    const transaction = Transaction.from(Buffer.from(result.transaction, 'base64'));
+    
     return transaction;
   } catch (error) {
     console.error('构建Token消耗交易失败:', error);
+    // 如果TOT合约调用失败，可以fallback到标准SPL Token转账
+    // 这里暂时抛出错误，后续可以添加fallback逻辑
     throw error;
   }
 }
@@ -109,8 +80,8 @@ router.post('/consume', authenticate, async (req, res) => {
       });
     }
 
-    // 构建消耗TOT的交易
-    const transaction = await buildConsumeTokenTransaction(userAddress, amount);
+    // 构建消耗TOT的交易（使用TOT合约的consume_to_treasury指令）
+    const transaction = await buildConsumeTokenTransaction(userAddress, amount, reason);
 
     // 序列化交易
     const serialized = transaction.serialize({ requireAllSignatures: false }).toString('base64');
@@ -238,6 +209,71 @@ router.get('/history', authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || '获取操作历史失败'
+    });
+  }
+});
+
+/**
+ * POST /api/map-actions/verify - 验证地图操作交易
+ */
+router.post('/verify', authenticate, async (req, res) => {
+  try {
+    const { txSignature, amount, reason } = req.body;
+    const userAddress = req.user?.address;
+
+    if (!userAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'User address is required'
+      });
+    }
+
+    if (!txSignature) {
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction signature is required'
+      });
+    }
+
+    // 验证交易
+    const { verifyStrategicAssetPurchase } = await import('../utils/solanaBlockchain.js');
+    try {
+      const verificationResult = await verifyStrategicAssetPurchase(
+        txSignature,
+        userAddress,
+        amount || 0
+      );
+
+      if (!verificationResult.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'Transaction verification failed',
+          message: '交易验证失败'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Transaction verified successfully',
+        blockchain: {
+          txHash: txSignature,
+          confirmed: verificationResult.confirmed,
+          blockTime: verificationResult.blockTime
+        }
+      });
+    } catch (error) {
+      console.error('Error verifying transaction:', error);
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction verification error',
+        message: error.message
+      });
+    }
+  } catch (error) {
+    console.error('Error verifying map action:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || '验证交易失败'
     });
   }
 });

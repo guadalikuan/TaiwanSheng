@@ -7,9 +7,8 @@ import crypto from 'crypto';
 import { get, put, getAll, NAMESPACES } from '../utils/rocksdb.js';
 import { authenticate } from '../middleware/auth.js';
 import solanaBlockchainService from '../utils/solanaBlockchain.js';
-import { Connection, PublicKey, Transaction } from '@solana/web3.js';
-import { getAssociatedTokenAddress, createTransferInstruction, getAccount } from '@solana/spl-token';
-import config from '../solana.config.js';
+import { Transaction } from '@solana/web3.js';
+import { consumeToTreasury } from '../utils/solanaBlockchain.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -71,63 +70,26 @@ function calculateDataHash(data) {
 }
 
 /**
- * 构建Token消耗交易
+ * 构建Token消耗交易（使用TOT合约）
  */
 async function buildConsumeTokenTransaction(userAddress) {
   try {
-    const connection = solanaBlockchainService.connection;
-    if (!connection) {
-      throw new Error('Solana connection not initialized');
-    }
-
-    const userPubkey = new PublicKey(userAddress);
-    const treasuryPubkey = new PublicKey(TREASURY_ADDRESS);
-
-    // 获取用户的TaiOneToken账户
-    const userTokenAccount = await getAssociatedTokenAddress(
-      TaiOneToken_MINT,
-      userPubkey
-    );
-
-    // 获取财库的TaiOneToken账户
-    const treasuryTokenAccount = await getAssociatedTokenAddress(
-      TaiOneToken_MINT,
-      treasuryPubkey
-    );
-
-    // 检查用户余额
-    try {
-      const account = await getAccount(connection, userTokenAccount);
-      if (BigInt(account.amount.toString()) < MARKING_FEE_RAW) {
-        throw new Error('余额不足，需要至少100 TaiOneToken');
-      }
-    } catch (error) {
-      if (error.message.includes('余额不足')) {
-        throw error;
-      }
-      throw new Error('用户Token账户不存在或余额不足');
-    }
-
-    // 构建转账交易
-    const transaction = new Transaction();
-    transaction.add(
-      createTransferInstruction(
-        userTokenAccount,
-        treasuryTokenAccount,
-        userPubkey,
-        MARKING_FEE_RAW,
-        [],
-        TaiOneToken_MINT
-      )
-    );
-
-    transaction.feePayer = userPubkey;
-    const { blockhash } = await connection.getLatestBlockhash('confirmed');
-    transaction.recentBlockhash = blockhash;
-
+    // 祖籍标记固定消耗100 TOT
+    const amount = 100;
+    // 使用ConsumeType::AncestorMarking（类型1）
+    const consumeType = 1;
+    
+    // 调用TOT合约的consume_to_treasury指令
+    const result = await consumeToTreasury(userAddress, amount, consumeType);
+    
+    // 反序列化交易以便返回
+    const transaction = Transaction.from(Buffer.from(result.transaction, 'base64'));
+    
     return transaction;
   } catch (error) {
     console.error('构建Token消耗交易失败:', error);
+    // 如果TOT合约调用失败，可以fallback到标准SPL Token转账
+    // 这里暂时抛出错误，后续可以添加fallback逻辑
     throw error;
   }
 }
@@ -698,6 +660,72 @@ router.get('/:id', authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || '获取标记详情失败'
+    });
+  }
+});
+
+/**
+ * POST /api/ancestor/verify-token - 验证祖籍标记交易
+ */
+router.post('/verify-token', authenticate, async (req, res) => {
+  try {
+    const { txSignature } = req.body;
+    const userAddress = req.user?.address || req.body.walletAddress;
+
+    if (!userAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'Wallet address is required'
+      });
+    }
+
+    if (!txSignature) {
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction signature is required'
+      });
+    }
+
+    // 验证交易
+    const { verifyStrategicAssetPurchase } = await import('../utils/solanaBlockchain.js');
+    try {
+      const verificationResult = await verifyStrategicAssetPurchase(
+        txSignature,
+        userAddress,
+        MARKING_FEE
+      );
+
+      if (!verificationResult.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'Transaction verification failed',
+          message: '交易验证失败'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Transaction verified successfully',
+        fee: MARKING_FEE,
+        blockchain: {
+          txHash: txSignature,
+          confirmed: verificationResult.confirmed,
+          blockTime: verificationResult.blockTime
+        }
+      });
+    } catch (error) {
+      console.error('Error verifying transaction:', error);
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction verification error',
+        message: error.message
+      });
+    }
+  } catch (error) {
+    console.error('验证Token消耗失败:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || '验证交易失败'
     });
   }
 });
