@@ -27,7 +27,8 @@ import {
   calculate24hVolume
 } from './orderMatchingEngine.js';
 import { startBotScheduler, stopBotScheduler } from './botScheduler.js';
-import { updateAllLeaderboards } from './leaderboard.js';
+import { updateAllLeaderboards, recordJackpotHistory } from './leaderboard.js';
+import { executeSnapshotTask } from './leaderboardSnapshots.js';
 
 let marketTaskInterval = null;
 let taiwanNodeTaskInterval = null;
@@ -271,6 +272,10 @@ const startLeaderboardTask = () => {
   leaderboardTaskInterval = setInterval(async () => {
     try {
       await updateAllLeaderboards();
+      // 同时检查是否需要执行快照
+      await executeSnapshotTask();
+      // 记录奖池余额历史
+      await recordJackpotHistory();
     } catch (error) {
       console.error('Leaderboard task error:', error);
     }

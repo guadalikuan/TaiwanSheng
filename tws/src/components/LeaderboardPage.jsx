@@ -4,11 +4,12 @@
 // ============================================
 
 import React, { useState, useEffect } from 'react';
-import { Trophy, Medal, TrendingUp, TrendingDown, Minus, Loader, RefreshCw } from 'lucide-react';
+import { Trophy, Medal, TrendingUp, TrendingDown, Minus, Loader, RefreshCw, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { getLeaderboard, getUserRanking } from '../utils/api';
+import { getLeaderboard, getUserRanking, getJackpotHistory } from '../utils/api';
 import { useServerStatus } from '../contexts/ServerStatusContext';
+import KlineChart from './KlineChart';
 
 // 排行榜类型配置
 const LEADERBOARD_TYPES = [
@@ -78,19 +79,58 @@ const LEADERBOARD_TYPES = [
   },
 ];
 
+// 时间维度配置
+const LEADERBOARD_PERIODS = [
+  {
+    id: 'all',
+    name: '总排行',
+    icon: Trophy,
+    color: 'text-gold',
+    bgColor: 'bg-gold/20',
+    borderColor: 'border-gold/50',
+  },
+  {
+    id: 'month',
+    name: '月排行',
+    icon: Calendar,
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-600/20',
+    borderColor: 'border-blue-600/50',
+  },
+  {
+    id: 'week',
+    name: '周排行',
+    icon: Calendar,
+    color: 'text-green-400',
+    bgColor: 'bg-green-600/20',
+    borderColor: 'border-green-600/50',
+  },
+  {
+    id: 'day',
+    name: '日排行',
+    icon: Calendar,
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-600/20',
+    borderColor: 'border-purple-600/50',
+  },
+];
+
 const LeaderboardPage = () => {
   const navigate = useNavigate();
   const { publicKey } = useWallet();
   const { isOnline } = useServerStatus();
   const [activeType, setActiveType] = useState('balance');
+  const [activePeriod, setActivePeriod] = useState('all');
   const [leaderboard, setLeaderboard] = useState([]);
   const [userRanking, setUserRanking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [jackpotHistory, setJackpotHistory] = useState([]);
+  const [jackpotLoading, setJackpotLoading] = useState(true);
 
   // 加载排行榜数据
-  const loadLeaderboard = async (type = activeType) => {
+  const loadLeaderboard = async (type = activeType, period = activePeriod) => {
     if (!isOnline) {
       setLoading(false);
       return;
@@ -100,14 +140,14 @@ const LeaderboardPage = () => {
     setError(null);
 
     try {
-      const response = await getLeaderboard(type, 100);
+      const response = await getLeaderboard(type, period, 100);
       if (response && response.success) {
         setLeaderboard(response.data || []);
         setLastUpdate(new Date());
         
         // 如果用户已连接钱包，获取用户排名
         if (publicKey) {
-          const userRankResponse = await getUserRanking(publicKey.toString(), type);
+          const userRankResponse = await getUserRanking(publicKey.toString(), type, period);
           if (userRankResponse && userRankResponse.success && userRankResponse.found) {
             setUserRanking(userRankResponse.data);
           } else {
@@ -127,10 +167,40 @@ const LeaderboardPage = () => {
     }
   };
 
-  // 初始加载和类型切换时重新加载
+  // 初始加载和类型/时间维度切换时重新加载
   useEffect(() => {
     loadLeaderboard();
-  }, [activeType, isOnline]);
+  }, [activeType, activePeriod, isOnline]);
+
+  // 加载奖池历史数据
+  const loadJackpotHistory = async () => {
+    if (!isOnline) {
+      setJackpotLoading(false);
+      return;
+    }
+
+    setJackpotLoading(true);
+    try {
+      const response = await getJackpotHistory(200);
+      if (response && response.success && response.data && response.data.length > 0) {
+        setJackpotHistory(response.data);
+      } else {
+        setJackpotHistory([]); // 没有数据，不显示图表
+      }
+    } catch (error) {
+      console.error('Failed to load jackpot history:', error);
+      setJackpotHistory([]);
+    } finally {
+      setJackpotLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadJackpotHistory();
+    // 每30秒刷新一次
+    const interval = setInterval(loadJackpotHistory, 30000);
+    return () => clearInterval(interval);
+  }, [isOnline]);
 
   // 获取排名徽章样式
   const getRankBadge = (rank) => {
@@ -188,7 +258,7 @@ const LeaderboardPage = () => {
 
       <div className="max-w-7xl mx-auto px-8 py-8">
         {/* 排行榜类型切换 */}
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
             {LEADERBOARD_TYPES.map((type) => {
               const Icon = type.icon;
@@ -207,6 +277,38 @@ const LeaderboardPage = () => {
                 >
                   <Icon size={18} />
                   {type.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 时间维度切换 */}
+        <div className="mb-6">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+            {LEADERBOARD_PERIODS.map((period) => {
+              const Icon = period.icon;
+              const isActive = activePeriod === period.id;
+              // 持币时间排行榜不支持日/周/月排行
+              const isDisabled = activeType === 'holding-time' && period.id !== 'all';
+              return (
+                <button
+                  key={period.id}
+                  onClick={() => !isDisabled && setActivePeriod(period.id)}
+                  disabled={isDisabled}
+                  className={`
+                    flex items-center gap-2 px-6 py-3 rounded-lg font-mono text-sm transition-all whitespace-nowrap
+                    ${isDisabled
+                      ? 'bg-slate-800/30 text-slate-600 border-2 border-slate-800 cursor-not-allowed'
+                      : isActive 
+                        ? `${period.bgColor} ${period.color} border-2 ${period.borderColor}` 
+                        : 'bg-slate-800/50 text-slate-400 border-2 border-slate-700 hover:border-slate-600 hover:text-slate-300'
+                    }
+                  `}
+                  title={isDisabled ? '持币时间排行榜不支持日/周/月排行' : ''}
+                >
+                  <Icon size={18} />
+                  {period.name}
                 </button>
               );
             })}
@@ -309,6 +411,22 @@ const LeaderboardPage = () => {
               </div>
             )}
           </>
+        )}
+
+        {/* 奖池余额K线图 */}
+        {jackpotHistory.length > 0 && (
+          <div className="mt-8 p-6 bg-slate-900/50 border border-slate-700 rounded-lg">
+            <h3 className="text-xl font-black text-white mb-4">奖池余额变化</h3>
+            <div className="h-96 w-full">
+              <KlineChart
+                data={jackpotHistory}
+                viewMode="分时"
+                currentPrice={jackpotHistory.length > 0 ? jackpotHistory[jackpotHistory.length - 1].close : 0}
+                width={800}
+                height={384}
+              />
+            </div>
+          </div>
         )}
       </div>
     </div>

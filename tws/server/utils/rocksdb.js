@@ -354,7 +354,8 @@ export const NAMESPACES = {
   SHARE_HOLDINGS: 'rwaShareHoldings', // 份额持有记录
   ETF_BASKETS: 'rwaEtfBaskets', // ETF篮子
   MAP_ACTIONS: 'mapActions', // 地图功能操作记录
-  LEADERBOARD: 'leaderboard' // 排行榜缓存
+  LEADERBOARD: 'leaderboard', // 排行榜缓存
+  JACKPOT_HISTORY: 'jackpotHistory' // 奖池历史记录
 };
 
 export default {
