@@ -1,0 +1,35 @@
+[workspace]
+members = [
+    "."  # 主程序在src/目录（transfer-hook已合并到主程序）
+]
+resolver = "2"
+
+[workspace.dependencies]
+anchor-lang = "0.29.0"
+anchor-spl = "0.29.0"
+
+# 主程序配置（从programs/tot-token/Cargo.toml移动）
+[package]
+name = "tot-token"
+version = "0.1.0"
+description = "TaiOneToken (TOT) - Solana SPL Token-2022 with dynamic tax system"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "tot_token"
+path = "lib.rs"  # Cargo.toml在src/目录，所以使用相对路径
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = { workspace = true, features = ["init-if-needed"] }
+anchor-spl = { workspace = true, features = ["token-2022"] }
+spl-token-2022 = "0.6"
+spl-transfer-hook-interface = "0.6"
+spl-tlv-account-resolution = "0.6"

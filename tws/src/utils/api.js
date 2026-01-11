@@ -2386,3 +2386,82 @@ export const recordMapAction = async (actionType, data) => {
   }
 };
 
+/**
+ * 获取排行榜数据
+ * @param {string} type - 排行榜类型 (balance, transactions, jackpot-wins, asset-value, tax-paid, consumption, referral-earnings, holding-time)
+ * @param {string} period - 时间维度 (all, day, week, month，默认all)
+ * @param {number} limit - 返回数量（默认100）
+ * @returns {Promise<Object>}
+ */
+export const getLeaderboard = async (type, period = 'all', limit = 100) => {
+  try {
+    const response = await fetchWithRetry(
+      `${API_BASE_URL}/api/leaderboard/${type}?period=${period}&limit=${limit}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+      3,
+      1000
+    );
+    return response;
+  } catch (error) {
+    console.error('API getLeaderboard error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取用户排名信息
+ * @param {string} address - 用户钱包地址
+ * @param {string} type - 排行榜类型（可选，默认balance）
+ * @param {string} period - 时间维度（可选，默认all）
+ * @returns {Promise<Object>}
+ */
+export const getUserRanking = async (address, type = 'balance', period = 'all') => {
+  try {
+    const response = await fetchWithRetry(
+      `${API_BASE_URL}/api/leaderboard/user/${address}?type=${type}&period=${period}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+      3,
+      1000
+    );
+    return response;
+  } catch (error) {
+    console.error('API getUserRanking error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取奖池历史数据（用于K线图）
+ * @param {number} limit - 返回数量（默认100）
+ * @returns {Promise<Object>}
+ */
+export const getJackpotHistory = async (limit = 100) => {
+  try {
+    const response = await fetchWithRetry(
+      `${API_BASE_URL}/api/leaderboard/jackpot-history?limit=${limit}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+      3,
+      1000
+    );
+    return response;
+  } catch (error) {
+    console.error('API getJackpotHistory error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+

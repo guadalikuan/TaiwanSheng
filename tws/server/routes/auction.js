@@ -3,7 +3,7 @@ import express from 'express';
 fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'routes/auction.js:2',message:'准备导入rocksdb和solanaBlockchain',data:{importPath:'../utils/rocksdb.js'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
 // #endregion
 import { get, put, getAll, getAllKeys, NAMESPACES } from '../utils/rocksdb.js';
-import { getTaiOneTokenBalance } from '../utils/solanaBlockchain.js';
+import { getTaiOneTokenBalance, consumeToTreasury, createAuctionOnChain, seizeAuctionOnChain } from '../utils/solanaBlockchain.js';
 import config from '../solana.config.js';
 
 const router = express.Router();
@@ -40,13 +40,13 @@ router.get('/:assetId', async (req, res) => {
 /**
  * 夺取资产（10%溢价机制）
  * POST /api/auction/:assetId/seize
- * Body: { bidMessage, userAddress, treasuryAddress? }
- * 注意：treasuryAddress 可选，默认使用 TaiOneToken 铸造地址
+ * Body: { bidMessage, userAddress }
+ * 使用tot合约的seize_auction指令
  */
 router.post('/:assetId/seize', async (req, res) => {
   try {
     const { assetId } = req.params;
-    const { bidMessage, userAddress, treasuryAddress } = req.body;
+    const { bidMessage, userAddress } = req.body;
 
     if (!bidMessage || !userAddress) {
       return res.status(400).json({
@@ -73,41 +73,44 @@ router.post('/:assetId/seize', async (req, res) => {
       });
     }
 
-    // 计算最低出价（当前价格 + 10%）
-    const currentPrice = BigInt(auctionData.price);
-    const minRequired = currentPrice * BigInt(110) / BigInt(100);
-    
-    // 更新拍卖信息
-    const newPrice = minRequired.toString();
+    // 调用tot合约的seize_auction指令
+    let seizeResult = null;
+    try {
+      seizeResult = await seizeAuctionOnChain(assetId, bidMessage, userAddress);
+    } catch (error) {
+      console.error('夺取资产失败:', error);
+      return res.status(400).json({
+        success: false,
+        error: '夺取资产失败: ' + error.message
+      });
+    }
+
+    // 更新链下拍卖信息
     const oldOwner = auctionData.owner;
     const now = new Date().toISOString();
     
     const updatedAuction = {
       ...auctionData,
       owner: userAddress,
-      price: newPrice,
-      minRequired: minRequired.toString(),
+      price: seizeResult.minRequired,
+      minRequired: (BigInt(seizeResult.minRequired) * BigInt(110) / BigInt(100)).toString(),
       tauntMessage: bidMessage,
       lastSeizedAt: now,
-      // 计算分账：5% 给财库，95% 给上一任房主
-      fee: (minRequired * BigInt(5) / BigInt(100)).toString(),
-      payout: (minRequired * BigInt(95) / BigInt(100)).toString(),
-      previousOwner: oldOwner
+      previousOwner: oldOwner,
+      seizeTxHash: `pending_${Date.now()}`, // 临时哈希，实际由用户签名后获得
     };
     
     // 保存到 RocksDB
     await put(NAMESPACES.AUCTIONS, assetId.toString(), updatedAuction);
     
-    // 生成模拟交易哈希（实际项目中应该返回真实的 Solana 交易哈希）
-    const txHash = `seize_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
     res.json({ 
       success: true, 
       data: {
-        txHash,
-        newPrice: newPrice,
+        transaction: seizeResult.transaction, // 交易（需要用户签名）
+        newPrice: seizeResult.minRequired,
         newOwner: userAddress,
-        previousOwner: oldOwner
+        previousOwner: oldOwner,
+        currentPrice: seizeResult.currentPrice,
       }
     });
   } catch (error) {
@@ -178,23 +181,19 @@ router.post('/create', async (req, res) => {
 
     // 创建费用：200 TOT
     const CREATE_FEE = 200;
-    const CREATE_FEE_RAW = BigInt(CREATE_FEE * Math.pow(10, config.TAI_ONE_TOKEN.DECIMALS)).toString();
     
-    // 检查用户余额（200 TOT 创建费 + 起拍价）
+    // 检查用户余额（200 TOT 创建费）
     const balanceData = await getTaiOneTokenBalance(creatorAddress);
     const userBalance = BigInt(balanceData.balance || '0');
-    const startPriceRaw = BigInt(Math.floor(startPriceNum * Math.pow(10, config.TAI_ONE_TOKEN.DECIMALS)).toString());
-    const requiredBalance = BigInt(CREATE_FEE_RAW) + startPriceRaw;
+    const createFeeRaw = BigInt(CREATE_FEE * Math.pow(10, config.TAI_ONE_TOKEN.DECIMALS));
+    const startPriceRaw = BigInt(Math.floor(startPriceNum * Math.pow(10, config.TAI_ONE_TOKEN.DECIMALS)));
 
-    if (userBalance < requiredBalance) {
+    if (userBalance < createFeeRaw) {
       return res.status(400).json({
         success: false,
-        error: `余额不足，需要 ${CREATE_FEE + startPriceNum} TOT（创建费 ${CREATE_FEE} TOT + 起拍价 ${startPriceNum} TOT）`
+        error: `余额不足，需要 ${CREATE_FEE} TOT 创建费`
       });
     }
-
-    // 如果有交易签名，验证交易（可选，用于链上扣除）
-    // 这里先跳过验证，直接创建拍卖（实际项目中应该验证交易）
 
     // 生成新的 assetId
     const allKeys = await getAllKeys(NAMESPACES.AUCTIONS);
@@ -212,7 +211,7 @@ router.post('/create', async (req, res) => {
     const startPriceRawStr = startPriceRaw.toString();
     const minRequired = (startPriceRaw * BigInt(110) / BigInt(100)).toString();
 
-    // 创建拍卖数据
+    // 创建拍卖数据（用于链下存储）
     const now = new Date().toISOString();
     const auctionData = {
       assetId: newAssetId,
@@ -232,9 +231,38 @@ router.post('/create', async (req, res) => {
       startPrice: startPriceRawStr,
       status: 'active', // 默认创建后为进行中
       creator: creatorAddress,
-      createFee: CREATE_FEE_RAW,
-      createTxHash: txSignature || `create_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      createFee: createFeeRaw.toString(),
     };
+
+    // 1. 先支付200 TOT创建费（使用tot合约的consume_to_treasury，类型AuctionCreate=3）
+    let createFeeTx = null;
+    try {
+      const createFeeResult = await consumeToTreasury(creatorAddress, CREATE_FEE, 3); // ConsumeType::AuctionCreate
+      createFeeTx = createFeeResult.transaction;
+      auctionData.createTxHash = `pending_${Date.now()}`; // 临时哈希，实际由用户签名后获得
+    } catch (error) {
+      console.error('支付创建费失败:', error);
+      return res.status(400).json({
+        success: false,
+        error: '支付创建费失败: ' + error.message
+      });
+    }
+
+    // 2. 上链拍卖信息（使用tot合约的create_auction）
+    let onChainResult = null;
+    try {
+      onChainResult = await createAuctionOnChain({
+        assetId: newAssetId,
+        startPrice: startPriceRawStr,
+        tauntMessage: tauntMessage || '此资产已被TaiOne接管',
+      }, creatorAddress);
+      auctionData.createTxHash = onChainResult.txHash;
+      auctionData.auctionAccount = onChainResult.auctionAccount;
+    } catch (error) {
+      console.error('拍卖上链失败:', error);
+      // 上链失败不影响链下记录，但需要记录错误
+      auctionData.onChainError = error.message;
+    }
 
     // 保存到 RocksDB
     await put(NAMESPACES.AUCTIONS, newAssetId.toString(), auctionData);
@@ -243,7 +271,8 @@ router.post('/create', async (req, res) => {
       success: true, 
       data: {
         assetId: newAssetId,
-        txHash: auctionData.createTxHash,
+        createFeeTransaction: createFeeTx, // 创建费交易（需要用户签名）
+        onChainResult: onChainResult, // 上链结果
         auction: auctionData
       }
     });
@@ -291,6 +320,150 @@ router.get('/list', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: error.message || '获取拍卖列表失败' 
+    });
+  }
+});
+
+// POST /api/auction/verify-create - 验证拍卖创建交易
+router.post('/verify-create', authenticate, async (req, res) => {
+  try {
+    const { txSignature, assetId } = req.body;
+    const creatorAddress = req.user?.address || req.body.creatorAddress;
+
+    if (!creatorAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'Creator address is required'
+      });
+    }
+
+    if (!txSignature) {
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction signature is required'
+      });
+    }
+
+    // 验证交易
+    const { verifyStrategicAssetPurchase } = await import('../utils/solanaBlockchain.js');
+    try {
+      const verificationResult = await verifyStrategicAssetPurchase(
+        txSignature,
+        creatorAddress,
+        CREATE_FEE
+      );
+
+      if (!verificationResult.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'Transaction verification failed',
+          message: '交易验证失败'
+        });
+      }
+
+      // 如果提供了assetId，可以更新拍卖状态
+      if (assetId) {
+        // 这里可以更新拍卖的创建交易哈希
+        // 具体实现取决于你的数据存储方式
+      }
+
+      res.json({
+        success: true,
+        message: 'Auction creation transaction verified successfully',
+        blockchain: {
+          txHash: txSignature,
+          confirmed: verificationResult.confirmed,
+          blockTime: verificationResult.blockTime
+        }
+      });
+    } catch (error) {
+      console.error('Error verifying transaction:', error);
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction verification error',
+        message: error.message
+      });
+    }
+  } catch (error) {
+    console.error('Error verifying auction creation:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to verify auction creation',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/auction/verify-seize - 验证拍卖夺取交易
+router.post('/verify-seize', authenticate, async (req, res) => {
+  try {
+    const { txSignature, assetId } = req.body;
+    const userAddress = req.user?.address;
+
+    if (!userAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'User address is required'
+      });
+    }
+
+    if (!txSignature || !assetId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction signature and assetId are required'
+      });
+    }
+
+    // 验证交易
+    const { verifyStrategicAssetPurchase } = await import('../utils/solanaBlockchain.js');
+    try {
+      // 获取拍卖信息以确定金额
+      const auction = await get(NAMESPACES.AUCTIONS, assetId);
+      if (!auction) {
+        return res.status(404).json({
+          success: false,
+          error: 'Auction not found'
+        });
+      }
+
+      const minRequired = BigInt(auction.price) * BigInt(110) / BigInt(100);
+      const verificationResult = await verifyStrategicAssetPurchase(
+        txSignature,
+        userAddress,
+        Number(minRequired)
+      );
+
+      if (!verificationResult.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'Transaction verification failed',
+          message: '交易验证失败'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Auction seize transaction verified successfully',
+        blockchain: {
+          txHash: txSignature,
+          confirmed: verificationResult.confirmed,
+          blockTime: verificationResult.blockTime
+        }
+      });
+    } catch (error) {
+      console.error('Error verifying transaction:', error);
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction verification error',
+        message: error.message
+      });
+    }
+  } catch (error) {
+    console.error('Error verifying auction seize:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to verify auction seize',
+      message: error.message
     });
   }
 });

@@ -2,7 +2,7 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { solanaBlockchain } from '../utils/solanaBlockchain.js';
+import { solanaBlockchain, placePredictionBet, consumeToTreasury, platformTransfer, transferPlatformFeeToTreasury } from '../utils/solanaBlockchain.js';
 import { put, get, getAll, NAMESPACES } from '../utils/rocksdb.js';
 
 const router = express.Router();
@@ -113,6 +113,19 @@ router.post('/bet', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Missing required fields' });
         }
 
+        // 使用tot合约的consume_to_treasury进行下注（类型PredictionBet=5）
+        let betTransaction = null;
+        try {
+            const betResult = await placePredictionBet(walletAddress, amount, marketId, direction);
+            betTransaction = betResult.transaction;
+        } catch (error) {
+            console.error('下注交易构建失败:', error);
+            return res.status(400).json({ 
+                success: false, 
+                message: '下注交易构建失败: ' + error.message 
+            });
+        }
+
         const newBet = {
             id: Date.now().toString(),
             walletAddress,
@@ -121,15 +134,92 @@ router.post('/bet', async (req, res) => {
             amount,
             signature,
             timestamp: timestamp || new Date().toISOString(),
-            status: 'PENDING' // PENDING, WON, LOST, REFUNDED
+            status: 'PENDING', // PENDING, WON, LOST, REFUNDED
+            betTransaction: betTransaction, // 下注交易（需要用户签名）
         };
         
         await put(NAMESPACES.PREDICTION_BETS, newBet.id, newBet);
         
-        res.json({ success: true, bet: newBet });
+        res.json({ 
+            success: true, 
+            bet: newBet,
+            transaction: betTransaction // 返回交易供用户签名
+        });
     } catch (error) {
         console.error('Error recording bet:', error);
         res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+});
+
+// POST /api/prediction/verify-bet - 验证预测下注交易
+router.post('/verify-bet', async (req, res) => {
+    try {
+        const { txSignature, walletAddress, amount, marketId, direction } = req.body;
+        
+        if (!txSignature || !walletAddress || !amount) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Missing required fields: txSignature, walletAddress, amount' 
+            });
+        }
+
+        // 验证交易
+        const { verifyStrategicAssetPurchase } = await import('../utils/solanaBlockchain.js');
+        try {
+            const verificationResult = await verifyStrategicAssetPurchase(
+                txSignature,
+                walletAddress,
+                amount
+            );
+
+            if (!verificationResult.success) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Transaction verification failed',
+                    message: '交易验证失败'
+                });
+            }
+
+            // 更新下注记录状态
+            const allBets = await getBets();
+            const bet = allBets.find(b => 
+                b.walletAddress === walletAddress && 
+                b.marketId == marketId && 
+                b.direction === direction &&
+                b.status === 'PENDING'
+            );
+
+            if (bet) {
+                bet.status = 'CONFIRMED';
+                bet.txHash = txSignature;
+                await saveBets(allBets);
+            }
+
+            res.json({
+                success: true,
+                message: 'Bet transaction verified successfully',
+                bet: bet,
+                blockchain: {
+                    txHash: txSignature,
+                    confirmed: verificationResult.confirmed,
+                    blockTime: verificationResult.blockTime
+                }
+            });
+        } catch (error) {
+            console.error('Error verifying transaction:', error);
+            return res.status(400).json({
+                success: false,
+                error: 'Transaction verification error',
+                message: error.message
+            });
+        }
+    } catch (error) {
+        console.error('Error verifying bet:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Internal server error',
+            error: error.message 
+        });
     }
 });
 
@@ -181,28 +271,19 @@ router.post('/distribute', checkAdminPermission, async (req, res) => {
         const feeAmount = totalPool * FEE_PERCENT;
         const distributablePool = totalPool - feeAmount;
 
-        const distributions = winningBets.map(bet => {
+        const winnerDistributions = winningBets.map(bet => {
             const share = Number(bet.amount) / winningPool;
             const prize = share * distributablePool;
             return {
                 wallet: bet.walletAddress,
-                amount: prize, // In TWS amount
+                amount: prize, // In TOT amount
                 betId: bet.id
             };
         });
 
-        // Add Fee Transfer to Treasury
-        if (feeAmount > 0) {
-            distributions.push({
-                wallet: TREASURY_ADDRESS,
-                amount: feeAmount,
-                betId: 'platform-fee'
-            });
-        }
+        console.log(`Distributing ${distributablePool} TOT to ${winningBets.length} winners + ${feeAmount} fee to Treasury`);
 
-        console.log(`Distributing ${distributablePool} TWS to ${winningBets.length} winners + ${feeAmount} fee to Treasury`);
-
-        // 4. Execute transfers via SolanaBlockchainService
+        // 4. Execute transfers via TOT contract
         // Note: Ideally we check if solanaBlockchain is initialized and has a wallet
         if (!solanaBlockchain.wallet) {
             // Simulation Mode if no wallet key provided
@@ -221,19 +302,64 @@ router.post('/distribute', checkAdminPermission, async (req, res) => {
             return res.json({ 
                 success: true, 
                 message: 'Distribution simulated (Treasury wallet not active)',
-                distributions 
+                distributions: winnerDistributions 
             });
         }
 
-        // Real Distribution
-        const results = await solanaBlockchain.distributePredictionRewards(distributions);
+        // Real Distribution using TOT contract
+        const results = [];
+        
+        // 4.1. 分发奖励给获胜者（使用platform_transfer，免税）
+        for (const dist of winnerDistributions) {
+            try {
+                const result = await platformTransfer(dist.wallet, dist.amount);
+                results.push({
+                    wallet: dist.wallet,
+                    success: true,
+                    txHash: result.txHash,
+                    amount: dist.amount,
+                    betId: dist.betId
+                });
+            } catch (error) {
+                console.error(`❌ 奖励分发失败 ${dist.wallet}:`, error);
+                results.push({
+                    wallet: dist.wallet,
+                    success: false,
+                    error: error.message,
+                    betId: dist.betId
+                });
+            }
+        }
+        
+        // 4.2. 平台费用转给财库（从平台钱包转给TWS财库）
+        if (feeAmount > 0) {
+            try {
+                const feeResult = await transferPlatformFeeToTreasury(feeAmount);
+                results.push({
+                    wallet: TREASURY_ADDRESS,
+                    success: true,
+                    txHash: feeResult.txHash,
+                    amount: feeAmount,
+                    betId: 'platform-fee'
+                });
+                console.log(`✅ 平台费用已转给财库: ${feeAmount} TOT, Tx: ${feeResult.txHash}`);
+            } catch (error) {
+                console.error(`❌ 平台费用转账失败:`, error);
+                results.push({
+                    wallet: TREASURY_ADDRESS,
+                    success: false,
+                    error: error.message,
+                    betId: 'platform-fee'
+                });
+            }
+        }
         
         // 5. Update bet status based on results
         const finalBets = allBets.map(b => {
             if (b.marketId == marketId && b.status === 'PENDING') {
                 if (b.direction === winningOutcome) {
                     // Check if this specific user was paid
-                    const result = results.find(r => r.wallet === b.walletAddress);
+                    const result = results.find(r => r.wallet === b.walletAddress && r.betId === b.id);
                     if (result && result.success) {
                         return { 
                             ...b, 

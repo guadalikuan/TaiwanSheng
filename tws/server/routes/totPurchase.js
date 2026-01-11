@@ -14,7 +14,7 @@ import { parseCallback as parseWechatCallback, isPaymentSuccess as isWechatSucce
 import { parseCallback as parseAlipayCallback, isPaymentSuccess as isAlipaySuccess, generateCallbackResponse as generateAlipayResponse } from '../utils/alipayService.js';
 import PaymentServiceFactory, { PAYMENT_METHODS } from '../utils/paymentServiceFactory.js';
 import { convertTwdToTot, getExchangeRate } from '../utils/exchangeRate.js';
-import { transferTOTToUser } from '../utils/solanaBlockchain.js';
+import { platformTransfer } from '../utils/solanaBlockchain.js';
 
 const router = express.Router();
 
@@ -305,8 +305,8 @@ async function processTOTTransfer(order) {
 
     console.log(`[TOT Purchase] 开始转账TOT: ${order.totAmount} TOT 到 ${order.walletAddress}`);
 
-    // 执行转账
-    const transferResult = await transferTOTToUser(order.walletAddress, order.totAmount);
+    // 执行转账（使用tot合约的platform_transfer，免税）
+    const transferResult = await platformTransfer(order.walletAddress, order.totAmount);
 
     // 更新订单状态为已完成
     order.status = ORDER_STATUS.COMPLETED;

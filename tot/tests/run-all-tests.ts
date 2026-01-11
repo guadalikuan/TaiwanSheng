@@ -19,7 +19,7 @@ interface TestGroup {
 const testGroups: TestGroup[] = [
   {
     name: "组1: 基础初始化测试",
-    files: ["tests/tot-token.ts", "tests/initialize.test.ts"],
+    files: ["tests/initialize.test.ts"],
     description: "基础测试套件和初始化相关测试",
   },
   {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Database, ShieldCheck, ArrowRight, Lock, FileText, Globe, Zap, Key, Package, Github, Building2, Wheat, FlaskConical, Wine, Palette, Plus, Mountain, Warehouse, Ship, Cpu, Eye } from 'lucide-react';
+import { Database, ShieldCheck, ArrowRight, Lock, FileText, Globe, Zap, Key, Package, Github, Building2, Wheat, FlaskConical, Wine, Palette, Plus, Mountain, Warehouse, Ship, Cpu, Eye, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getHomepageAssets } from '../utils/api';
 import { useServerStatus } from '../contexts/ServerStatusContext';
@@ -82,6 +82,13 @@ const AssetsSection = () => {
                 发布科技项目
               </button>
             )}
+            <button
+              onClick={() => navigate('/leaderboard')}
+              className="ml-4 bg-yellow-600/20 border border-yellow-600/50 text-yellow-400 hover:bg-yellow-600 hover:text-white px-6 py-3 rounded text-sm font-mono tracking-widest transition-all flex items-center gap-2 whitespace-nowrap"
+            >
+              <Trophy size={16} />
+              排行榜
+            </button>
             <button
               onClick={() => navigate('/my-assets')}
               className="ml-4 bg-emerald-600/20 border border-emerald-600/50 text-emerald-400 hover:bg-emerald-600 hover:text-white px-6 py-3 rounded text-sm font-mono tracking-widest transition-all flex items-center gap-2 whitespace-nowrap"

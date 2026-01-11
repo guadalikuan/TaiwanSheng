@@ -33,7 +33,6 @@ import {
 import {
   checkBalance,
   calculateLockFee,
-  processPayment,
   verifyPaymentTransaction
 } from '../utils/rwaPaymentHandler.js';
 import {
@@ -56,7 +55,7 @@ import {
   deleteEtfBasket
 } from '../utils/rwaEtfManager.js';
 import blockchainService from '../utils/blockchain.js';
-import { mintStrategicAsset, verifyStrategicAssetPurchase } from '../utils/solanaBlockchain.js';
+import { mintStrategicAsset, verifyStrategicAssetPurchase, consumeToTreasury } from '../utils/solanaBlockchain.js';
 
 const router = express.Router();
 
@@ -407,46 +406,32 @@ router.post('/lock/:assetId', authenticate, async (req, res) => {
       });
     }
     
-    // 处理支付
-    const paymentResult = await processPayment({
-      userAddress: userId,
-      amount: lockFee,
-      txSignature,
-      paymentType: 'lock_fee',
-      to: 'platform',
-      extra: { assetId, lockFee }
-    });
-    
-    if (!paymentResult.success) {
+    // 构建支付交易（使用tot合约的consume_to_treasury，免税）
+    let lockFeeTransaction = null;
+    try {
+      const lockFeeResult = await consumeToTreasury(userId, lockFee, 2); // ConsumeType::Other
+      lockFeeTransaction = lockFeeResult.transaction;
+    } catch (error) {
+      console.error('构建锁定费用交易失败:', error);
+      // 如果tot合约不可用，可以提供降级方案或记录到队列
       return res.status(400).json({
         success: false,
-        error: 'Payment failed',
-        message: paymentResult.message
+        error: '构建锁定费用交易失败',
+        message: error.message,
+        suggestion: 'TOT合约可能未加载，请联系管理员或稍后重试'
       });
     }
     
-    // 创建锁定记录
-    const lock = await createLock({
-      assetId,
-      userId,
-      lockFee,
-      lockExpiresAt: Date.now() + 48 * 60 * 60 * 1000, // 48小时
-      txHash: paymentResult.txHash
-    });
-    
-    // 更新资产状态
-    await updateAssetStatus(assetId, 'RESERVED', {
-      lockedBy: userId,
-      lockedAt: Date.now(),
-      lockExpiresAt: lock.lockExpiresAt,
-      lockFee: lockFee
-    });
+    // 注意：不在此处创建锁定记录和更新状态，等待用户签名交易后通过验证端点创建
+    // 锁定记录和状态更新将在 /api/rwa-trade/verify-lock/:assetId 端点中完成
     
     res.json({
       success: true,
-      message: 'Asset locked successfully',
-      lock,
-      lockExpiresAt: lock.lockExpiresAt
+      message: 'Transaction built, please sign and verify',
+      transaction: lockFeeTransaction, // 锁定费用交易（需要用户签名）
+      assetId: assetId,
+      lockFee: lockFee,
+      note: '请签名交易后调用 /api/rwa-trade/verify-lock/:assetId 端点验证并创建锁定记录'
     });
   } catch (error) {
     console.error('Error locking asset:', error);
@@ -523,34 +508,22 @@ router.post('/confirm/:assetId', authenticate, async (req, res) => {
       });
     }
     
-    // 处理支付
-    const paymentResult = await processPayment({
-      userAddress: userId,
-      amount: remainingAmount,
-      txSignature,
-      paymentType: 'purchase',
-      to: 'platform',
-      extra: { assetId, totalPrice: assetPrice, lockFee: lock.lockFee }
-    });
-    
-    if (!paymentResult.success) {
+    // 构建支付交易（使用tot合约的consume_to_treasury，免税）
+    let purchaseTransaction = null;
+    try {
+      const purchaseResult = await consumeToTreasury(userId, remainingAmount, 2); // ConsumeType::Other
+      purchaseTransaction = purchaseResult.transaction;
+    } catch (error) {
+      console.error('构建购买交易失败:', error);
       return res.status(400).json({
         success: false,
-        error: 'Payment failed',
-        message: paymentResult.message
+        error: '构建购买交易失败',
+        message: error.message
       });
     }
     
-    // 确认锁定
-    await confirmLock(lock.id);
-    
-    // 更新资产状态
-    const updatedAsset = await updateAssetStatus(assetId, 'LOCKED', {
-      purchasedBy: userId,
-      purchasedAt: Date.now(),
-      purchasePrice: assetPrice,
-      purchaseTxHash: paymentResult.txHash
-    });
+    // 注意：不在此处更新状态，等待用户签名交易后通过验证端点更新
+    // 状态更新将在 /api/rwa-trade/verify-purchase/:assetId 端点中完成
     
     // 可选：触发NFT铸造
     let mintResult = null;
@@ -570,12 +543,11 @@ router.post('/confirm/:assetId', authenticate, async (req, res) => {
     
     res.json({
       success: true,
-      message: 'Purchase confirmed successfully',
-      asset: updatedAsset,
-      blockchain: mintResult ? {
-        txHash: mintResult.txHash,
-        tokenId: mintResult.tokenId
-      } : null
+      message: 'Transaction built, please sign and verify',
+      transaction: purchaseTransaction, // 购买交易（需要用户签名）
+      assetId: assetId,
+      amount: remainingAmount,
+      note: '请签名交易后调用 /api/rwa-trade/verify-purchase/:assetId 端点验证并更新状态'
     });
   } catch (error) {
     console.error('Error confirming purchase:', error);
@@ -946,35 +918,30 @@ router.post('/buy-shares', authenticate, async (req, res) => {
       });
     }
     
-    // 处理支付
-    const paymentResult = await processPayment({
-      userAddress: userId,
-      amount: requiredAmount,
-      txSignature,
-      paymentType: 'share_purchase',
-      to: 'platform',
-      extra: { assetId, shares: formatShares(shares) }
-    });
-    
-    if (!paymentResult.success) {
+    // 构建支付交易（使用tot合约的consume_to_treasury，免税）
+    let purchaseTransaction = null;
+    try {
+      const purchaseResult = await consumeToTreasury(userId, requiredAmount, 2); // ConsumeType::Other
+      purchaseTransaction = purchaseResult.transaction;
+    } catch (error) {
+      console.error('构建份额购买交易失败:', error);
       return res.status(400).json({
         success: false,
-        error: 'Payment failed',
-        message: paymentResult.message
+        error: '构建份额购买交易失败',
+        message: error.message
       });
     }
     
-    // 记录份额持有
-    const holding = await recordShareHolding(userId, assetId, formatShares(shares));
-    
+    // 注意：不在此处记录份额持有，等待用户签名交易后通过验证端点更新
     res.json({
       success: true,
-      message: 'Shares purchased successfully',
-      holding,
+      message: 'Transaction built, please sign and verify',
+      transaction: purchaseTransaction, // 份额购买交易（需要用户签名）
+      assetId: assetId,
       shares: formatShares(shares),
       pricePerShare,
       totalAmount: requiredAmount,
-      txHash: paymentResult.txHash
+      note: '请签名交易后调用 /api/rwa-trade/verify-shares 端点验证并更新状态'
     });
   } catch (error) {
     console.error('Error buying shares:', error);
@@ -1031,21 +998,17 @@ router.post('/etf/buy', authenticate, async (req, res) => {
       });
     }
     
-    // 处理支付
-    const paymentResult = await processPayment({
-      userAddress: userId,
-      amount: investmentAmount,
-      txSignature,
-      paymentType: 'etf_purchase',
-      to: 'platform',
-      extra: { etfId, investmentAmount }
-    });
-    
-    if (!paymentResult.success) {
+    // 构建支付交易（使用tot合约的consume_to_treasury，免税）
+    let etfPurchaseTransaction = null;
+    try {
+      const etfPurchaseResult = await consumeToTreasury(userId, investmentAmount, 2); // ConsumeType::Other
+      etfPurchaseTransaction = etfPurchaseResult.transaction;
+    } catch (error) {
+      console.error('构建ETF购买交易失败:', error);
       return res.status(400).json({
         success: false,
-        error: 'Payment failed',
-        message: paymentResult.message
+        error: '构建ETF购买交易失败',
+        message: error.message
       });
     }
     
@@ -1068,15 +1031,12 @@ router.post('/etf/buy', authenticate, async (req, res) => {
         // 计算应购买的份额
         const shares = formatShares(allocation.investmentAmount / pricePerShare);
         
-        // 记录份额持有
-        const holding = await recordShareHolding(userId, allocation.assetId, shares);
-        
+        // 注意：不在此处记录份额持有，等待用户签名交易后通过验证端点更新
         purchaseResults.push({
           assetId: allocation.assetId,
           shares,
           investmentAmount: allocation.investmentAmount,
-          pricePerShare,
-          holding
+          pricePerShare
         });
       } catch (error) {
         console.error(`Error purchasing asset ${allocation.assetId}:`, error);
@@ -1086,10 +1046,12 @@ router.post('/etf/buy', authenticate, async (req, res) => {
     
     res.json({
       success: true,
-      message: 'ETF purchase completed',
-      etf: etf,
+      message: 'Transaction built, please sign and verify',
+      transaction: etfPurchaseTransaction, // ETF购买交易（需要用户签名）
+      etfId: etfId,
+      investmentAmount: investmentAmount,
       allocations: purchaseResults,
-      txHash: paymentResult.txHash
+      note: '请签名交易后调用 /api/rwa-trade/verify-etf 端点验证并更新状态'
     });
   } catch (error) {
     console.error('Error buying ETF:', error);
@@ -1382,21 +1344,22 @@ router.post('/buy-strategic/:assetId', authenticate, async (req, res) => {
           });
         }
         
-        // 构建交易
-        const transactionResult = await mintStrategicAsset(
-          assetData,
+        // 构建交易（使用TOT合约的consume_to_treasury，免税）
+        // RWA购买是向TWS官方消费，所以使用免税的consume_to_treasury指令
+        const transactionResult = await consumeToTreasury(
           userId,
-          assetPrice
+          assetPrice,
+          2 // ConsumeType::Other（RWA购买）
         );
         
         return res.json({
           success: true,
           message: 'Transaction built, please sign',
           transaction: transactionResult.transaction,
-          buyerAddress: transactionResult.buyerAddress,
-          platformAddress: transactionResult.platformAddress,
+          buyerAddress: transactionResult.userAddress,
+          platformAddress: transactionResult.treasuryAddress,
           amount: transactionResult.amount,
-          assetId: transactionResult.assetId
+          assetId: assetData.sanitized?.id || assetData.raw?.id || 'unknown'
         });
       } catch (error) {
         console.error('Error building transaction:', error);
@@ -1412,6 +1375,414 @@ router.post('/buy-strategic/:assetId', authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to process strategic asset purchase',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/rwa-trade/verify-purchase/:assetId - 验证购买交易并更新状态
+router.post('/verify-purchase/:assetId', authenticate, async (req, res) => {
+  try {
+    const { assetId } = req.params;
+    const { txSignature } = req.body;
+    const userId = req.user?.address || req.user?.username || req.user?.id;
+    
+    if (!txSignature) {
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction signature is required'
+      });
+    }
+    
+    // 获取资产数据
+    const assetData = await getAssetById(assetId);
+    if (!assetData.sanitized) {
+      return res.status(404).json({
+        success: false,
+        error: 'Asset not found'
+      });
+    }
+    
+    // 检查锁定状态
+    const lock = await getAssetLock(assetId);
+    if (!lock || lock.userId !== userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid lock or unauthorized'
+      });
+    }
+    
+    // 验证交易
+    const { verifyStrategicAssetPurchase } = await import('../utils/solanaBlockchain.js');
+    const assetPrice = assetData.sanitized.financials?.totalTokens || 
+                      assetData.sanitized.tokenPrice || 
+                      assetData.raw?.debtAmount || 0;
+    const remainingAmount = assetPrice - lock.lockFee;
+    
+    try {
+      const verificationResult = await verifyStrategicAssetPurchase(
+        txSignature,
+        userId,
+        remainingAmount
+      );
+      
+      if (!verificationResult.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'Transaction verification failed',
+          message: '交易验证失败'
+        });
+      }
+      
+      // 验证成功，更新状态
+      await confirmLock(lock.id);
+      
+      const updatedAsset = await updateAssetStatus(assetId, 'LOCKED', {
+        purchasedBy: userId,
+        purchasedAt: Date.now(),
+        purchasePrice: assetPrice,
+        purchaseTxHash: txSignature
+      });
+      
+      // 记录推荐佣金（不影响主流程）
+      try {
+        const { recordCommission } = await import('../utils/referral.js');
+        await recordCommission(userId, remainingAmount, 0.05, { immediateTransfer: true });
+        console.log(`✅ 推荐佣金已记录: ${userId}, 金额: ${remainingAmount * 0.05} TOT`);
+      } catch (commissionError) {
+        console.error('推荐佣金记录失败（不影响主流程）:', commissionError);
+      }
+      
+      // 可选：触发NFT铸造
+      let mintResult = null;
+      if (process.env.CONTRACT_ADDRESS) {
+        try {
+          mintResult = await blockchainService.mintAsset(assetData, userId);
+          await updateAssetStatus(assetId, 'LOCKED', {
+            nftMinted: true,
+            nftTokenId: mintResult.tokenId,
+            nftTxHash: mintResult.txHash,
+            nftMintedAt: Date.now()
+          });
+        } catch (mintError) {
+          console.error('⚠️ NFT铸造失败（但购买已确认）:', mintError);
+        }
+      }
+      
+      res.json({
+        success: true,
+        message: 'Purchase verified and confirmed successfully',
+        asset: updatedAsset,
+        blockchain: {
+          txHash: txSignature,
+          confirmed: verificationResult.confirmed,
+          blockTime: verificationResult.blockTime
+        },
+        mintResult: mintResult
+      });
+    } catch (error) {
+      console.error('Error verifying transaction:', error);
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction verification error',
+        message: error.message
+      });
+    }
+  } catch (error) {
+    console.error('Error verifying purchase:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to verify purchase',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/rwa-trade/verify-shares - 验证份额购买交易并更新状态
+router.post('/verify-shares', authenticate, async (req, res) => {
+  try {
+    const { assetId, shares, txSignature } = req.body;
+    const userId = req.user?.address || req.user?.username || req.user?.id;
+    
+    if (!assetId || !shares || !txSignature) {
+      return res.status(400).json({
+        success: false,
+        error: 'assetId, shares, and txSignature are required'
+      });
+    }
+    
+    // 获取资产数据
+    const assetData = await getAssetById(assetId);
+    if (!assetData.sanitized && !assetData.raw) {
+      return res.status(404).json({
+        success: false,
+        error: 'Asset not found'
+      });
+    }
+    
+    const asset = assetData.sanitized || assetData.raw;
+    const totalPrice = asset.financials?.totalTokens || asset.tokenPrice || asset.debtAmount || 0;
+    const totalShares = asset.totalShares || 10000;
+    const pricePerShare = totalPrice / totalShares;
+    const requiredAmount = formatShares(shares) * pricePerShare;
+    
+    // 验证交易
+    const { verifyStrategicAssetPurchase } = await import('../utils/solanaBlockchain.js');
+    try {
+      const verificationResult = await verifyStrategicAssetPurchase(
+        txSignature,
+        userId,
+        requiredAmount
+      );
+      
+      if (!verificationResult.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'Transaction verification failed',
+          message: '交易验证失败'
+        });
+      }
+      
+      // 验证成功，记录份额持有
+      const holding = await recordShareHolding(userId, assetId, formatShares(shares));
+      
+      // 记录推荐佣金（不影响主流程）
+      try {
+        const { recordCommission } = await import('../utils/referral.js');
+        await recordCommission(userId, requiredAmount, 0.05, { immediateTransfer: true });
+        console.log(`✅ 推荐佣金已记录: ${userId}, 金额: ${requiredAmount * 0.05} TOT`);
+      } catch (commissionError) {
+        console.error('推荐佣金记录失败（不影响主流程）:', commissionError);
+      }
+      
+      res.json({
+        success: true,
+        message: 'Shares purchase verified and confirmed successfully',
+        holding,
+        shares: formatShares(shares),
+        pricePerShare,
+        totalAmount: requiredAmount,
+        blockchain: {
+          txHash: txSignature,
+          confirmed: verificationResult.confirmed,
+          blockTime: verificationResult.blockTime
+        }
+      });
+    } catch (error) {
+      console.error('Error verifying transaction:', error);
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction verification error',
+        message: error.message
+      });
+    }
+  } catch (error) {
+    console.error('Error verifying shares purchase:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to verify shares purchase',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/rwa-trade/verify-etf - 验证ETF购买交易并更新状态
+router.post('/verify-etf', authenticate, async (req, res) => {
+  try {
+    const { etfId, investmentAmount, allocations, txSignature } = req.body;
+    const userId = req.user?.address || req.user?.username || req.user?.id;
+    
+    if (!etfId || !investmentAmount || !txSignature) {
+      return res.status(400).json({
+        success: false,
+        error: 'etfId, investmentAmount, and txSignature are required'
+      });
+    }
+    
+    // 验证交易
+    const { verifyStrategicAssetPurchase } = await import('../utils/solanaBlockchain.js');
+    try {
+      const verificationResult = await verifyStrategicAssetPurchase(
+        txSignature,
+        userId,
+        investmentAmount
+      );
+      
+      if (!verificationResult.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'Transaction verification failed',
+          message: '交易验证失败'
+        });
+      }
+      
+      // 验证成功，记录份额持有
+      const purchaseResults = [];
+      if (allocations && Array.isArray(allocations)) {
+        for (const allocation of allocations) {
+          try {
+            const assetData = await getAssetById(allocation.assetId);
+            if (!assetData.sanitized && !assetData.raw) {
+              console.error(`Asset ${allocation.assetId} not found`);
+              continue;
+            }
+            
+            const asset = assetData.sanitized || assetData.raw;
+            const totalPrice = asset.financials?.totalTokens || asset.tokenPrice || asset.debtAmount || 0;
+            const totalShares = asset.totalShares || 10000;
+            const pricePerShare = totalPrice / totalShares;
+            const shares = formatShares(allocation.investmentAmount / pricePerShare);
+            
+            const holding = await recordShareHolding(userId, allocation.assetId, shares);
+            
+            purchaseResults.push({
+              assetId: allocation.assetId,
+              shares,
+              investmentAmount: allocation.investmentAmount,
+              pricePerShare,
+              holding
+            });
+          } catch (error) {
+            console.error(`Error recording holding for asset ${allocation.assetId}:`, error);
+          }
+        }
+      }
+      
+      // 记录推荐佣金（不影响主流程）
+      try {
+        const { recordCommission } = await import('../utils/referral.js');
+        await recordCommission(userId, investmentAmount, 0.05, { immediateTransfer: true });
+        console.log(`✅ 推荐佣金已记录: ${userId}, 金额: ${investmentAmount * 0.05} TOT`);
+      } catch (commissionError) {
+        console.error('推荐佣金记录失败（不影响主流程）:', commissionError);
+      }
+      
+      res.json({
+        success: true,
+        message: 'ETF purchase verified and confirmed successfully',
+        etfId: etfId,
+        allocations: purchaseResults,
+        blockchain: {
+          txHash: txSignature,
+          confirmed: verificationResult.confirmed,
+          blockTime: verificationResult.blockTime
+        }
+      });
+    } catch (error) {
+      console.error('Error verifying transaction:', error);
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction verification error',
+        message: error.message
+      });
+    }
+  } catch (error) {
+    console.error('Error verifying ETF purchase:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to verify ETF purchase',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/rwa-trade/verify-lock/:assetId - 验证锁定交易并创建锁定记录
+router.post('/verify-lock/:assetId', authenticate, async (req, res) => {
+  try {
+    const { assetId } = req.params;
+    const { txSignature } = req.body;
+    const userId = req.user?.address || req.user?.username || req.user?.id;
+    
+    if (!txSignature) {
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction signature is required'
+      });
+    }
+    
+    // 获取资产数据
+    const assetData = await getAssetById(assetId);
+    if (!assetData.sanitized) {
+      return res.status(404).json({
+        success: false,
+        error: 'Asset not found'
+      });
+    }
+    
+    // 检查是否已被锁定
+    const existingLock = await getAssetLock(assetId);
+    if (existingLock) {
+      return res.status(400).json({
+        success: false,
+        error: 'Asset is already locked',
+        message: `Locked by ${existingLock.userId} until ${new Date(existingLock.lockExpiresAt).toISOString()}`
+      });
+    }
+    
+    // 计算锁定费用
+    const assetPrice = assetData.sanitized.financials?.totalTokens || 
+                      assetData.sanitized.tokenPrice || 
+                      assetData.raw?.debtAmount || 0;
+    const lockFee = calculateLockFee(assetPrice);
+    
+    // 验证交易
+    const { verifyStrategicAssetPurchase } = await import('../utils/solanaBlockchain.js');
+    try {
+      const verificationResult = await verifyStrategicAssetPurchase(
+        txSignature,
+        userId,
+        lockFee
+      );
+      
+      if (!verificationResult.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'Transaction verification failed',
+          message: '交易验证失败'
+        });
+      }
+      
+      // 验证成功，创建锁定记录
+      const lock = await createLock({
+        assetId,
+        userId,
+        lockFee,
+        lockExpiresAt: Date.now() + 48 * 60 * 60 * 1000, // 48小时
+        txHash: txSignature
+      });
+      
+      // 更新资产状态
+      await updateAssetStatus(assetId, 'RESERVED', {
+        lockedBy: userId,
+        lockedAt: Date.now(),
+        lockExpiresAt: lock.lockExpiresAt,
+        lockFee: lockFee
+      });
+      
+      res.json({
+        success: true,
+        message: 'Asset locked successfully',
+        lock,
+        lockExpiresAt: lock.lockExpiresAt,
+        blockchain: {
+          txHash: txSignature,
+          confirmed: verificationResult.confirmed,
+          blockTime: verificationResult.blockTime
+        }
+      });
+    } catch (error) {
+      console.error('Error verifying transaction:', error);
+      return res.status(400).json({
+        success: false,
+        error: 'Transaction verification error',
+        message: error.message
+      });
+    }
+  } catch (error) {
+    console.error('Error verifying lock:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to verify lock',
       message: error.message
     });
   }

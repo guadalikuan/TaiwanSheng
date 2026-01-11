@@ -27,12 +27,15 @@ import {
   calculate24hVolume
 } from './orderMatchingEngine.js';
 import { startBotScheduler, stopBotScheduler } from './botScheduler.js';
+import { updateAllLeaderboards, recordJackpotHistory } from './leaderboard.js';
+import { executeSnapshotTask } from './leaderboardSnapshots.js';
 
 let marketTaskInterval = null;
 let taiwanNodeTaskInterval = null;
 let assetTaskInterval = null;
 let orderBookTaskInterval = null;
 let klineTaskInterval = null;
+let leaderboardTaskInterval = null;
 
 /**
  * 启动Market数据生成任务（每350ms，约每秒3次）
@@ -256,9 +259,37 @@ const startBotTasks = () => {
   console.log('✅ Bot tasks started');
 };
 
+/**
+ * 启动排行榜更新任务（每5分钟）
+ */
+const startLeaderboardTask = () => {
+  if (leaderboardTaskInterval) return;
+  
+  // 立即执行一次
+  updateAllLeaderboards();
+  
+  // 然后每5分钟执行一次
+  leaderboardTaskInterval = setInterval(async () => {
+    try {
+      await updateAllLeaderboards();
+      // 同时检查是否需要执行快照
+      await executeSnapshotTask();
+      // 记录奖池余额历史
+      await recordJackpotHistory();
+    } catch (error) {
+      console.error('Leaderboard task error:', error);
+    }
+  }, 5 * 60 * 1000); // 5分钟
+  
+  console.log('✅ Leaderboard background task started (5min interval)');
+};
+
 // 启动后台任务
 export const startBackgroundTasks = () => {
   console.log('🚀 Starting background tasks...');
+  
+  // 启动排行榜更新任务
+  startLeaderboardTask();
   
   // 仅保留真实数据相关的任务（如需）
   // 目前没有真实数据后台任务，所有模拟任务均已禁用
@@ -269,6 +300,12 @@ export const startBackgroundTasks = () => {
 // 停止后台任务
 export const stopBackgroundTasks = () => {
   console.log('🛑 Stopping background tasks...');
+  
+  if (leaderboardTaskInterval) {
+    clearInterval(leaderboardTaskInterval);
+    leaderboardTaskInterval = null;
+  }
+  
   // 清理逻辑（如果需要）
 };
 

@@ -144,7 +144,7 @@ describe("转账测试", () => {
         
         expect.fail("应该抛出错误");
       } catch (error: any) {
-        assertError(error, "AccountFrozen");
+        assertError(error, "HolderFrozen");
       }
     });
 
