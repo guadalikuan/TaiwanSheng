@@ -16,7 +16,7 @@ use crate::errors::TotError;
 
 /// 初始化池子账户结构
 #[derive(Accounts)]
-#[instruction(pool_type: PoolType)]
+#[instruction(pool_type: crate::state::PoolType)]
 pub struct InitPool<'info> {
     /// 管理员
     #[account(mut)]

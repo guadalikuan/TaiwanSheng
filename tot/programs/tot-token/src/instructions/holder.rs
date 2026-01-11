@@ -8,7 +8,7 @@ use crate::state::config::TotConfig;
 use crate::state::holder::HolderAccount;
 use crate::constants::seeds;
 use crate::errors::TotError;
-use crate::utils::validation::validate_freeze_reason;
+
 
 /// 初始化持有者信息
 /// 当用户首次接收 TOT 代币时调用

@@ -24,7 +24,6 @@ use anchor_lang::prelude::*;
 /// - 只有管理员可以修改
 /// - 所有关键操作都需要验证此账户
 #[account]
-#[derive(Default)]
 pub struct TotConfig {
     /// 管理员地址（总司令）
     /// 
@@ -204,6 +203,25 @@ pub struct TotConfig {
     /// - 未来功能扩展
     /// - 避免账户迁移
     pub _reserved: [u8; 128],
+}
+
+impl Default for TotConfig {
+    fn default() -> Self {
+        Self {
+            authority: Pubkey::default(),
+            mint: Pubkey::default(),
+            treasury: Pubkey::default(),
+            liquidity_pool: Pubkey::default(),
+            tax_config: Pubkey::default(),
+            panic_mode: false,
+            initialized_at: 0,
+            total_minted: 0,
+            total_burned: 0,
+            total_tax_collected: 0,
+            version: 1,
+            _reserved: [0; 128],
+        }
+    }
 }
 
 impl TotConfig {

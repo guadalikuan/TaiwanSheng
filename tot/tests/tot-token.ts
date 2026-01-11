@@ -75,7 +75,7 @@ describe("tot-token", () => {
         TOKEN_2022_PROGRAM_ID
       );
 
-      expect(mintInfo.decimals).to.equal(9);
+      expect(mintInfo.decimals).to.equal(6);
       expect(mintInfo.supply.toString()).to.equal("0");
 
     } catch (error) {

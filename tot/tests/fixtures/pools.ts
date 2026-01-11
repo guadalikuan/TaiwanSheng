@@ -8,20 +8,20 @@ import { PoolType } from "../helpers/accounts";
 
 /**
  * 池子分配常量（对应Rust中的allocation模块）
- * 单位：基础单位（已乘以10^9）
+ * 单位：基础单位（已乘以10^6）
  */
 export const POOL_ALLOCATIONS = {
-  VICTORY_FUND: new BN("20270000000000000000"),    // 20.27B
-  HISTORY_LP: new BN("19490000000000000000"),      // 19.49B
-  CYBER_ARMY: new BN("14500000000000000000"),      // 14.50B
-  GLOBAL_ALLIANCE: new BN("7040000000000000000"),  // 7.04B
-  ASSET_ANCHOR: new BN("141400000000000000000"),   // 141.40B
+  VICTORY_FUND: new BN("20270000000000000"),    // 20.27B
+  HISTORY_LP: new BN("19490000000000000"),      // 19.49B
+  CYBER_ARMY: new BN("14500000000000000"),      // 14.50B
+  GLOBAL_ALLIANCE: new BN("7040000000000000"),  // 7.04B
+  ASSET_ANCHOR: new BN("141400000000000000"),   // 141.40B
 };
 
 /**
  * 总供应量
  */
-export const TOTAL_SUPPLY = new BN("202700000000000000000"); // 202.7B
+export const TOTAL_SUPPLY = new BN("202700000000000000"); // 202.7B
 
 /**
  * 池子配置数据

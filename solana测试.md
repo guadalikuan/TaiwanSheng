@@ -25,148 +25,452 @@
 ### B. 创建 TOT Token 程序 (主控端)
 1.  再次创建新项目，命名为 `tot-token`。
 2.  将 `d:\三大赛\李宽TWS\TaiwanSheng\tot\programs\tot-token\src\lib.rs` (及相关模块) 的内容复制进去。
-3.  **关键修改**：
-    *   在代码中找到引用 `transfer-hook` Program ID 的地方，替换为 **步骤 A 中部署的 Program ID**。
-4.  点击 **Build** & **Deploy**。
+    *   *提示：请务必使用本地最新修复后的代码（已解决 IDL 过大导致的构建错误）。*
+3.  **同步 Program ID**：
+    *   点击 **Build** & **Deploy**。
+    *   部署成功后，Solpg 会自动分配一个 Program ID。
+    *   **重要**：将此 ID 复制，回填到 `src/lib.rs` 的 `declare_id!("...")` 中。
+    *   再次点击 **Build** & **Deploy** 确保代码中的 ID 与链上一致。
 
 ## 3. 编写测试脚本 (Client Side)
 
 Solpg 允许直接在浏览器运行 TypeScript 脚本来模拟 `scripts/initialize.ts` 的功能。
 
-1.  在 `tot-token` 项目下，点击 `client.ts` (或 `tests/anchor.test.ts`)。
-2.  粘贴以下测试代码（基于您的 `initialize.ts` 改编）：
+1.  在对应项目下，点击 `client.ts` (或 `tests/anchor.test.ts`)。
+2.  分别粘贴并运行下面的测试代码。
+
+### A. transfer-hook 项目测试脚本
 
 ```typescript
-import { 
-  ExtensionType, 
-  TOKEN_2022_PROGRAM_ID, 
-  getMintLen, 
-  createInitializeMintInstruction, 
-  createInitializeTransferHookInstruction,
+const { Keypair, PublicKey, SystemProgram } = web3;
+
+describe("transfer-hook：功能自检", () => {
+  const program = pg.program;
+  const wallet = pg.wallet;
+
+  it("initialize + setPaused", async () => {
+    const hookConfigPda = PublicKey.findProgramAddressSync(
+      [Buffer.from("hook-config")],
+      program.programId
+    )[0];
+
+    await program.methods
+      .initialize(Keypair.generate().publicKey, Keypair.generate().publicKey)
+      .accounts({
+        authority: wallet.publicKey,
+        hookConfig: hookConfigPda,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
+    await program.methods
+      .setPaused(true)
+      .accounts({
+        authority: wallet.publicKey,
+        hookConfig: hookConfigPda,
+      })
+      .rpc();
+
+    await program.methods
+      .setPaused(false)
+      .accounts({
+        authority: wallet.publicKey,
+        hookConfig: hookConfigPda,
+      })
+      .rpc();
+  });
+});
+```
+
+### B. tot-token 项目测试脚本
+
+```typescript
+import * as anchor from "@coral-xyz/anchor";
+import {
+  TOKEN_2022_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,
   createMintToInstruction,
-  createTransferCheckedInstruction
+  createBurnCheckedInstruction,
+  getAccount,
 } from "@solana/spl-token";
 
-describe("TOT 绝密发射演习", () => {
-  // 1. 设置测试账户
+const { Keypair, PublicKey, Transaction, SystemProgram, ComputeBudgetProgram } = web3;
+
+describe("tot-token：全指令演习", () => {
+  const program = pg.program;
   const wallet = pg.wallet;
   const connection = pg.connection;
-  
-  // 生成一个新的 Mint 地址
+
   const mintKeypair = new Keypair();
-  const mint = mintKeypair.publicKey;
-  const decimals = 9;
-  
-  // Hook 程序 ID (请替换为您在步骤 A 部署的 ID)
-  const HOOK_PROGRAM_ID = new PublicKey("您的_Transfer_Hook_Program_ID");
+  let mint = mintKeypair.publicKey;
 
-  it("铸剑：初始化 TOT Token-2022", async () => {
-    console.log("正在铸造 TOT: ", mint.toString());
+  const configPda = PublicKey.findProgramAddressSync(
+    [Buffer.from("tot_config")],
+    program.programId
+  )[0];
+  const taxConfigPda = PublicKey.findProgramAddressSync(
+    [Buffer.from("tot_tax_config")],
+    program.programId
+  )[0];
 
-    // 计算所需的空间和租金
-    const extensions = [
-      ExtensionType.TransferHook,
-      ExtensionType.TransferFeeConfig,
-      ExtensionType.MetadataPointer
-    ];
-    const mintLen = getMintLen(extensions);
-    const lamports = await connection.getMinimumBalanceForRentExemption(mintLen);
+  const senderHolderPda = PublicKey.findProgramAddressSync(
+    [Buffer.from("tot_holder"), wallet.publicKey.toBuffer()],
+    program.programId
+  )[0];
 
-    // 构建交易
-    const transaction = new Transaction().add(
-      // 1. 创建账户
-      SystemProgram.createAccount({
-        fromPubkey: wallet.publicKey,
-        newAccountPubkey: mint,
-        space: mintLen,
-        lamports,
-        programId: TOKEN_2022_PROGRAM_ID,
-      }),
-      // 2. 初始化 Transfer Hook
-      createInitializeTransferHookInstruction(
-        mint,
-        wallet.publicKey,
-        HOOK_PROGRAM_ID, // 所有的转账都会经过这里！
-        TOKEN_2022_PROGRAM_ID
-      ),
-      // 3. 初始化 Mint
-      createInitializeMintInstruction(
-        mint,
-        decimals,
-        wallet.publicKey,
-        wallet.publicKey,
-        TOKEN_2022_PROGRAM_ID
-      )
+  const poolPdas = {
+    victory: PublicKey.findProgramAddressSync(
+      [Buffer.from("tot_pool"), Buffer.from([0])],
+      program.programId
+    )[0],
+    history: PublicKey.findProgramAddressSync(
+      [Buffer.from("tot_pool"), Buffer.from([1])],
+      program.programId
+    )[0],
+    cyber: PublicKey.findProgramAddressSync(
+      [Buffer.from("tot_pool"), Buffer.from([2])],
+      program.programId
+    )[0],
+    global: PublicKey.findProgramAddressSync(
+      [Buffer.from("tot_pool"), Buffer.from([3])],
+      program.programId
+    )[0],
+    asset: PublicKey.findProgramAddressSync(
+      [Buffer.from("tot_pool"), Buffer.from([4])],
+      program.programId
+    )[0],
+  };
+
+  const receiver = Keypair.generate();
+  const getPoolTokenAccount = (poolPda: PublicKey) =>
+    getAssociatedTokenAddressSync(
+      mint,
+      poolPda,
+      true,
+      TOKEN_2022_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID
     );
 
-    // 发送交易
-    const txHash = await web3.sendAndConfirmTransaction(
-      connection,
-      transaction,
-      [wallet.keypair, mintKeypair]
+  const getSenderAta = () =>
+    getAssociatedTokenAddressSync(
+      mint,
+      wallet.publicKey,
+      false,
+      TOKEN_2022_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID
     );
-    console.log("✅ TOT Mint 初始化成功，Tx:", txHash);
-  });
 
-  it("实战：测试转账 (触发 Hook)", async () => {
-    // 1. 创建源账户 (ATA)
-    const senderAta = getAssociatedTokenAddressSync(
-      mint, 
-      wallet.publicKey, 
-      false, 
-      TOKEN_2022_PROGRAM_ID
-    );
-    
-    // 2. 创建接收账户 (随机路人)
-    const receiver = new Keypair();
-    const receiverAta = getAssociatedTokenAddressSync(
+  const getReceiverAta = () =>
+    getAssociatedTokenAddressSync(
       mint,
       receiver.publicKey,
       false,
-      TOKEN_2022_PROGRAM_ID
+      TOKEN_2022_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID
     );
 
-    // 构建初始化账户和铸币交易
+  const DECIMALS = 6;
+  const CU_IX = ComputeBudgetProgram.setComputeUnitLimit({ units: 1_200_000 });
+
+  async function ensureInitialized() {
+    const configInfo = await connection.getAccountInfo(configPda);
+    if (!configInfo) {
+      await program.methods
+        .initialize({
+          taxConfig: null,
+          liquidityPool: null,
+        })
+        .preInstructions([CU_IX])
+        .accounts({
+          authority: wallet.publicKey,
+          mint,
+          config: configPda,
+          transferHookProgram: null,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        })
+        .signers([mintKeypair])
+        .rpc();
+    }
+
+    const config = await program.account.totConfig.fetch(configPda);
+    if (!config.authority.equals(wallet.publicKey)) {
+      throw new Error(`config.authority 不匹配：${config.authority.toString()}`);
+    }
+    mint = config.mint;
+  }
+
+  async function ensureTaxConfigInitialized() {
+    const taxInfo = await connection.getAccountInfo(taxConfigPda);
+    if (taxInfo) return;
+    await program.methods
+      .initializeTaxConfig()
+      .preInstructions([CU_IX])
+      .accounts({
+        authority: wallet.publicKey,
+        config: configPda,
+        taxConfig: taxConfigPda,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+  }
+
+  before(async () => {
+    await ensureInitialized();
+    await ensureTaxConfigInitialized();
+  });
+
+  async function ensureAta(ata: PublicKey, owner: PublicKey) {
+    const info = await connection.getAccountInfo(ata);
+    if (info) return;
+    const tx = new Transaction().add(
+      createAssociatedTokenAccountInstruction(
+        wallet.publicKey,
+        ata,
+        owner,
+        mint,
+        TOKEN_2022_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      )
+    );
+    await web3.sendAndConfirmTransaction(connection, tx, [wallet.keypair]);
+  }
+
+  async function burnAllIfExists(tokenAccount: PublicKey, owner: Keypair) {
+    const info = await connection.getAccountInfo(tokenAccount);
+    if (!info) return;
+    const acc = await getAccount(connection, tokenAccount, undefined, TOKEN_2022_PROGRAM_ID);
+    if (acc.amount === 0n) return;
+    const tx = new Transaction().add(
+      createBurnCheckedInstruction(
+        tokenAccount,
+        mint,
+        owner.publicKey,
+        acc.amount,
+        DECIMALS,
+        [],
+        TOKEN_2022_PROGRAM_ID
+      )
+    );
+    tx.feePayer = wallet.publicKey;
+    const signers = owner.publicKey.equals(wallet.publicKey)
+      ? [wallet.keypair]
+      : [wallet.keypair, owner];
+    await web3.sendAndConfirmTransaction(connection, tx, signers);
+  }
+
+  it("initialize + initializeTaxConfig", async () => {
+    await ensureInitialized();
+    await ensureTaxConfigInitialized();
+  });
+
+  it("initializeHolder + transferWithTax + getHolderStats + calculateTax", async () => {
+    const senderAta = getSenderAta();
+    const receiverAta = getReceiverAta();
+    await ensureAta(senderAta, wallet.publicKey);
+    await ensureAta(receiverAta, receiver.publicKey);
+
     const setupTx = new Transaction().add(
-      createAssociatedTokenAccountInstruction(
-        wallet.publicKey, senderAta, wallet.publicKey, mint, TOKEN_2022_PROGRAM_ID
-      ),
-      createAssociatedTokenAccountInstruction(
-        wallet.publicKey, receiverAta, receiver.publicKey, mint, TOKEN_2022_PROGRAM_ID
-      ),
       createMintToInstruction(
-        mint, senderAta, wallet.publicKey, 1000 * 10**9, [], TOKEN_2022_PROGRAM_ID
+        mint,
+        senderAta,
+        wallet.publicKey,
+        1_000_000_000,
+        [],
+        TOKEN_2022_PROGRAM_ID
       )
     );
     await web3.sendAndConfirmTransaction(connection, setupTx, [wallet.keypair]);
-    console.log("✅ 账户设立完成，资金已到位");
 
-    // 3. 执行转账 - 这应该会触发您的 Hook 和 税收逻辑
     try {
-      const transferTx = new Transaction().add(
-        createTransferCheckedInstruction(
-          senderAta,
+      await program.methods
+        .initializeHolder()
+        .accounts({
+          payer: wallet.publicKey,
+          holderWallet: wallet.publicKey,
+          holderInfo: senderHolderPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+    } catch (_) {}
+
+    await program.methods
+      .transferWithTax(new anchor.BN(100_000_000), false)
+      .accounts({
+        sender: wallet.publicKey,
+        senderTokenAccount: senderAta,
+        receiverTokenAccount: receiverAta,
+        mint,
+        config: configPda,
+        taxConfig: taxConfigPda,
+        senderHolderInfo: senderHolderPda,
+        receiverHolderInfo: null,
+        taxCollector: receiverAta,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .rpc();
+
+    await program.methods
+      .getHolderStats()
+      .accounts({
+        holderInfo: senderHolderPda,
+      })
+      .view();
+
+    await program.methods
+      .calculateTax(new anchor.BN(100_000_000), false, true)
+      .accounts({
+        user: wallet.publicKey,
+        config: configPda,
+        taxConfig: taxConfigPda,
+        mint,
+        holderInfo: senderHolderPda,
+      })
+      .view();
+
+    await burnAllIfExists(senderAta, wallet.keypair);
+    await burnAllIfExists(receiverAta, receiver);
+  });
+
+  it("setPaused + emergencyWithdraw + updateAuthority", async () => {
+    const senderAta = getSenderAta();
+    const receiverAta = getReceiverAta();
+    await ensureAta(senderAta, wallet.publicKey);
+    await ensureAta(receiverAta, receiver.publicKey);
+
+    await program.methods
+      .setPaused(true)
+      .accounts({
+        authority: wallet.publicKey,
+        config: configPda,
+      })
+      .rpc();
+
+    const mintTx = new Transaction().add(
+      createMintToInstruction(
+        mint,
+        senderAta,
+        wallet.publicKey,
+        200_000_000,
+        [],
+        TOKEN_2022_PROGRAM_ID
+      )
+    );
+    await web3.sendAndConfirmTransaction(connection, mintTx, [wallet.keypair]);
+
+    await program.methods
+      .emergencyWithdraw(new anchor.BN(100_000_000))
+      .accounts({
+        authority: wallet.publicKey,
+        config: configPda,
+        sourceAccount: senderAta,
+        destinationAccount: receiverAta,
+        mint,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .rpc();
+
+    await program.methods
+      .setPaused(false)
+      .accounts({
+        authority: wallet.publicKey,
+        config: configPda,
+      })
+      .rpc();
+
+    await program.methods
+      .updateAuthority(wallet.publicKey)
+      .accounts({
+        authority: wallet.publicKey,
+        config: configPda,
+      })
+      .rpc();
+
+    await burnAllIfExists(senderAta, wallet.keypair);
+    await burnAllIfExists(receiverAta, receiver);
+  });
+
+  it("updateTaxConfig + addTaxExempt + removeTaxExempt", async () => {
+    await program.methods
+      .updateTaxConfig(300, null, null, null, null, null)
+      .accounts({
+        authority: wallet.publicKey,
+        config: configPda,
+        taxConfig: taxConfigPda,
+      })
+      .rpc();
+
+    await program.methods
+      .addTaxExempt(receiver.publicKey)
+      .accounts({
+        authority: wallet.publicKey,
+        config: configPda,
+        taxConfig: taxConfigPda,
+      })
+      .rpc();
+
+    await program.methods
+      .removeTaxExempt(receiver.publicKey)
+      .accounts({
+        authority: wallet.publicKey,
+        config: configPda,
+        taxConfig: taxConfigPda,
+      })
+      .rpc();
+  });
+
+  it("initPool x5 + mintToPools", async () => {
+    const initPoolIfNeeded = async (poolAccount: PublicKey, poolTokenAccount: PublicKey, poolType: any) => {
+      const poolInfo = await connection.getAccountInfo(poolAccount);
+      if (poolInfo) return;
+      await program.methods
+        .initPool(poolType)
+        .preInstructions([CU_IX])
+        .accounts({
+          authority: wallet.publicKey,
+          config: configPda,
           mint,
-          receiverAta,
-          wallet.publicKey,
-          100 * 10**9, // 转账 100 TOT
-          decimals,
-          [],
-          TOKEN_2022_PROGRAM_ID
-        )
-      );
-      
-      // 注意：带 Hook 的转账通常需要额外的 Account Metas，
-      // 如果您的 Hook 比较复杂，可能需要使用 createTransferInstructionWithExtraMetas
-      
-      const tx = await web3.sendAndConfirmTransaction(connection, transferTx, [wallet.keypair]);
-      console.log("🚀 转账成功！Hook 已执行。Tx:", tx);
-    } catch (e) {
-      console.log("⚠️ 转账被拦截 (符合预期吗？):", e);
-    }
+          poolAccount,
+          poolTokenAccount,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+    };
+
+    await initPoolIfNeeded(poolPdas.victory, getPoolTokenAccount(poolPdas.victory), { victoryFund: {} });
+    await initPoolIfNeeded(poolPdas.history, getPoolTokenAccount(poolPdas.history), { historyLp: {} });
+    await initPoolIfNeeded(poolPdas.cyber, getPoolTokenAccount(poolPdas.cyber), { cyberArmy: {} });
+    await initPoolIfNeeded(poolPdas.global, getPoolTokenAccount(poolPdas.global), { globalAlliance: {} });
+    await initPoolIfNeeded(poolPdas.asset, getPoolTokenAccount(poolPdas.asset), { assetAnchor: {} });
+
+    const config = await program.account.totConfig.fetch(configPda);
+    if (config.totalMinted.gt(new anchor.BN(0))) return;
+
+    await program.methods
+      .mintToPools()
+      .preInstructions([CU_IX])
+      .accounts({
+        authority: wallet.publicKey,
+        config: configPda,
+        mint,
+        victoryPool: poolPdas.victory,
+        victoryTokenAccount: getPoolTokenAccount(poolPdas.victory),
+        historyPool: poolPdas.history,
+        historyTokenAccount: getPoolTokenAccount(poolPdas.history),
+        cyberPool: poolPdas.cyber,
+        cyberTokenAccount: getPoolTokenAccount(poolPdas.cyber),
+        globalPool: poolPdas.global,
+        globalTokenAccount: getPoolTokenAccount(poolPdas.global),
+        assetPool: poolPdas.asset,
+        assetTokenAccount: getPoolTokenAccount(poolPdas.asset),
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .rpc();
   });
 });
 ```
@@ -175,7 +479,7 @@ describe("TOT 绝密发射演习", () => {
 
 1.  点击左侧的 **"Test"** (试管图标)。
 2.  点击 **"Run"** 按钮。
-3.  观察控制台输出。如果看到 "✅ TOT Mint 初始化成功"，说明您的代码逻辑在链上跑通了！
+3.  观察控制台输出：全部用例通过即表示链上逻辑跑通。
 
 ---
 

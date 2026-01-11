@@ -98,10 +98,6 @@ pub fn handler(ctx: Context<MintToPools>) -> Result<()> {
         TotError::AlreadyInitialized
     );
     
-    let mint = &ctx.accounts.mint;
-    let authority = &ctx.accounts.authority;
-    let token_program = &ctx.accounts.token_program;
-    
     // 铸造到各池子
     let pools_and_amounts = [
         (&ctx.accounts.victory_token_account, allocation::VICTORY_FUND),
@@ -110,15 +106,19 @@ pub fn handler(ctx: Context<MintToPools>) -> Result<()> {
         (&ctx.accounts.global_token_account, allocation::GLOBAL_ALLIANCE),
         (&ctx.accounts.asset_token_account, allocation::ASSET_ANCHOR),
     ];
+
+    let mint_info = ctx.accounts.mint.to_account_info();
+    let authority_info = ctx.accounts.authority.to_account_info();
+    let token_program_info = ctx.accounts.token_program.to_account_info();
     
     for (token_account, amount) in pools_and_amounts.iter() {
         mint_to(
             CpiContext::new(
-                token_program.to_account_info(),
+                token_program_info.clone(),
                 MintTo {
-                    mint: mint.to_account_info(),
+                    mint: mint_info.clone(),
                     to: token_account.to_account_info(),
-                    authority: authority.to_account_info(),
+                    authority: authority_info.clone(),
                 },
             ),
             *amount,
@@ -127,8 +127,9 @@ pub fn handler(ctx: Context<MintToPools>) -> Result<()> {
     
     // 验证总供应量是否正确
     // 确保所有代币都已成功铸造到池子
+    ctx.accounts.mint.reload()?;
     require!(
-        mint.supply == TOTAL_SUPPLY,
+        ctx.accounts.mint.supply == TOTAL_SUPPLY,
         TotError::InvalidMint
     );
     

@@ -1,19 +1,15 @@
-// ============================================
-// 文件: programs/tot-token/src/instructions/tax.rs
-// 税率管理指令
-// ============================================
-
 use anchor_lang::prelude::*;
 use crate::state::config::TotConfig;
 use crate::state::tax::TaxConfig;
 use crate::constants::seeds;
 use crate::errors::TotError;
 use crate::utils::validation::validate_tax_rate;
+use crate::utils::validation::validate_bps;
 
-/// 初始化税率配置
 #[derive(Accounts)]
 pub struct InitializeTaxConfig<'info> {
     #[account(
+        mut,
         constraint = authority.key() == config.authority @ TotError::Unauthorized
     )]
     pub authority: Signer<'info>,
@@ -36,12 +32,10 @@ pub struct InitializeTaxConfig<'info> {
     pub system_program: Program<'info, System>,
 }
 
-/// 初始化税率配置处理器
 pub fn initialize_tax_config_handler(ctx: Context<InitializeTaxConfig>) -> Result<()> {
     let tax_config = &mut ctx.accounts.tax_config;
     let clock = Clock::get()?;
 
-    // 使用默认值初始化
     tax_config.base_tax_bps = crate::constants::tax::BASE_TAX_BPS;
     tax_config.alpha = crate::constants::tax::ALPHA_COEFFICIENT;
     tax_config.beta = crate::constants::tax::BETA_EXPONENT;
@@ -53,11 +47,9 @@ pub fn initialize_tax_config_handler(ctx: Context<InitializeTaxConfig>) -> Resul
     tax_config.last_updated = clock.unix_timestamp;
     tax_config.bump = ctx.bumps.tax_config;
 
-    msg!("Tax config initialized");
     Ok(())
 }
 
-/// 更新税率配置
 #[derive(Accounts)]
 pub struct UpdateTaxConfig<'info> {
     #[account(
@@ -79,7 +71,6 @@ pub struct UpdateTaxConfig<'info> {
     pub tax_config: Account<'info, TaxConfig>,
 }
 
-/// 更新税率配置处理器
 pub fn update_tax_config_handler(
     ctx: Context<UpdateTaxConfig>,
     base_tax_bps: Option<u16>,
@@ -134,7 +125,6 @@ pub fn update_tax_config_handler(
     Ok(())
 }
 
-/// 管理免税地址
 #[derive(Accounts)]
 pub struct ManageTaxExempt<'info> {
     #[account(
@@ -156,7 +146,6 @@ pub struct ManageTaxExempt<'info> {
     pub tax_config: Account<'info, TaxConfig>,
 }
 
-/// 添加免税地址处理器
 pub fn add_tax_exempt_handler(
     ctx: Context<ManageTaxExempt>,
     address: Pubkey,
@@ -166,8 +155,6 @@ pub fn add_tax_exempt_handler(
     let timestamp = clock.unix_timestamp;
     
     tax_config.add_exempt(address)?;
-
-    msg!("Added tax exempt address: {}", address);
     
     emit!(TaxExemptAdded {
         address,
@@ -177,7 +164,6 @@ pub fn add_tax_exempt_handler(
     Ok(())
 }
 
-/// 移除免税地址处理器
 pub fn remove_tax_exempt_handler(
     ctx: Context<ManageTaxExempt>,
     address: Pubkey,
@@ -187,8 +173,6 @@ pub fn remove_tax_exempt_handler(
     let timestamp = clock.unix_timestamp;
     
     tax_config.remove_exempt(&address)?;
-
-    msg!("Removed tax exempt address: {}", address);
     
     emit!(TaxExemptRemoved {
         address,
@@ -198,9 +182,6 @@ pub fn remove_tax_exempt_handler(
     Ok(())
 }
 
-use crate::utils::validation::validate_bps;
-
-/// 税率配置更新事件
 #[event]
 pub struct TaxConfigUpdated {
     pub base_tax_bps: u16,
@@ -210,14 +191,12 @@ pub struct TaxConfigUpdated {
     pub timestamp: i64,
 }
 
-/// 免税地址添加事件
 #[event]
 pub struct TaxExemptAdded {
     pub address: Pubkey,
     pub timestamp: i64,
 }
 
-/// 免税地址移除事件
 #[event]
 pub struct TaxExemptRemoved {
     pub address: Pubkey,
