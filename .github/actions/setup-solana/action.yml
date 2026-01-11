@@ -1,0 +1,39 @@
+name: 'Setup Solana Environment'
+description: '设置Solana和Anchor开发环境'
+runs:
+  using: 'composite'
+  steps:
+    - name: 安装 Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+    
+    - name: 安装 Solana CLI
+      shell: bash
+      run: |
+        sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
+        echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+      continue-on-error: true
+    
+    - name: 验证 Solana 安装
+      shell: bash
+      run: solana --version || echo "Solana安装失败，跳过智能合约测试"
+      continue-on-error: true
+    
+    - name: 安装 Anchor
+      shell: bash
+      run: |
+        export PATH="$HOME/.cargo/bin:$PATH"
+        cargo install --git https://github.com/coral-xyz/anchor avm --locked --force || echo "avm安装失败"
+        avm install latest || echo "Anchor安装失败"
+        avm use latest || echo "Anchor激活失败"
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      continue-on-error: true
+    
+    - name: 验证 Anchor 安装
+      shell: bash
+      run: |
+        export PATH="$HOME/.cargo/bin:$PATH"
+        anchor --version || echo "Anchor未安装，跳过智能合约测试"
+      continue-on-error: true

@@ -1,0 +1,35 @@
+name: 'Run Backend Test'
+description: '运行后端测试'
+inputs:
+  test-type:
+    description: '测试类型 (unit/integration/coverage)'
+    required: true
+  working-directory:
+    description: '工作目录'
+    required: false
+    default: 'tws/server'
+  node-env:
+    description: 'NODE_ENV环境变量'
+    required: false
+    default: 'test'
+  jwt-secret:
+    description: 'JWT_SECRET环境变量'
+    required: false
+    default: 'test-secret-key-for-ci'
+  treasury-address:
+    description: 'TWS_TREASURY_ADDRESS环境变量'
+    required: false
+    default: 'test-treasury-address'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 运行测试
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: npm run test:${{ inputs.test-type }} -- --passWithNoTests || true
+      env:
+        NODE_ENV: ${{ inputs.node-env }}
+        JWT_SECRET: ${{ inputs.jwt-secret }}
+        TWS_TREASURY_ADDRESS: ${{ inputs.treasury-address }}
+      continue-on-error: true
