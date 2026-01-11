@@ -10,7 +10,7 @@ on:
 jobs:
   # 后端单元测试
   backend-unit-tests:
-    uses: ./.github/workflows/reusable/backend-test.yml
+    uses: ./.github/workflows/backend-test.yml
     with:
       test-type: unit
       coverage-flag: backend-unit
@@ -18,7 +18,7 @@ jobs:
 
   # 后端集成测试
   backend-integration-tests:
-    uses: ./.github/workflows/reusable/backend-test.yml
+    uses: ./.github/workflows/backend-test.yml
     with:
       test-type: integration
       coverage-flag: backend-integration
@@ -26,7 +26,7 @@ jobs:
 
   # 后端完整测试和覆盖率
   backend-coverage:
-    uses: ./.github/workflows/reusable/backend-test.yml
+    uses: ./.github/workflows/backend-test.yml
     with:
       test-type: coverage
       coverage-flag: backend
@@ -35,7 +35,7 @@ jobs:
 
   # 智能合约测试
   smart-contract-tests:
-    uses: ./.github/workflows/reusable/smart-contract-test.yml
+    uses: ./.github/workflows/smart-contract-test.yml
 
   # 测试映射验证
   test-mapping-verification:
