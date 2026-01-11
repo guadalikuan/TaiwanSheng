@@ -1,0 +1,27 @@
+name: 'Upload Coverage to Codecov'
+description: '上传测试覆盖率到Codecov'
+inputs:
+  coverage-file:
+    description: '覆盖率文件路径'
+    required: true
+  flag:
+    description: 'Codecov标志'
+    required: false
+    default: ''
+  name:
+    description: '覆盖率名称'
+    required: false
+    default: 'coverage'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 上传测试覆盖率
+      uses: codecov/codecov-action@v4
+      if: always() && hashFiles('${{ inputs.coverage-file }}') != ''
+      with:
+        files: ${{ inputs.coverage-file }}
+        flags: ${{ inputs.flag }}
+        name: ${{ inputs.name }}
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}

@@ -1,0 +1,25 @@
+name: 'Upload Artifact'
+description: '上传工件'
+inputs:
+  name:
+    description: '工件名称'
+    required: true
+  path:
+    description: '工件路径'
+    required: true
+  retention-days:
+    description: '保留天数'
+    required: false
+    default: '30'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 上传工件
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ${{ inputs.name }}
+        path: ${{ inputs.path }}
+        retention-days: ${{ inputs.retention-days }}
+        if-no-files-found: ignore

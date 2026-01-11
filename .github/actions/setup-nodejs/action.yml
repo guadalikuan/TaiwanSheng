@@ -1,0 +1,30 @@
+name: 'Setup Node.js Environment'
+description: '设置Node.js环境并安装依赖'
+inputs:
+  node-version:
+    description: 'Node.js版本'
+    required: false
+    default: '20'
+  cache-dependency-path:
+    description: '缓存依赖路径（package.json路径）'
+    required: false
+    default: 'tws/server/package.json'
+  working-directory:
+    description: '工作目录'
+    required: false
+    default: 'tws/server'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
+    
+    - name: 安装依赖
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: npm ci

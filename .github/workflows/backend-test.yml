@@ -1,0 +1,70 @@
+name: Backend Test Workflow
+
+on:
+  workflow_call:
+    inputs:
+      test-type:
+        description: '测试类型 (unit/integration/coverage)'
+        required: true
+        type: string
+      working-directory:
+        description: '工作目录'
+        required: false
+        type: string
+        default: 'tws/server'
+      cache-dependency-path:
+        description: '缓存依赖路径'
+        required: false
+        type: string
+        default: 'tws/server/package.json'
+      coverage-flag:
+        description: 'Codecov标志'
+        required: false
+        type: string
+        default: ''
+      coverage-name:
+        description: '覆盖率名称'
+        required: false
+        type: string
+        default: 'coverage'
+      upload-artifact:
+        description: '是否上传HTML报告工件'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  test:
+    name: 后端测试
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      
+      - name: 设置Node.js环境
+        uses: ./.github/actions/setup-nodejs
+        with:
+          node-version: '20'
+          cache-dependency-path: ${{ inputs.cache-dependency-path }}
+          working-directory: ${{ inputs.working-directory }}
+      
+      - name: 运行测试
+        uses: ./.github/actions/run-backend-test
+        with:
+          test-type: ${{ inputs.test-type }}
+          working-directory: ${{ inputs.working-directory }}
+      
+      - name: 上传覆盖率
+        uses: ./.github/actions/upload-coverage
+        with:
+          coverage-file: ./${{ inputs.working-directory }}/coverage/lcov.info
+          flag: ${{ inputs.coverage-flag }}
+          name: ${{ inputs.coverage-name }}
+      
+      - name: 上传覆盖率HTML报告
+        if: ${{ inputs.upload-artifact }}
+        uses: ./.github/actions/upload-artifact
+        with:
+          name: backend-coverage-report
+          path: ${{ inputs.working-directory }}/coverage/
+          retention-days: 30
