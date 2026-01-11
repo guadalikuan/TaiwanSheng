@@ -579,6 +579,15 @@ pub fn transfer_with_tax_handler(
     // 
     // 记录转账信息到链上日志，便于前端监听和显示。
     // 事件包含完整的转账信息，包括税收详情。
+    // 
+    // 计算jackpot金额：如果tax_amount > 0，tax_distribution应该存在
+    // 如果不存在（理论上不应该发生），使用0作为默认值
+    let jackpot_amount = if let Some(ref dist) = tax_distribution {
+        dist.to_jackpot
+    } else {
+        // tax_amount为0时，tax_distribution为None是正常的，此时jackpot为0
+        0
+    };
     
     emit!(TransferWithTaxEvent {
         from: sender_key,
@@ -587,7 +596,7 @@ pub fn transfer_with_tax_handler(
         tax_amount: tax_calculation.tax_amount,
         net_amount: tax_calculation.net_amount,
         tax_rate_bps: tax_calculation.final_tax_bps,
-        jackpot: tax_distribution.as_ref().map(|d| d.to_jackpot).unwrap_or(0),
+        jackpot: jackpot_amount,
         timestamp,
     });
 

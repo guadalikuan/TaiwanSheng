@@ -1,0 +1,38 @@
+// 测试资产数据
+export const testAssets = {
+  pendingAsset: {
+    id: 'test-asset-1',
+    city: 'Taipei',
+    area: 100,
+    debtAmount: 1000000,
+    projectName: 'Test Project',
+    status: 'pending',
+    submittedBy: '11111111111111111111111111111111',
+    submittedAt: Date.now(),
+  },
+  approvedAsset: {
+    id: 'test-asset-2',
+    city: 'New Taipei',
+    area: 200,
+    debtAmount: 2000000,
+    projectName: 'Approved Project',
+    status: 'approved',
+    submittedBy: '11111111111111111111111111111111',
+    submittedAt: Date.now(),
+    approvedBy: '33333333333333333333333333333333',
+    approvedAt: Date.now(),
+  },
+  rejectedAsset: {
+    id: 'test-asset-3',
+    city: 'Taichung',
+    area: 150,
+    debtAmount: 1500000,
+    projectName: 'Rejected Project',
+    status: 'rejected',
+    submittedBy: '11111111111111111111111111111111',
+    submittedAt: Date.now(),
+    rejectedBy: '33333333333333333333333333333333',
+    rejectedAt: Date.now(),
+    rejectionReason: 'Test rejection reason',
+  },
+};

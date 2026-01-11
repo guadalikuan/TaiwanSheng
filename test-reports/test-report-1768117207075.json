@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-01-11T07:40:07.073Z",
+  "results": {
+    "backend": {
+      "unit": {
+        "success": false,
+        "error": null
+      },
+      "integration": {
+        "success": false,
+        "error": null
+      },
+      "coverage": {
+        "success": false,
+        "error": null
+      }
+    },
+    "contract": {
+      "success": false,
+      "error": null
+    },
+    "mapping": {
+      "success": false,
+      "error": "Command failed: node scripts/verify-test-mapping.js"
+    }
+  },
+  "summary": {
+    "total": 5,
+    "passed": 0,
+    "failed": 5
+  }
+}
