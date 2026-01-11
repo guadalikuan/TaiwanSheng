@@ -62,6 +62,7 @@ use instructions::{
     SetPaused,
     EmergencyWithdraw,
     SetTwsTreasury,
+    SetJackpotRatio,
     // 查询相关
     CalculateTax,
     GetHolderStats,
@@ -75,6 +76,8 @@ use instructions::{
     // 拍卖相关
     CreateAuction,
     SeizeAuction,
+    // 奖池相关
+    InitializeJackpot,
 };
 use state::{
     // 初始化参数在state模块中定义
@@ -891,6 +894,86 @@ pub mod tot_token {
         tws_treasury: Pubkey,
     ) -> Result<()> {
         instructions::admin::set_tws_treasury_handler(ctx, tws_treasury)
+    }
+
+    /// 设置奖池比例
+    /// 
+    /// 管理员可以动态调整税收用于奖池的比例，范围: 4%-40%。
+    /// 
+    /// # 功能说明
+    /// 
+    /// 1. 验证管理员权限
+    /// 2. 验证比例范围（4%-40%）
+    /// 3. 更新TaxConfig和JackpotAccount中的比例
+    /// 4. 发出比例更新事件
+    /// 
+    /// # 参数
+    /// * `ctx` - 设置奖池比例上下文
+    /// * `new_ratio_bps` - 新的奖池比例（basis points，400-4000，即4%-40%）
+    /// 
+    /// # 返回值
+    /// * `Result<()>` - 成功返回Ok(())，失败返回相应错误
+    /// 
+    /// # 注意事项
+    /// * 只有管理员可以执行此操作
+    /// * 比例必须在400-4000 basis points范围内（4%-40%）
+    /// * 修改后立即生效，影响后续所有转账的税收分配
+    /// 
+    /// # 使用示例
+    /// ```rust
+    /// // 设置奖池比例为30%
+    /// program.methods
+    ///     .setJackpotRatio(3000)
+    ///     .accounts({
+    ///         authority: admin,
+    ///         config: configPda,
+    ///         taxConfig: taxConfigPda,
+    ///         jackpotAccount: jackpotPda,
+    ///     })
+    ///     .rpc();
+    /// ```
+    pub fn set_jackpot_ratio(
+        ctx: Context<SetJackpotRatio>,
+        new_ratio_bps: u16,
+    ) -> Result<()> {
+        instructions::admin::set_jackpot_ratio_handler(ctx, new_ratio_bps)
+    }
+
+    /// 初始化奖池账户
+    /// 
+    /// 创建奖池账户并设置初始参数，包括基础难度、保留比例等。
+    /// 这是启用成瘾机制（天命轮盘）的第一步。
+    /// 
+    /// # 功能说明
+    /// 
+    /// 1. 验证调用者是否为系统管理员
+    /// 2. 创建奖池账户（PDA）和关联代币账户（ATA）
+    /// 3. 设置初始参数（难度、比例等）
+    /// 4. 发出初始化事件
+    /// 
+    /// # 参数
+    /// * `ctx` - 奖池初始化上下文
+    /// 
+    /// # 返回值
+    /// * `Result<()>` - 成功返回Ok(())，失败返回相应错误
+    /// 
+    /// # 注意事项
+    /// * 只有系统管理员可以执行此操作
+    /// * 奖池账户只能初始化一次
+    /// * 初始难度设置为1000（对应0.1%中奖概率）
+    /// 
+    /// # 使用示例
+    /// ```rust
+    /// // 初始化奖池账户
+    /// program.methods
+    ///     .initializeJackpot()
+    ///     .accounts({...})
+    ///     .rpc();
+    /// ```
+    pub fn initialize_jackpot(
+        ctx: Context<InitializeJackpot>,
+    ) -> Result<()> {
+        instructions::jackpot::initialize_jackpot_handler(ctx)
     }
 
     /// 资产上链

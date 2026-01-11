@@ -689,4 +689,32 @@ pub enum TotError {
     /// - 确认时间参数在合理范围内
     #[msg("Invalid time parameter")]
     InvalidTimeParameter,
+    
+    // ============================================
+    // 奖池错误 (6120-6139)
+    // ============================================
+    
+    /// 无效的奖池比例
+    /// 
+    /// 触发场景:
+    /// - 尝试设置超出范围的奖池比例
+    /// - 奖池比例 < 4% 或 > 40%
+    /// 
+    /// 解决方案:
+    /// - 确保奖池比例在400-4000 basis points范围内
+    /// - 检查输入参数的有效性
+    #[msg("Invalid jackpot ratio, must be between 4% and 40%")]
+    InvalidJackpotRatio,
+    
+    /// 奖池余额不足
+    /// 
+    /// 触发场景:
+    /// - 尝试开奖但奖池余额低于最小阈值
+    /// - 奖池余额不足以支付奖金
+    /// 
+    /// 解决方案:
+    /// - 等待奖池积累更多资金
+    /// - 检查奖池余额是否足够
+    #[msg("Insufficient jackpot balance")]
+    InsufficientJackpotBalance,
 }

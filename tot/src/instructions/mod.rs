@@ -62,6 +62,7 @@ pub mod hook;
 pub mod asset_mint;
 pub mod auction_create;
 pub mod auction_seize;
+pub mod jackpot;
 
 // 精确导出公共接口，避免通配符导出导致的模块边界不清晰
 // 只导出外部模块（如lib.rs）需要使用的账户结构体
@@ -107,6 +108,7 @@ pub use admin::{
     SetPaused,
     EmergencyWithdraw,
     SetTwsTreasury,
+    SetJackpotRatio,
 };
 
 // 查询指令公共接口
@@ -129,3 +131,6 @@ pub use asset_mint::MintAsset;
 // 拍卖指令公共接口
 pub use auction_create::CreateAuction;
 pub use auction_seize::SeizeAuction;
+
+// 奖池指令公共接口
+pub use jackpot::InitializeJackpot;

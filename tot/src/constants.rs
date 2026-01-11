@@ -354,19 +354,55 @@ pub mod tax {
     pub mod distribution {
         use super::*;
         
-        /// 销毁比例
+        /// 奖池比例（原销毁比例）
+        /// 
+        /// 数值: 40% (4000 basis points)，可动态调整
+        /// 
+        /// 说明:
+        /// - 40%的税收会注入奖池（原用于销毁）
+        /// - 实现成瘾机制（天命轮盘），每次转账都有机会中奖
+        /// - 可动态调整，范围: 4%-40%
+        /// 
+        /// 效果:
+        /// - 每次交易都会注入奖池
+        /// - 奖池积累到一定程度会开奖
+        /// - 实现"参与即挖矿"的成瘾机制
+        /// 
+        /// 注意:
+        /// - 默认值: 4000 (40%)
+        /// - 可通过管理员指令动态调整
+        /// - 调整范围: 400-4000 (4%-40%)
+        pub const TAX_TO_JACKPOT_BPS: u16 = 4000;
+        
+        /// 奖池最小比例
+        /// 
+        /// 数值: 4% (400 basis points)
+        /// 
+        /// 说明:
+        /// - 税收用于奖池的最小比例
+        /// - 管理员调整时的下限
+        pub const JACKPOT_MIN_RATIO_BPS: u16 = 400;
+        
+        /// 奖池最大比例
         /// 
         /// 数值: 40% (4000 basis points)
         /// 
         /// 说明:
-        /// - 40%的税收会被永久销毁
-        /// - 实现通缩机制，减少总供应量
-        /// - 长期持有者受益于代币稀缺性
+        /// - 税收用于奖池的最大比例
+        /// - 管理员调整时的上限
+        pub const JACKPOT_MAX_RATIO_BPS: u16 = 4000;
+        
+        /// 奖金保留比例
         /// 
-        /// 效果:
-        /// - 每次交易都会减少总供应量
-        /// - 随着时间推移，代币越来越稀缺
-        /// - 提升代币的长期价值
+        /// 数值: 20% (2000 basis points)
+        /// 
+        /// 说明:
+        /// - 每次开奖后，保留20%在奖池中
+        /// - 防止奖池被完全掏空
+        pub const JACKPOT_RESERVE_RATIO_BPS: u16 = 2000;
+        
+        /// 向后兼容：保留旧的常量名（标记为deprecated）
+        #[deprecated(note = "使用TAX_TO_JACKPOT_BPS代替")]
         pub const TAX_TO_BURN_BPS: u16 = 4000;
         
         /// 流动性池注入比例
@@ -464,6 +500,10 @@ pub mod seeds {
     /// 用于派生AuctionAccount账户的PDA地址
     /// 注意：实际使用时需要结合资产ID一起派生
     pub const AUCTION_SEED: &[u8] = b"tot_auction";
+    
+    /// 奖池账户种子
+    /// 用于派生JackpotAccount账户的PDA地址
+    pub const JACKPOT_SEED: &[u8] = b"tot_jackpot";
 }
 
 /// 基点常量

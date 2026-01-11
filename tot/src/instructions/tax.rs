@@ -49,6 +49,7 @@ pub fn initialize_tax_config_handler(ctx: Context<InitializeTaxConfig>) -> Resul
     tax_config.panic_threshold_bps = crate::constants::tax::PANIC_THRESHOLD_BPS;
     tax_config.panic_tax_bps = crate::constants::tax::PANIC_TAX_BPS;
     tax_config.enabled = true;
+    tax_config.jackpot_ratio_bps = crate::constants::tax::distribution::TAX_TO_JACKPOT_BPS; // 默认40%
     tax_config.exempt_addresses = vec![];
     tax_config.last_updated = clock.unix_timestamp;
     tax_config.bump = ctx.bumps.tax_config;

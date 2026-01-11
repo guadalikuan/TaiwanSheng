@@ -9,6 +9,8 @@ use anchor_spl::token_interface::{
 };
 
 use crate::state::config::TotConfig;
+use crate::state::tax::TaxConfig;
+use crate::state::jackpot::JackpotAccount;
 use crate::constants::seeds;
 use crate::errors::TotError;
 
@@ -286,5 +288,97 @@ pub struct EmergencyWithdrawEvent {
 pub struct TwsTreasuryUpdated {
     pub old_treasury: Pubkey,
     pub new_treasury: Pubkey,
+    pub timestamp: i64,
+}
+
+/// 设置奖池比例
+#[derive(Accounts)]
+pub struct SetJackpotRatio<'info> {
+    #[account(
+        constraint = authority.key() == config.authority @ TotError::Unauthorized
+    )]
+    pub authority: Signer<'info>,
+
+    #[account(
+        seeds = [seeds::CONFIG_SEED],
+        bump
+    )]
+    pub config: Account<'info, TotConfig>,
+
+    #[account(
+        mut,
+        seeds = [seeds::TAX_CONFIG_SEED],
+        bump = tax_config.bump
+    )]
+    pub tax_config: Account<'info, TaxConfig>,
+
+    #[account(
+        mut,
+        seeds = [seeds::JACKPOT_SEED],
+        bump = jackpot_account.bump
+    )]
+    pub jackpot_account: Account<'info, JackpotAccount>,
+}
+
+/// 设置奖池比例处理器
+/// 
+/// 管理员可以动态调整税收用于奖池的比例，范围: 4%-40%。
+/// 
+/// # 参数
+/// * `ctx` - 管理员操作上下文
+/// * `new_ratio_bps` - 新的奖池比例（basis points，400-4000，即4%-40%）
+/// 
+/// # 返回值
+/// * `Result<()>` - 成功返回Ok(())
+/// 
+/// # 用途
+/// - 根据市场情况动态调整奖池积累速度
+/// - 当需要快速积累奖池时，可以设置为40%
+/// - 当需要减少奖池注入时，可以降低到4%
+pub fn set_jackpot_ratio_handler(
+    ctx: Context<SetJackpotRatio>,
+    new_ratio_bps: u16,
+) -> Result<()> {
+    use crate::constants::tax::distribution;
+    
+    // 验证比例范围（4%-40%）
+    require!(
+        new_ratio_bps >= distribution::JACKPOT_MIN_RATIO_BPS 
+            && new_ratio_bps <= distribution::JACKPOT_MAX_RATIO_BPS,
+        TotError::InvalidJackpotRatio
+    );
+    
+    let clock = Clock::get()?;
+    let timestamp = clock.unix_timestamp;
+    
+    // 更新TaxConfig中的jackpot_ratio_bps
+    let old_ratio = ctx.accounts.tax_config.jackpot_ratio_bps;
+    ctx.accounts.tax_config.jackpot_ratio_bps = new_ratio_bps;
+    ctx.accounts.tax_config.last_updated = timestamp;
+    
+    // 更新JackpotAccount中的jackpot_ratio_bps
+    ctx.accounts.jackpot_account.jackpot_ratio_bps = new_ratio_bps;
+    ctx.accounts.jackpot_account.last_updated = timestamp;
+    
+    msg!(
+        "Jackpot ratio updated from {}% to {}%",
+        old_ratio as f64 / 100.0,
+        new_ratio_bps as f64 / 100.0
+    );
+
+    emit!(JackpotRatioUpdated {
+        old_ratio_bps: old_ratio,
+        new_ratio_bps,
+        timestamp,
+    });
+
+    Ok(())
+}
+
+/// 奖池比例更新事件
+#[event]
+pub struct JackpotRatioUpdated {
+    pub old_ratio_bps: u16,
+    pub new_ratio_bps: u16,
     pub timestamp: i64,
 }

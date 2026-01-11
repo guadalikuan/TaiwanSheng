@@ -11,6 +11,7 @@ use anchor_spl::token_interface::{
 use crate::state::config::TotConfig;
 use crate::state::tax::TaxConfig;
 use crate::state::holder::HolderAccount;
+use crate::state::jackpot::JackpotAccount;
 use crate::constants::seeds;
 use crate::errors::TotError;
 use crate::utils::tax_calculator::*;
@@ -71,6 +72,18 @@ pub struct TransferWithTax<'info> {
     /// 税收收集账户（流动性池）
     #[account(mut)]
     pub tax_collector: InterfaceAccount<'info, TokenAccount>,
+
+    /// 奖池账户（PDA）
+    #[account(
+        mut,
+        seeds = [seeds::JACKPOT_SEED],
+        bump = jackpot_account.bump
+    )]
+    pub jackpot_account: Account<'info, JackpotAccount>,
+
+    /// 奖池代币账户
+    #[account(mut)]
+    pub jackpot_token_account: InterfaceAccount<'info, TokenAccount>,
 
     /// Token 程序
     pub token_program: Interface<'info, TokenInterface>,
@@ -303,8 +316,9 @@ pub fn transfer_with_tax_handler(
     
     // 计算税收分配（用于事件记录）
     // 即使tax_amount为0，也计算分配以便在事件中记录
+    // 需要传入tax_config以获取动态的jackpot_ratio_bps
     let tax_distribution = if tax_calculation.tax_amount > 0 {
-        Some(TaxDistribution::calculate(tax_calculation.tax_amount)?)
+        Some(TaxDistribution::calculate(tax_calculation.tax_amount, &ctx.accounts.tax_config)?)
     } else {
         None
     };
@@ -320,27 +334,37 @@ pub fn transfer_with_tax_handler(
         let tax_dist = tax_distribution.as_ref()
             .ok_or(error!(TotError::TaxCalculationOverflow))?;
 
-        // 分配1: 销毁部分（40%）
-        // 销毁代币会减少总供应量，实现通缩机制
-        if tax_dist.to_burn > 0 {
-            let burn_ctx = CpiContext::new(
+        // 分配1: 注入奖池（原销毁部分，40%，可动态调整）
+        // 将税收的一部分注入奖池，实现成瘾机制（天命轮盘）
+        if tax_dist.to_jackpot > 0 {
+            let jackpot_transfer_ctx = CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
-                Burn {
-                    mint: ctx.accounts.mint.to_account_info(),
+                TransferChecked {
                     from: ctx.accounts.sender_token_account.to_account_info(),
+                    mint: ctx.accounts.mint.to_account_info(),
+                    to: ctx.accounts.jackpot_token_account.to_account_info(),
                     authority: ctx.accounts.sender.to_account_info(),
                 },
             );
 
-            // 执行销毁操作
-            token_interface::burn(burn_ctx, tax_dist.to_burn)?;
+            // 执行转账到奖池
+            token_interface::transfer_checked(
+                jackpot_transfer_ctx,
+                tax_dist.to_jackpot,
+                mint_decimals,
+            )?;
+            
+            // 更新奖池余额
+            ctx.accounts.jackpot_account.balance = ctx.accounts.jackpot_account.balance
+                .checked_add(tax_dist.to_jackpot)
+                .ok_or(error!(TotError::MathOverflow))?;
         }
 
         // 分配2: 转入税收收集账户（60%：流动性 + 社区 + 营销）
-        // 剩余税收 = 总税收 - 销毁部分
-        // 使用checked_sub确保数据一致性，如果销毁部分超过总税收，返回错误
+        // 剩余税收 = 总税收 - 奖池部分
+        // 使用checked_sub确保数据一致性，如果奖池部分超过总税收，返回错误
         let remaining_tax = tax_calculation.tax_amount
-            .checked_sub(tax_dist.to_burn)
+            .checked_sub(tax_dist.to_jackpot)
             .ok_or(error!(TotError::MathUnderflow))?;
 
         if remaining_tax > 0 {
@@ -365,11 +389,20 @@ pub fn transfer_with_tax_handler(
         
         // 合并所有税收分配信息到一个msg!调用，减少gas消耗
         msg!(
-            "Tax distribution: burned={}, collected={}, total={}",
-            tax_dist.to_burn,
+            "Tax distribution: jackpot={}, collected={}, total={}",
+            tax_dist.to_jackpot,
             remaining_tax,
             tax_calculation.tax_amount
         );
+        
+        // 更新奖池交易计数（参与即挖矿）
+        ctx.accounts.jackpot_account.total_transactions = ctx.accounts.jackpot_account.total_transactions
+            .checked_add(1)
+            .ok_or(error!(TotError::MathOverflow))?;
+        
+        // 更新难度（根据新的奖池余额和交易次数）
+        ctx.accounts.jackpot_account.update_difficulty(ctx.accounts.jackpot_account.balance)?;
+        ctx.accounts.jackpot_account.last_updated = timestamp;
     }
 
     // ========================================
@@ -404,6 +437,143 @@ pub fn transfer_with_tax_handler(
     }
 
     // ========================================
+    // 检查是否中奖（成瘾机制：天命轮盘）
+    // ========================================
+    // 
+    // 采用两阶段检查机制，大幅减少算力消耗：
+    // 1. 第一阶段：哈希特征预筛选（快速检查）
+    // 2. 第二阶段：完整中奖检查（仅在预筛选通过时执行）
+    
+    if tax_calculation.tax_amount > 0 && ctx.accounts.jackpot_account.balance > 0 {
+        // 生成交易哈希（用于预筛选）
+        let transaction_hash = {
+            let mut seed = Vec::new();
+            seed.extend_from_slice(ctx.accounts.sender.key().as_ref());
+            seed.extend_from_slice(&clock.slot.to_le_bytes());
+            seed.extend_from_slice(&amount.to_le_bytes());
+            seed.extend_from_slice(&timestamp.to_le_bytes());
+            use anchor_lang::solana_program::hash::hash;
+            let hash_result = hash(&seed);
+            let mut hash_bytes = [0u8; 32];
+            hash_bytes.copy_from_slice(hash_result.as_ref());
+            hash_bytes
+        };
+        
+        // 第一阶段：哈希特征预筛选（快速检查）
+        // 只有当哈希前N位全为0时，才进入第二阶段
+        if ctx.accounts.jackpot_account.check_hash_difficulty(&transaction_hash) {
+            // 第二阶段：完整中奖检查（仅在预筛选通过时执行）
+            let random_seed = crate::utils::math::generate_random_seed(
+                &ctx.accounts.sender.key(),
+                clock.slot,
+                amount,
+                timestamp,
+            );
+            
+            if ctx.accounts.jackpot_account.check_win(random_seed) {
+                // 中奖！计算奖金分配
+                let (winner_payout, reserve) = ctx.accounts.jackpot_account.calculate_payout(
+                    ctx.accounts.jackpot_account.balance
+                )?;
+                
+                if winner_payout > 0 {
+                    // 转账奖金给中奖者（发送者）
+                    // 使用PDA签名，因为jackpot_account是PDA
+                    let jackpot_seeds = &[
+                        crate::constants::seeds::JACKPOT_SEED,
+                        &[ctx.accounts.jackpot_account.bump],
+                    ];
+                    let jackpot_signer = &[&jackpot_seeds[..]];
+                    
+                    let winner_transfer_ctx = CpiContext::new_with_signer(
+                        ctx.accounts.token_program.to_account_info(),
+                        TransferChecked {
+                            from: ctx.accounts.jackpot_token_account.to_account_info(),
+                            mint: ctx.accounts.mint.to_account_info(),
+                            to: ctx.accounts.sender_token_account.to_account_info(),
+                            authority: ctx.accounts.jackpot_account.to_account_info(),
+                        },
+                        jackpot_signer,
+                    );
+                    
+                    // 执行转账给中奖者
+                    token_interface::transfer_checked(
+                        winner_transfer_ctx,
+                        winner_payout,
+                        mint_decimals,
+                    )?;
+                    
+                    // 更新奖池余额（保留部分）
+                    ctx.accounts.jackpot_account.balance = reserve;
+                    
+                    // 更新统计
+                    ctx.accounts.jackpot_account.total_wins = ctx.accounts.jackpot_account.total_wins
+                        .checked_add(1)
+                        .ok_or(error!(TotError::MathOverflow))?;
+                    ctx.accounts.jackpot_account.total_payouts = ctx.accounts.jackpot_account.total_payouts
+                        .checked_add(winner_payout)
+                        .ok_or(error!(TotError::MathOverflow))?;
+                    
+                    // 更新开奖统计
+                    ctx.accounts.jackpot_account.last_win_time = timestamp;
+                    ctx.accounts.jackpot_account.transactions_since_last_win = 0;
+                    
+                    // 更新难度（开奖后重新计算）
+                    ctx.accounts.jackpot_account.update_difficulty(reserve)?;
+                    
+                    // 重新计算哈希难度（基于新的开奖时间）
+                    ctx.accounts.jackpot_account.calculate_hash_difficulty(
+                        timestamp,
+                        ctx.accounts.jackpot_account.target_win_interval,
+                    )?;
+                    
+                    ctx.accounts.jackpot_account.last_updated = timestamp;
+                    
+                    // 发出中奖事件
+                    emit!(JackpotWinEvent {
+                        winner: sender_key,
+                        payout: winner_payout,
+                        reserve,
+                        difficulty: ctx.accounts.jackpot_account.difficulty,
+                        total_wins: ctx.accounts.jackpot_account.total_wins,
+                        timestamp,
+                    });
+                    
+                    msg!(
+                        "🎉 JACKPOT WIN! Winner: {}, Payout: {} TOT, Reserve: {} TOT, Difficulty: {}, Hash Difficulty: {} bits",
+                        sender_key,
+                        winner_payout,
+                        reserve,
+                        ctx.accounts.jackpot_account.difficulty,
+                        ctx.accounts.jackpot_account.hash_difficulty_bits
+                    );
+                }
+            }
+        }
+        
+        // 更新交易计数（无论是否中奖）
+        ctx.accounts.jackpot_account.transactions_since_last_win = ctx.accounts.jackpot_account
+            .transactions_since_last_win
+            .checked_add(1)
+            .ok_or(error!(TotError::MathOverflow))?;
+        
+        // 定期调整难度（即使没开奖，也要根据时间调整）
+        if ctx.accounts.jackpot_account.last_win_time > 0 {
+            let time_since_last_win = timestamp
+                .checked_sub(ctx.accounts.jackpot_account.last_win_time)
+                .ok_or(error!(TotError::MathUnderflow))?;
+            
+            // 如果距离上次开奖时间超过目标间隔的2倍，强制降低难度
+            if time_since_last_win > ctx.accounts.jackpot_account.target_win_interval * 2 {
+                ctx.accounts.jackpot_account.calculate_hash_difficulty(
+                    timestamp,
+                    ctx.accounts.jackpot_account.target_win_interval,
+                )?;
+            }
+        }
+    }
+
+    // ========================================
     // 发出转账事件
     // ========================================
     // 
@@ -417,7 +587,7 @@ pub fn transfer_with_tax_handler(
         tax_amount: tax_calculation.tax_amount,
         net_amount: tax_calculation.net_amount,
         tax_rate_bps: tax_calculation.final_tax_bps,
-        burned: tax_distribution.as_ref().map(|d| d.to_burn).unwrap_or(0),
+        jackpot: tax_distribution.as_ref().map(|d| d.to_jackpot).unwrap_or(0),
         timestamp,
     });
 
@@ -448,9 +618,34 @@ pub struct TransferWithTaxEvent {
     /// 最终税率（basis points）
     pub tax_rate_bps: u16,
     
-    /// 销毁的代币数量
-    pub burned: u64,
+    /// 注入奖池的代币数量（原销毁）
+    pub jackpot: u64,
     
     /// 交易时间戳
+    pub timestamp: i64,
+}
+
+/// 中奖事件
+/// 
+/// 每次中奖都会发出此事件，记录完整的中奖信息。
+/// 前端可以通过监听此事件来实时显示中奖信息。
+#[event]
+pub struct JackpotWinEvent {
+    /// 中奖者地址
+    pub winner: Pubkey,
+    
+    /// 奖金金额（基础单位）
+    pub payout: u64,
+    
+    /// 奖池保留金额（基础单位）
+    pub reserve: u64,
+    
+    /// 当前难度
+    pub difficulty: u64,
+    
+    /// 累计中奖次数
+    pub total_wins: u64,
+    
+    /// 中奖时间戳
     pub timestamp: i64,
 }

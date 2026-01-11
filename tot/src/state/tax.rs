@@ -157,6 +157,23 @@ pub struct TaxConfig {
     /// - 系统维护时使用
     pub enabled: bool,
     
+    /// 税收用于奖池的比例（basis points，4000=40%，400=4%）
+    /// 
+    /// 类型: u16 (2字节)
+    /// 默认值: 4000 (40%)
+    /// 取值范围: 400-4000 (4%-40%)
+    /// 
+    /// 说明:
+    /// - 税收中用于注入奖池的比例（原用于销毁）
+    /// - 可动态调整，范围: 4%-40%
+    /// - 管理员可以通过指令调整
+    /// 
+    /// 用途:
+    /// - 控制奖池积累速度
+    /// - 实现成瘾机制（天命轮盘）
+    /// - 根据市场情况动态调整
+    pub jackpot_ratio_bps: u16,
+    
     /// 免税地址列表
     /// 
     /// 类型: Vec<Pubkey> (动态数组，最多50个地址)
@@ -203,7 +220,7 @@ impl TaxConfig {
     /// 
     /// 返回税率配置账户所需的总字节数，用于账户初始化时的空间分配。
     /// 
-    /// 总大小: 1655 字节
+    /// 总大小: 1657 字节
     /// 
     /// 注意: 由于Vec<Pubkey>需要预留最大空间（50个地址），账户大小较大。
     pub const LEN: usize = 8 + // discriminator (Anchor自动添加)
@@ -214,6 +231,7 @@ impl TaxConfig {
         2 + // panic_threshold_bps (u16)
         2 + // panic_tax_bps (u16)
         1 + // enabled (bool)
+        2 + // jackpot_ratio_bps (u16)
         4 + // Vec length (u32)
         (32 * 50) + // exempt_addresses (Vec<Pubkey>, max 50 addresses)
         8 + // last_updated (i64)
@@ -319,6 +337,42 @@ impl TaxConfig {
         
         // 从列表中移除
         self.exempt_addresses.remove(index);
+        Ok(())
+    }
+    
+    /// 设置奖池比例
+    /// 
+    /// 更新税收用于奖池的比例。只有管理员可以执行此操作。
+    /// 
+    /// # 参数
+    /// * `ratio_bps` - 新的奖池比例（basis points，400-4000，即4%-40%）
+    /// 
+    /// # 返回值
+    /// * `Result<()>` - 成功返回Ok(())，失败返回相应错误
+    /// 
+    /// # 验证
+    /// 1. 检查比例是否在有效范围内（4%-40%）
+    /// 
+    /// # 错误
+    /// * 如果比例不在400-4000范围内，返回`TotError::InvalidJackpotRatio`
+    /// 
+    /// # 使用示例
+    /// ```rust
+    /// // 设置奖池比例为30%
+    /// tax_config.set_jackpot_ratio(3000)?;
+    /// ```
+    pub fn set_jackpot_ratio(&mut self, ratio_bps: u16) -> Result<()> {
+        use crate::constants::tax::distribution;
+        use crate::errors::TotError;
+        
+        // 验证比例范围（4%-40%）
+        require!(
+            ratio_bps >= distribution::JACKPOT_MIN_RATIO_BPS 
+                && ratio_bps <= distribution::JACKPOT_MAX_RATIO_BPS,
+            TotError::InvalidJackpotRatio
+        );
+        
+        self.jackpot_ratio_bps = ratio_bps;
         Ok(())
     }
 }

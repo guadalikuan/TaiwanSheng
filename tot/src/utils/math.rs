@@ -130,6 +130,48 @@ pub fn power_fixed(base: u64, exponent: u64, scale: u64) -> Result<u64> {
     Ok(base)
 }
 
+/// 生成伪随机数种子
+/// 
+/// 使用交易本身的不可预测因素生成随机数，实现零额外Gas。
+/// 
+/// # 参数
+/// * `sender` - 发送者地址
+/// * `slot` - 当前区块slot
+/// * `amount` - 转账金额
+/// * `timestamp` - 时间戳
+/// 
+/// # 返回值
+/// * `u64` - 随机数种子
+/// 
+/// # 说明
+/// 使用简单的哈希组合，避免引入外部依赖。
+/// 在Solana中，这些因素在交易执行时已经可用。
+pub fn generate_random_seed(
+    sender: &anchor_lang::prelude::Pubkey,
+    slot: u64,
+    amount: u64,
+    timestamp: i64,
+) -> u64 {
+    // 组合多个不可预测的因素
+    let mut seed = Vec::new();
+    seed.extend_from_slice(sender.as_ref());
+    seed.extend_from_slice(&slot.to_le_bytes());
+    seed.extend_from_slice(&amount.to_le_bytes());
+    seed.extend_from_slice(&timestamp.to_le_bytes());
+    
+    // 使用简单的哈希函数（避免引入外部依赖）
+    // 使用Anchor内置的hash函数
+    use anchor_lang::solana_program::hash::{hash, Hash};
+    let hash_result = hash(&seed);
+    
+    // 取前8字节作为随机数
+    let hash_bytes = hash_result.as_ref();
+    u64::from_le_bytes([
+        hash_bytes[0], hash_bytes[1], hash_bytes[2], hash_bytes[3],
+        hash_bytes[4], hash_bytes[5], hash_bytes[6], hash_bytes[7],
+    ])
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

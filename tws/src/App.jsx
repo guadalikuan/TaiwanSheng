@@ -43,6 +43,7 @@ import RWASharePurchase from './components/RWASharePurchase';
 import RWAEtfPurchase from './components/RWAEtfPurchase';
 import RWAMyHoldings from './components/RWAMyHoldings';
 import MissileLaunchPage from './components/MissileLaunchPage';
+import LeaderboardPage from './components/LeaderboardPage';
 import { ArsenalAuthProvider } from './contexts/ArsenalAuthContext';
 
 const App = () => (
@@ -117,6 +118,7 @@ const App = () => (
     <Route path="/rwa/etf" element={<RWAEtfPurchase />} />
     <Route path="/rwa/holdings" element={<RWAMyHoldings />} />
     <Route path="/missile-launch" element={<MissileLaunchPage />} />
+    <Route path="/leaderboard" element={<LeaderboardPage />} />
   </Routes>
 );
 

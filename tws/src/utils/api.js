@@ -2386,3 +2386,55 @@ export const recordMapAction = async (actionType, data) => {
   }
 };
 
+/**
+ * 获取排行榜数据
+ * @param {string} type - 排行榜类型 (balance, transactions, jackpot-wins, asset-value, tax-paid, consumption, referral-earnings, holding-time)
+ * @param {number} limit - 返回数量（默认100）
+ * @returns {Promise<Object>}
+ */
+export const getLeaderboard = async (type, limit = 100) => {
+  try {
+    const response = await fetchWithRetry(
+      `${API_BASE_URL}/api/leaderboard/${type}?limit=${limit}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+      3,
+      1000
+    );
+    return response;
+  } catch (error) {
+    console.error('API getLeaderboard error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+
+/**
+ * 获取用户排名信息
+ * @param {string} address - 用户钱包地址
+ * @param {string} type - 排行榜类型（可选，默认balance）
+ * @returns {Promise<Object>}
+ */
+export const getUserRanking = async (address, type = 'balance') => {
+  try {
+    const response = await fetchWithRetry(
+      `${API_BASE_URL}/api/leaderboard/user/${address}?type=${type}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+      3,
+      1000
+    );
+    return response;
+  } catch (error) {
+    console.error('API getUserRanking error:', error);
+    return { success: false, message: error.message || '网络错误，请检查服务器连接' };
+  }
+};
+

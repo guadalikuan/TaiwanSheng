@@ -472,7 +472,7 @@ impl TaxCalculator {
 /// 根据配置的分配比例计算税收的分配
 #[derive(Debug, Clone)]
 pub struct TaxDistribution {
-    pub to_burn: u64,           // 销毁
+    pub to_jackpot: u64,        // 奖池（原销毁）
     pub to_liquidity: u64,      // 流动性池
     pub to_community: u64,      // 社区奖励
     pub to_marketing: u64,      // 营销
@@ -481,26 +481,31 @@ pub struct TaxDistribution {
 impl TaxDistribution {
     /// 计算税收分配
     /// 
-    /// 分配比例（根据constants.rs）：
-    /// - 40% 销毁
+    /// 分配比例（根据TaxConfig）：
+    /// - jackpot_ratio_bps% 奖池（可动态调整，默认40%）
     /// - 30% 流动性池
     /// - 20% 社区奖励
-    /// - 10% 营销
+    /// - 剩余部分 营销
+    /// 
+    /// # 参数
+    /// * `total_tax` - 总税收金额
+    /// * `tax_config` - 税率配置（包含jackpot_ratio_bps）
     /// 
     /// # 返回值
     /// * `Result<Self>` - 成功返回分配结果，溢出时返回错误
-    pub fn calculate(total_tax: u64) -> Result<Self> {
-        let to_burn = calculate_bps(total_tax, tax::TAX_TO_BURN_BPS)?;
+    pub fn calculate(total_tax: u64, tax_config: &crate::state::tax::TaxConfig) -> Result<Self> {
+        // 从TaxConfig读取奖池比例（可动态调整）
+        let to_jackpot = calculate_bps(total_tax, tax_config.jackpot_ratio_bps)?;
         let to_liquidity = calculate_bps(total_tax, tax::TAX_TO_LIQUIDITY_BPS)?;
         let to_community = calculate_bps(total_tax, tax::TAX_TO_COMMUNITY_BPS)?;
         let to_marketing = total_tax
-            .checked_sub(to_burn)
+            .checked_sub(to_jackpot)
             .and_then(|v| v.checked_sub(to_liquidity))
             .and_then(|v| v.checked_sub(to_community))
             .ok_or(error!(TotError::MathOverflow))?;
 
         let distribution = Self {
-            to_burn,
+            to_jackpot,
             to_liquidity,
             to_community,
             to_marketing,
@@ -509,7 +514,7 @@ impl TaxDistribution {
         // 验证分配总和是否等于总税收
         // 由于使用整数除法和舍入，可能存在1-2个代币的误差，这是可接受的
         // 但如果误差过大（>1），说明计算有问题
-        let sum = distribution.to_burn
+        let sum = distribution.to_jackpot
             .checked_add(distribution.to_liquidity)
             .and_then(|v| v.checked_add(distribution.to_community))
             .and_then(|v| v.checked_add(distribution.to_marketing))
@@ -590,10 +595,26 @@ mod tests {
 
     #[test]
     fn test_tax_distribution() {
+        use crate::state::tax::TaxConfig;
+        
         let total_tax = 1000u64;
-        let dist = TaxDistribution::calculate(total_tax).unwrap();
+        let tax_config = TaxConfig {
+            base_tax_bps: 200,
+            alpha: 500,
+            beta: 50,
+            gamma_bps: 2000,
+            panic_threshold_bps: 50,
+            panic_tax_bps: 3000,
+            enabled: true,
+            jackpot_ratio_bps: 4000, // 40%
+            exempt_addresses: vec![],
+            last_updated: 0,
+            bump: 0,
+        };
+        
+        let dist = TaxDistribution::calculate(total_tax, &tax_config).unwrap();
 
-        assert_eq!(dist.to_burn, 400); // 40%
+        assert_eq!(dist.to_jackpot, 400); // 40%
         assert_eq!(dist.to_liquidity, 300); // 30%
         assert_eq!(dist.to_community, 200); // 20%
         assert_eq!(dist.to_marketing, 100); // 10%

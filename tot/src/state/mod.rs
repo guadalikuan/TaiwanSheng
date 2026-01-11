@@ -55,6 +55,7 @@ pub mod tax;
 pub mod hook;
 pub mod asset;
 pub mod auction;
+pub mod jackpot;
 
 // 精确导出公共API，避免通配符导出导致的模块边界不清晰
 // 只导出外部模块需要使用的类型和常量
@@ -79,3 +80,6 @@ pub use asset::{AssetAccount, AssetLocation};
 
 // 拍卖模块公共API
 pub use auction::AuctionAccount;
+
+// 奖池模块公共API
+pub use jackpot::JackpotAccount;
