@@ -12,9 +12,10 @@ use crate::errors::TotError;
 
 /// 拍卖创建账户结构
 #[derive(Accounts)]
-#[instruction(asset_id: String)]
+#[instruction(asset_id: String, taunt_message: String)]
 pub struct CreateAuction<'info> {
     /// 创建者（签名者）
+    #[account(mut)]
     pub creator: Signer<'info>,
 
     /// 拍卖账户（PDA）

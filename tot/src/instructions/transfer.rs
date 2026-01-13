@@ -5,7 +5,7 @@
 
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{
-    self, Mint, TokenAccount, TokenInterface, TransferChecked, Burn,
+    self, Mint, TokenAccount, TokenInterface, TransferChecked,
 };
 
 use crate::state::config::TotConfig;
@@ -205,7 +205,7 @@ pub fn transfer_with_tax_handler(
             tax_amount: 0,
             net_amount: amount,
             tax_rate_bps: 0,
-            burned: 0,
+            jackpot: 0,
             timestamp,
         });
 
@@ -401,7 +401,8 @@ pub fn transfer_with_tax_handler(
             .ok_or(error!(TotError::MathOverflow))?;
         
         // 更新难度（根据新的奖池余额和交易次数）
-        ctx.accounts.jackpot_account.update_difficulty(ctx.accounts.jackpot_account.balance)?;
+        let jackpot_balance = ctx.accounts.jackpot_account.balance;
+        ctx.accounts.jackpot_account.update_difficulty(jackpot_balance)?;
         ctx.accounts.jackpot_account.last_updated = timestamp;
     }
 
@@ -522,10 +523,10 @@ pub fn transfer_with_tax_handler(
                     ctx.accounts.jackpot_account.update_difficulty(reserve)?;
                     
                     // 重新计算哈希难度（基于新的开奖时间）
-                    ctx.accounts.jackpot_account.calculate_hash_difficulty(
-                        timestamp,
-                        ctx.accounts.jackpot_account.target_win_interval,
-                    )?;
+                    let target_win_interval = ctx.accounts.jackpot_account.target_win_interval;
+                    ctx.accounts
+                        .jackpot_account
+                        .calculate_hash_difficulty(timestamp, target_win_interval)?;
                     
                     ctx.accounts.jackpot_account.last_updated = timestamp;
                     
@@ -565,10 +566,10 @@ pub fn transfer_with_tax_handler(
             
             // 如果距离上次开奖时间超过目标间隔的2倍，强制降低难度
             if time_since_last_win > ctx.accounts.jackpot_account.target_win_interval * 2 {
-                ctx.accounts.jackpot_account.calculate_hash_difficulty(
-                    timestamp,
-                    ctx.accounts.jackpot_account.target_win_interval,
-                )?;
+                let target_win_interval = ctx.accounts.jackpot_account.target_win_interval;
+                ctx.accounts
+                    .jackpot_account
+                    .calculate_hash_difficulty(timestamp, target_win_interval)?;
             }
         }
     }

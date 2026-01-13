@@ -228,6 +228,7 @@ impl Default for TotConfig {
             treasury: Pubkey::default(),
             liquidity_pool: Pubkey::default(),
             tax_config: Pubkey::default(),
+            tws_treasury: Pubkey::default(),
             panic_mode: false,
             initialized_at: 0,
             total_minted: 0,

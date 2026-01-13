@@ -342,7 +342,7 @@ impl JackpotAccount {
         }
         
         // 计算需要检查的完整字节数
-        let full_bytes = self.hash_difficulty_bits / 8;
+        let full_bytes = (self.hash_difficulty_bits / 8) as usize;
         
         // 检查完整的字节（必须全为0）
         for i in 0..full_bytes.min(32) {
@@ -357,7 +357,7 @@ impl JackpotAccount {
             // 检查该字节的前N位是否为0
             // 例如：如果remaining_bits = 4，检查前4位（高4位）是否为0
             // 我们需要检查高4位是否为0，即 (hash[i] >> 4) == 0
-            let shift = 8 - remaining_bits;
+            let shift = (8 - remaining_bits) as u32;
             if (transaction_hash[full_bytes] >> shift) != 0 {
                 return false; // 不满足难度要求
             }

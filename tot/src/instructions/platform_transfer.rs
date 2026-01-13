@@ -100,7 +100,6 @@ pub fn platform_transfer_handler(
     amount: u64,
 ) -> Result<()> {
     // 获取账户和配置引用
-    let config = &ctx.accounts.config;
     let clock = Clock::get()?;
     let timestamp = clock.unix_timestamp;
 

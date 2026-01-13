@@ -9,6 +9,7 @@
 // ============================================
 
 use anchor_lang::prelude::*;
+use crate::errors::TotError;
 
 /// 拍卖账户结构体
 /// 
@@ -133,7 +134,7 @@ impl AuctionAccount {
         self.price
             .checked_mul(110)
             .and_then(|v| v.checked_div(100))
-            .ok_or_else(|| anchor_lang::error!(anchor_lang::error::ErrorCode::ArithmeticError))
+            .ok_or_else(|| anchor_lang::error!(TotError::MathOverflow))
     }
     
     /// 计算分账金额
@@ -148,12 +149,12 @@ impl AuctionAccount {
         let fee_amount = total_amount
             .checked_mul(5)
             .and_then(|v| v.checked_div(100))
-            .ok_or_else(|| anchor_lang::error!(anchor_lang::error::ErrorCode::ArithmeticError))?;
+            .ok_or_else(|| anchor_lang::error!(TotError::MathOverflow))?;
         
         // 计算95%给房主
         let payout_amount = total_amount
             .checked_sub(fee_amount)
-            .ok_or_else(|| anchor_lang::error!(anchor_lang::error::ErrorCode::ArithmeticError))?;
+            .ok_or_else(|| anchor_lang::error!(TotError::MathUnderflow))?;
         
         Ok((fee_amount, payout_amount))
     }

@@ -161,7 +161,7 @@ pub fn generate_random_seed(
     
     // 使用简单的哈希函数（避免引入外部依赖）
     // 使用Anchor内置的hash函数
-    use anchor_lang::solana_program::hash::{hash, Hash};
+    use anchor_lang::solana_program::hash::hash;
     let hash_result = hash(&seed);
     
     // 取前8字节作为随机数

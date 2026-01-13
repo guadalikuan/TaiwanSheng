@@ -64,7 +64,6 @@ pub struct TaxConfig {
     /// - 系统地址免税（避免税收循环）
     /// - 特殊合约地址免税
     /// - 管理员可以动态添加/移除
-    #[max_len(50)]
     pub exempt_addresses: Vec<Pubkey>,
     pub last_updated: i64,
     pub bump: u8,

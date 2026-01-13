@@ -65,7 +65,6 @@ use instructions::{
     // 查询相关
     CalculateTax,
     GetHolderStats,
-    DiscountTier,
     // Transfer Hook相关
     InitializeTransferHook,
     ExecuteTransferHook,
@@ -151,6 +150,50 @@ pub mod __client_accounts_calculate_tax {
 
 pub mod __client_accounts_get_holder_stats {
     pub use crate::instructions::query::__client_accounts_get_holder_stats::*;
+}
+
+pub mod __client_accounts_consume_to_treasury {
+    pub use crate::instructions::consume::__client_accounts_consume_to_treasury::*;
+}
+
+pub mod __client_accounts_platform_transfer {
+    pub use crate::instructions::platform_transfer::__client_accounts_platform_transfer::*;
+}
+
+pub mod __client_accounts_set_tws_treasury {
+    pub use crate::instructions::admin::__client_accounts_set_tws_treasury::*;
+}
+
+pub mod __client_accounts_set_jackpot_ratio {
+    pub use crate::instructions::admin::__client_accounts_set_jackpot_ratio::*;
+}
+
+pub mod __client_accounts_initialize_jackpot {
+    pub use crate::instructions::jackpot::__client_accounts_initialize_jackpot::*;
+}
+
+pub mod __client_accounts_mint_asset {
+    pub use crate::instructions::asset_mint::__client_accounts_mint_asset::*;
+}
+
+pub mod __client_accounts_create_auction {
+    pub use crate::instructions::auction_create::__client_accounts_create_auction::*;
+}
+
+pub mod __client_accounts_seize_auction {
+    pub use crate::instructions::auction_seize::__client_accounts_seize_auction::*;
+}
+
+pub mod __client_accounts_initialize_transfer_hook {
+    pub use crate::instructions::hook::__client_accounts_initialize_transfer_hook::*;
+}
+
+pub mod __client_accounts_execute_transfer_hook {
+    pub use crate::instructions::hook::__client_accounts_execute_transfer_hook::*;
+}
+
+pub mod __client_accounts_transfer_hook_admin_action {
+    pub use crate::instructions::hook::__client_accounts_transfer_hook_admin_action::*;
 }
 
 #[program]
@@ -691,11 +734,13 @@ pub mod tot_token {
         amount: u64,
         is_buy: bool,
         is_sell: bool,
-    ) -> Result<TaxCalculationResult> {
+    ) -> anchor_lang::prelude::Result<crate::instructions::query::TaxCalculationResult> {
         crate::instructions::query::calculate_tax_handler(ctx, amount, is_buy, is_sell)
     }
 
-    pub fn get_holder_stats(ctx: Context<GetHolderStats>) -> Result<HolderStats> {
+    pub fn get_holder_stats(
+        ctx: Context<GetHolderStats>,
+    ) -> anchor_lang::prelude::Result<crate::instructions::query::HolderStats> {
         crate::instructions::query::get_holder_stats_handler(ctx)
     }
 
@@ -814,74 +859,6 @@ pub mod tot_token {
     }
 }
 
-/// 税率计算结果（用于返回给客户端）
-/// 
-/// 包含完整的税率计算信息，用于前端显示和用户决策。
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
-pub struct TaxCalculationResult {
-    /// 基础税率（basis points，10000 = 100%）
-    /// 这是不考虑任何折扣和惩罚的基础税率
-    pub base_tax_bps: u16,
-    
-    /// 持有时间折扣（basis points）
-    /// 根据持有时间计算的折扣金额，会从基础税率中扣除
-    pub holding_discount_bps: u16,
-    
-    /// 大额交易附加税（basis points）
-    /// 仅对卖出操作，当交易规模超过阈值时收取的附加税
-    pub whale_tax_bps: u16,
-    
-    /// 最终税率（basis points）
-    /// 综合考虑基础税率、折扣和附加税后的最终税率
-    pub final_tax_bps: u16,
-    
-    /// 税额（代币数量）
-    /// 根据最终税率计算出的实际税额
-    pub tax_amount: u64,
-    
-    /// 净转账金额（代币数量）
-    /// 扣除税收后，接收者实际收到的代币数量
-    pub net_amount: u64,
-}
-
-/// 持有者统计结果
-/// 
-/// 包含持有者的完整统计信息，用于展示用户的持有历史和享受的优惠。
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
-pub struct HolderStats {
-    /// 持有者钱包地址
-    pub owner: Pubkey,
-    
-    /// 持有天数
-    /// 从首次持有时间到当前时间的天数
-    pub holding_days: u64,
-    
-    /// 累计买入量
-    /// 用户累计买入的TOT代币总数
-    pub total_bought: u64,
-    
-    /// 累计卖出量
-    /// 用户累计卖出的TOT代币总数
-    pub total_sold: u64,
-    
-    /// 累计缴税总额
-    /// 用户累计支付的所有税收总和
-    pub total_tax_paid: u64,
-    
-    /// 是否被冻结
-    /// `true`表示账户被管理员冻结，无法转账
-    pub is_frozen: bool,
-    
-    /// 税率折扣等级
-    /// 枚举类型，客户端可以根据枚举值转换为字符串显示
-    /// - None: 无折扣
-    /// - Bronze: 10%折扣 (30-90天)
-    /// - Silver: 25%折扣 (90-180天)
-    /// - Gold: 50%折扣 (180-365天)
-    /// - Diamond: 75%折扣 (365+天)
-    pub tax_discount_tier: crate::instructions::query::DiscountTier,
-}
-
 /// Fallback函数
 /// 
 /// 处理spl-transfer-hook-interface的execute指令。
@@ -908,15 +885,14 @@ pub struct HolderStats {
 /// - Token-2022应该能够直接调用execute函数（推荐方式）
 /// - 如果discriminator不匹配，fallback函数会尝试处理（但受技术限制）
 /// - 如果升级到Anchor 0.30.0+，可以使用#[interface]属性替代fallback函数
-#[fallback]
 pub fn fallback(
-    program_id: &Pubkey,
-    accounts: &[AccountInfo],
+    _program_id: &Pubkey,
+    _accounts: &[AccountInfo],
     instruction_data: &[u8],
 ) -> Result<()> {
     // 尝试解析为TransferHookInstruction
     match TransferHookInstruction::unpack(instruction_data) {
-        Ok(TransferHookInstruction::Execute { amount }) => {
+        Ok(TransferHookInstruction::Execute { amount: _ }) => {
             // 注意：fallback函数无法直接使用Anchor的Context和账户验证机制
             // 因此无法在这里直接调用execute函数
             // 

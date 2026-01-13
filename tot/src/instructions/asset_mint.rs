@@ -12,10 +12,11 @@ use crate::errors::TotError;
 
 /// 资产上链账户结构
 #[derive(Accounts)]
-#[instruction(asset_id: String)]
+#[instruction(asset_id: String, metadata_uri: Option<String>)]
 pub struct MintAsset<'info> {
     /// 管理员（签名者，需要验证权限）
     #[account(
+        mut,
         constraint = authority.key() == config.authority @ TotError::Unauthorized
     )]
     pub authority: Signer<'info>,

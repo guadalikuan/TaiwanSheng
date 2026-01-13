@@ -4,9 +4,7 @@
 // ============================================
 
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
-use spl_transfer_hook_interface::instruction::{ExecuteInstruction, TransferHookInstruction};
-use spl_tlv_account_resolution::state::ExtraAccountMetaList;
+use anchor_spl::token_interface::{Mint, TokenAccount};
 use crate::state::hook::TransferHookConfig;
 use crate::errors::TotError;
 

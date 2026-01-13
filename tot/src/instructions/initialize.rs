@@ -49,6 +49,8 @@ pub struct Initialize<'info> {
     #[account(mut)]
     pub mint: Signer<'info>,
     
+    pub transfer_hook_program: Option<UncheckedAccount<'info>>,
+    
     #[account(
         init,
         payer = authority,
@@ -147,13 +149,18 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
     let authority_key = authority.key();
     let mint_key = mint.key();
     let token_program_key = token_program.key();
+    let transfer_hook_program_id = ctx
+        .accounts
+        .transfer_hook_program
+        .as_ref()
+        .map(|a| a.key());
     
     let mut extensions = vec![
         ExtensionType::TransferFeeConfig,
         ExtensionType::PermanentDelegate,
         ExtensionType::MetadataPointer,
     ];
-    if ctx.accounts.transfer_hook_program.is_some() {
+    if transfer_hook_program_id.is_some() {
         extensions.push(ExtensionType::TransferHook);
     }
     
@@ -231,17 +238,19 @@ pub fn handler(ctx: Context<Initialize>, params: InitializeParams) -> Result<()>
     // - 主程序同时处理自己的指令和transfer hook的execute指令
     // - 在初始化时，主程序ID会自动设置为transfer hook program ID
     
-    invoke(
-        &spl_token_2022::instruction::initialize_transfer_hook(
-            &token_program.key(),
-            &mint.key(),
-            Some(&authority.key()),      // hook_authority: 可以更新Transfer Hook配置的权限
-            Some(&ctx.program_id),       // hook_program_id: 使用主程序ID作为transfer hook program ID
-        )?,
-        &[
-            mint.to_account_info(),
-        ],
-    )?;
+    if let Some(transfer_hook_program_id) = transfer_hook_program_id.as_ref() {
+        invoke(
+            &initialize_transfer_hook(
+                &token_program_key,
+                &mint_key,
+                Some(authority_key),
+                Some(*transfer_hook_program_id),
+            )?,
+            &[
+                mint.to_account_info(),
+            ],
+        )?;
+    }
     
     invoke(
         &token_2022_instruction::initialize_mint2(

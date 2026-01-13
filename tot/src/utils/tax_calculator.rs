@@ -38,9 +38,11 @@
 // ============================================
 
 use anchor_lang::prelude::*;
+use crate::constants::tax;
 use crate::state::holder::HolderAccount;
 use crate::state::tax::TaxConfig;
 use crate::errors::TotError;
+use super::math::{calculate_bps, safe_sub};
 
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct TaxCalculation {
@@ -143,7 +145,7 @@ impl TaxCalculator {
         holder_info: Option<&HolderAccount>,
         total_supply: u64,
         current_timestamp: i64,
-        is_buy: bool,
+        _is_buy: bool,
         is_sell: bool,
         tax_config: &TaxConfig,
     ) -> Result<TaxCalculation> {
@@ -511,192 +513,5 @@ impl TaxDistribution {
         );
 
         Ok(distribution)
-    }
-}
-
-pub struct TaxCalculator;
-
-impl TaxCalculator {
-    pub fn calculate_tax(
-        amount: u64,
-        holder_info: Option<&HolderAccount>,
-        total_supply: u64,
-        current_timestamp: i64,
-        _is_buy: bool,
-        is_sell: bool,
-        tax_config: &TaxConfig,
-    ) -> Result<TaxCalculation> {
-        let base_tax_bps = tax_config.base_tax_bps;
-
-        let holding_discount_bps = Self::calculate_holding_discount(
-            holder_info,
-            current_timestamp,
-            tax_config,
-        )?;
-
-        let whale_tax_bps = if is_sell {
-            Self::calculate_whale_tax(
-                amount,
-                total_supply,
-                tax_config,
-            )?
-        } else {
-            0
-        };
-
-        let mut final_tax_bps = base_tax_bps;
-        
-        if final_tax_bps > holding_discount_bps {
-            final_tax_bps -= holding_discount_bps;
-        } else {
-            final_tax_bps = 0;
-        }
-        
-        final_tax_bps = final_tax_bps.checked_add(whale_tax_bps)
-            .ok_or(error!(TotError::MathOverflow))?;
-            
-        if final_tax_bps > 9900 {
-            final_tax_bps = 9900;
-        }
-
-        let tax_amount = (amount as u128)
-            .checked_mul(final_tax_bps as u128)
-            .ok_or(error!(TotError::MathOverflow))?
-            .checked_div(10000)
-            .ok_or(error!(TotError::DivisionByZero))? as u64;
-
-        let net_amount = amount.checked_sub(tax_amount)
-            .ok_or(error!(TotError::MathUnderflow))?;
-
-        Ok(TaxCalculation {
-            base_tax_bps,
-            holding_discount_bps,
-            whale_tax_bps,
-            final_tax_bps,
-            tax_amount,
-            net_amount,
-        })
-    }
-
-    fn calculate_holding_discount(
-        holder_info: Option<&HolderAccount>,
-        current_timestamp: i64,
-        tax_config: &TaxConfig,
-    ) -> Result<u16> {
-        if let Some(holder) = holder_info {
-            let holding_time = current_timestamp.checked_sub(holder.first_hold_time)
-                .ok_or(error!(TotError::MathUnderflow))?;
-            
-            if holding_time < 0 {
-                return Ok(0);
-            }
-            
-            let holding_days = (holding_time as u64) / 86400;
-            
-            // Discount = gamma / (days + 1)^beta
-            // Simplified: gamma * 100 / sqrt(days + 1) if beta is 0.5
-            // Using pre-calculated logic or approximation
-            
-            // For now, using linear interpolation based on tiers as approximation if formula is complex
-            // or simple step function as defined in requirements
-            // Requirement:
-            // 30 days: 10%
-            // 90 days: 25%
-            // 180 days: 50%
-            // 365 days: 75%
-            
-            // Assuming base tax is around 5-10% (500-1000 bps)
-            // Discount is percentage of TAX, not bps directly? 
-            // "Hold for 30 days -> 10% tax discount" usually means tax * 0.9
-            
-            // But here we return bps to subtract.
-            // Let's assume the discount is percentage of Base Tax.
-            
-            let discount_percent = if holding_days >= 365 {
-                75
-            } else if holding_days >= 180 {
-                50
-            } else if holding_days >= 90 {
-                25
-            } else if holding_days >= 30 {
-                10
-            } else {
-                0
-            };
-            
-            let discount_bps = (tax_config.base_tax_bps as u64)
-                .checked_mul(discount_percent)
-                .ok_or(error!(TotError::MathOverflow))?
-                .checked_div(100)
-                .ok_or(error!(TotError::DivisionByZero))? as u16;
-                
-            Ok(discount_bps)
-        } else {
-            Ok(0)
-        }
-    }
-
-    #[test]
-    fn test_basic_tax_calculation() {
-        let tax_config = create_test_tax_config();
-        let result = TaxCalculator::calculate_tax(
-            1_000_000, // 1M tokens
-            None,      // 新用户
-            1_000_000_000_000, // 1T total supply
-            0,
-            false,
-            true, // 卖出
-            &tax_config,
-        ).unwrap();
-
-        assert_eq!(result.base_tax_bps, 200);
-        assert_eq!(result.holding_discount_bps, 0);
-        assert_eq!(result.whale_tax_bps, 0); // 小额交易
-    }
-
-    #[test]
-    fn test_whale_tax() {
-        let tax_config = create_test_tax_config();
-        let total_supply = 1_000_000_000_000u64; // 1T
-        let large_amount = total_supply * 3 / 100; // 3% of supply
-
-        let result = TaxCalculator::calculate_tax(
-            large_amount,
-            None,
-            total_supply,
-            0,
-            false,
-            true,
-            &tax_config,
-        ).unwrap();
-
-        assert_eq!(result.whale_tax_bps, 500); // +5% for > 2%
-    }
-
-    #[test]
-    fn test_tax_distribution() {
-        use crate::state::tax::TaxConfig;
-        
-        let total_tax = 1000u64;
-        let tax_config = TaxConfig {
-            base_tax_bps: 200,
-            alpha: 500,
-            beta: 50,
-            gamma_bps: 2000,
-            panic_threshold_bps: 50,
-            panic_tax_bps: 3000,
-            enabled: true,
-            jackpot_ratio_bps: 4000, // 40%
-            exempt_addresses: vec![],
-            last_updated: 0,
-            bump: 0,
-        };
-        
-        let dist = TaxDistribution::calculate(total_tax, &tax_config).unwrap();
-
-        assert_eq!(dist.to_jackpot, 400); // 40%
-        assert_eq!(dist.to_liquidity, 300); // 30%
-        assert_eq!(dist.to_community, 200); // 20%
-        assert_eq!(dist.to_marketing, 100); // 10%
     }
 }

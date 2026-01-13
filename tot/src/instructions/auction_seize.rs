@@ -13,7 +13,6 @@ use crate::state::auction::AuctionAccount;
 use crate::state::holder::HolderAccount;
 use crate::constants::seeds;
 use crate::errors::TotError;
-use crate::utils::validation::validate_transfer_amount;
 
 /// 拍卖夺取账户结构
 #[derive(Accounts)]
