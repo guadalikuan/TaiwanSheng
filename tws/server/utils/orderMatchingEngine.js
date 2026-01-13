@@ -50,7 +50,9 @@ const initOrderBookData = async () => {
 };
 
 // 初始化数据
-initOrderBookData();
+if (process.env.NODE_ENV !== 'test') {
+  void initOrderBookData();
+}
 
 // 从数据库读取并排序订单簿
 const getOrderBookFromDB = async () => {

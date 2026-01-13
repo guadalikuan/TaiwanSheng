@@ -159,11 +159,11 @@ router.get('/risk', async (req, res) => {
 router.get('/stats', async (req, res) => {
   try {
     // 获取所有资产
-    const allAssets = getAllAssets();
-    const approvedAssets = getApprovedAssets();
+    const allAssets = await getAllAssets();
+    const approvedAssets = await getApprovedAssets();
     
     // 获取所有用户
-    const allUsers = getAllUsers();
+    const allUsers = await getAllUsers();
     
     // 计算平均生存率（基于资产数量）
     // 假设每个用户平均拥有资产数量

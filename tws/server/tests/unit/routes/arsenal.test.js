@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
-import arsenalRoutes from '../../routes/arsenal.js';
+import arsenalRoutes from '../../../routes/arsenal.js';
 import { testUsers } from '../../fixtures/testUsers.js';
 import { testAssets } from '../../fixtures/testAssets.js';
 

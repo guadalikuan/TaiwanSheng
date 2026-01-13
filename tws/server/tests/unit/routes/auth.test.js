@@ -2,14 +2,35 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
-import authRoutes from '../../routes/auth.js';
-import * as userStorage from '../../utils/userStorage.js';
-import * as web3 from '../../utils/web3.js';
-import * as jwt from '../../utils/jwt.js';
-import { testUsers } from '../fixtures/testUsers.js';
+import { testUsers } from '../../fixtures/testUsers.js';
 
-// Mock依赖 - 注意：Jest的ESM mock需要特殊处理
-// 在实际测试中，可能需要使用不同的mock策略
+const userStorage = {
+  getUserByUsername: jest.fn(),
+  getUserByAddress: jest.fn(),
+  saveUser: jest.fn(),
+  updateUser: jest.fn(),
+  getAllUsers: jest.fn(),
+  getUsersByRole: jest.fn(),
+};
+
+const web3 = {
+  generateMnemonic: jest.fn(),
+  validateMnemonic: jest.fn(),
+  getAddressFromMnemonic: jest.fn(),
+  encryptPrivateKey: jest.fn(),
+  decryptPrivateKey: jest.fn(),
+};
+
+const jwt = {
+  generateToken: jest.fn(),
+  verifyToken: jest.fn(),
+};
+
+jest.unstable_mockModule('../../../utils/userStorage.js', () => userStorage);
+jest.unstable_mockModule('../../../utils/web3.js', () => web3);
+jest.unstable_mockModule('../../../utils/jwt.js', () => jwt);
+
+const { default: authRoutes } = await import('../../../routes/auth.js');
 
 const app = express();
 app.use(express.json());
@@ -24,12 +45,12 @@ describe('F-AUTH-001-v1.0: 用户注册', () => {
     const mockMnemonic = 'test mnemonic phrase with twelve words here';
     const mockAddress = '11111111111111111111111111111111';
 
-    userStorage.getUserByUsername.mockReturnValue(null);
-    userStorage.getUserByAddress.mockReturnValue(null);
+    userStorage.getUserByUsername.mockResolvedValue(null);
+    userStorage.getUserByAddress.mockResolvedValue(null);
     web3.generateMnemonic.mockReturnValue(mockMnemonic);
     web3.getAddressFromMnemonic.mockReturnValue(mockAddress);
     web3.encryptPrivateKey.mockReturnValue('encrypted-mnemonic');
-    userStorage.saveUser.mockReturnValue({
+    userStorage.saveUser.mockResolvedValue({
       ...testUsers.regularUser,
       address: mockAddress,
     });
@@ -87,7 +108,7 @@ describe('F-AUTH-001-v1.0: 用户注册', () => {
   });
 
   it('应该拒绝重复的用户名', async () => {
-    userStorage.getUserByUsername.mockReturnValue(testUsers.regularUser);
+    userStorage.getUserByUsername.mockResolvedValue(testUsers.regularUser);
 
     const response = await request(app)
       .post('/api/auth/register')
@@ -103,10 +124,10 @@ describe('F-AUTH-001-v1.0: 用户注册', () => {
 
   it('应该拒绝重复的地址', async () => {
     const mockAddress = '11111111111111111111111111111111';
-    userStorage.getUserByUsername.mockReturnValue(null);
+    userStorage.getUserByUsername.mockResolvedValue(null);
     web3.generateMnemonic.mockReturnValue('test mnemonic');
     web3.getAddressFromMnemonic.mockReturnValue(mockAddress);
-    userStorage.getUserByAddress.mockReturnValue(testUsers.regularUser);
+    userStorage.getUserByAddress.mockResolvedValue(testUsers.regularUser);
 
     const response = await request(app)
       .post('/api/auth/register')
@@ -127,11 +148,13 @@ describe('F-AUTH-002-v1.0: 用户登录', () => {
   });
 
   it('应该成功登录', async () => {
-    userStorage.getUserByUsername.mockReturnValue(testUsers.regularUser);
+    userStorage.getUserByUsername.mockResolvedValue(testUsers.regularUser);
     // Mock bcrypt.compare
-    const bcrypt = await import('bcryptjs');
+    const bcryptModule = await import('bcryptjs');
+    const bcrypt = bcryptModule.default ?? bcryptModule;
     jest.spyOn(bcrypt, 'compare').mockResolvedValue(true);
     jwt.generateToken.mockReturnValue('mock-token');
+    userStorage.updateUser.mockResolvedValue(testUsers.regularUser);
 
     const response = await request(app)
       .post('/api/auth/login')
@@ -157,8 +180,8 @@ describe('F-AUTH-002-v1.0: 用户登录', () => {
   });
 
   it('应该拒绝无效凭证', async () => {
-    userStorage.getUserByUsername.mockReturnValue(null);
-    userStorage.getUserByAddress.mockReturnValue(null);
+    userStorage.getUserByUsername.mockResolvedValue(null);
+    userStorage.getUserByAddress.mockResolvedValue(null);
 
     const response = await request(app)
       .post('/api/auth/login')
@@ -172,8 +195,9 @@ describe('F-AUTH-002-v1.0: 用户登录', () => {
   });
 
   it('应该拒绝错误密码', async () => {
-    userStorage.getUserByUsername.mockReturnValue(testUsers.regularUser);
-    const bcrypt = await import('bcryptjs');
+    userStorage.getUserByUsername.mockResolvedValue(testUsers.regularUser);
+    const bcryptModule = await import('bcryptjs');
+    const bcrypt = bcryptModule.default ?? bcryptModule;
     jest.spyOn(bcrypt, 'compare').mockResolvedValue(false);
 
     const response = await request(app)

@@ -2,30 +2,47 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
-import usersRoutes from '../../routes/users.js';
-import * as userStorage from '../../utils/userStorage.js';
-import { testUsers } from '../fixtures/testUsers.js';
+import { testUsers } from '../../fixtures/testUsers.js';
+
+const userStorage = {
+  getAllUsers: jest.fn(),
+  getUsersByRole: jest.fn(),
+  getUserByAddress: jest.fn(),
+  getUserByUsername: jest.fn(),
+  saveUser: jest.fn(),
+  updateUser: jest.fn(),
+};
+
+const authMiddleware = {
+  authenticate: (req, res, next) => {
+    if (!req.user) {
+      req.user = testUsers.admin;
+    }
+    next();
+  },
+  requireRole: (...allowedRoles) => {
+    return (req, res, next) => {
+      const role = req.user?.role;
+      if (!allowedRoles.includes(role)) {
+        return res.status(403).json({ success: false, error: 'Forbidden' });
+      }
+      next();
+    };
+  },
+  authorize: (...allowedRoles) => {
+    return authMiddleware.requireRole(...allowedRoles);
+  },
+  optionalAuth: (req, _res, next) => next(),
+};
+
+jest.unstable_mockModule('../../../utils/userStorage.js', () => userStorage);
+jest.unstable_mockModule('../../../middleware/auth.js', () => authMiddleware);
+
+const { default: usersRoutes } = await import('../../../routes/users.js');
 
 const app = express();
 app.use(express.json());
 app.use('/api/users', usersRoutes);
-
-// Mock中间件
-const mockAuthenticate = (req, res, next) => {
-  req.user = testUsers.admin;
-  next();
-};
-
-const mockRequireAdmin = (req, res, next) => {
-  if (req.user?.role !== 'ADMIN') {
-    return res.status(403).json({ success: false, error: 'Forbidden' });
-  }
-  next();
-};
-
-// 应用mock中间件
-app.use('/api/users', mockAuthenticate);
-app.use('/api/users', mockRequireAdmin);
 
 describe('F-USER-001-v1.0: 获取所有用户', () => {
   beforeEach(() => {
@@ -34,7 +51,7 @@ describe('F-USER-001-v1.0: 获取所有用户', () => {
 
   it('应该成功获取所有用户列表', async () => {
     const mockUsers = [testUsers.regularUser, testUsers.submitter];
-    userStorage.getAllUsers.mockReturnValue(mockUsers);
+    userStorage.getAllUsers.mockResolvedValue(mockUsers);
 
     const response = await request(app)
       .get('/api/users');
@@ -51,7 +68,6 @@ describe('F-USER-001-v1.0: 获取所有用户', () => {
       req.user = testUsers.regularUser; // 非管理员
       next();
     });
-    appNoAdmin.use('/api/users', mockRequireAdmin);
     appNoAdmin.use('/api/users', usersRoutes);
 
     const response = await request(appNoAdmin)
@@ -68,7 +84,7 @@ describe('F-USER-002-v1.0: 获取所有房地产开发商账户', () => {
 
   it('应该成功获取开发商列表', async () => {
     const mockDevelopers = [testUsers.submitter];
-    userStorage.getAllUsers.mockReturnValue(mockDevelopers);
+    userStorage.getUsersByRole.mockResolvedValue(mockDevelopers);
 
     const response = await request(app)
       .get('/api/users/developers');

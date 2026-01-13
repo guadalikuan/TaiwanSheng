@@ -54,7 +54,7 @@ router.post('/register', async (req, res) => {
     }
 
     // 检查用户名是否已存在
-    const existingUser = getUserByUsername(username);
+    const existingUser = await getUserByUsername(username);
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -83,7 +83,7 @@ router.post('/register', async (req, res) => {
     }
 
     // 检查地址是否已存在
-    const existingAddress = getUserByAddress(walletAddress);
+    const existingAddress = await getUserByAddress(walletAddress);
     if (existingAddress) {
       return res.status(400).json({
         success: false,
@@ -139,7 +139,7 @@ router.post('/register', async (req, res) => {
     };
 
     // 保存用户
-    const savedUser = saveUser(userData);
+    const savedUser = await saveUser(userData);
 
     // 生成 JWT token
     const token = generateToken(savedUser);
@@ -182,9 +182,9 @@ router.post('/login', async (req, res) => {
     }
 
     // 查找用户（支持用户名或地址）
-    let user = getUserByUsername(username);
+    let user = await getUserByUsername(username);
     if (!user) {
-      user = getUserByAddress(username);
+      user = await getUserByAddress(username);
     }
 
     if (!user) {
@@ -206,7 +206,7 @@ router.post('/login', async (req, res) => {
     }
 
     // 更新最后登录时间
-    updateUser(user.address, { lastLogin: Date.now() });
+    await updateUser(user.address, { lastLogin: Date.now() });
 
     // 生成 JWT token
     const token = generateToken(user);
@@ -297,7 +297,7 @@ router.post('/login-mnemonic', async (req, res) => {
     const walletAddress = getAddressFromMnemonic(mnemonic);
 
     // 查找用户
-    const user = getUserByAddress(walletAddress);
+    const user = await getUserByAddress(walletAddress);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -317,7 +317,7 @@ router.post('/login-mnemonic', async (req, res) => {
     }
 
     // 更新最后登录时间
-    updateUser(user.address, { lastLogin: Date.now() });
+    await updateUser(user.address, { lastLogin: Date.now() });
 
     // 生成 JWT token
     const token = generateToken(user);
@@ -447,7 +447,7 @@ router.post('/login-wallet', async (req, res) => {
     }
 
     // 查找用户
-    const user = getUserByAddress(address);
+    const user = await getUserByAddress(address);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -487,7 +487,7 @@ router.post('/login-wallet', async (req, res) => {
     }
 
     // 更新最后登录时间
-    updateUser(user.address, { lastLogin: Date.now() });
+    await updateUser(user.address, { lastLogin: Date.now() });
     
     // 生成 Token
     const token = generateToken(user);
@@ -572,7 +572,7 @@ router.post('/register-wallet', async (req, res) => {
     }
 
     // 检查是否已存在
-    const existingUser = getUserByUsername(username);
+    const existingUser = await getUserByUsername(username);
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -581,7 +581,7 @@ router.post('/register-wallet', async (req, res) => {
       });
     }
 
-    const existingAddress = getUserByAddress(address);
+    const existingAddress = await getUserByAddress(address);
     if (existingAddress) {
       return res.status(400).json({
         success: false,
@@ -640,7 +640,7 @@ router.post('/register-wallet', async (req, res) => {
       lastLogin: null
     };
 
-    const savedUser = saveUser(userData);
+    const savedUser = await saveUser(userData);
     const token = generateToken(savedUser);
 
     res.json({
@@ -692,7 +692,7 @@ router.get('/me', async (req, res) => {
     }
 
     // 获取用户信息
-    const user = getUserByAddress(decoded.address);
+    const user = await getUserByAddress(decoded.address);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -758,7 +758,7 @@ router.put('/profile', async (req, res) => {
     }
 
     // 更新用户资料
-    const user = getUserByAddress(decoded.address);
+    const user = await getUserByAddress(decoded.address);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -772,7 +772,7 @@ router.put('/profile', async (req, res) => {
       ...(avatar !== undefined && { avatar })
     };
 
-    const updatedUser = updateUser(decoded.address, {
+    const updatedUser = await updateUser(decoded.address, {
       profile: updatedProfile
     });
 
@@ -842,7 +842,7 @@ router.post('/change-password', async (req, res) => {
     }
 
     // 获取用户
-    const user = getUserByAddress(decoded.address);
+    const user = await getUserByAddress(decoded.address);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -868,7 +868,7 @@ router.post('/change-password', async (req, res) => {
     const newEncryptedMnemonic = encryptPrivateKey(decryptedMnemonic, newPassword);
 
     // 更新密码和加密的助记符
-    updateUser(decoded.address, {
+    await updateUser(decoded.address, {
       passwordHash: newPasswordHash,
       encryptedMnemonic: newEncryptedMnemonic
     });

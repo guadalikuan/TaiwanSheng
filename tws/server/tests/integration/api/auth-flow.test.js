@@ -2,11 +2,35 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
-import authRoutes from '../../../routes/auth.js';
-import * as userStorage from '../../../utils/userStorage.js';
-import * as web3 from '../../../utils/web3.js';
-import * as jwt from '../../../utils/jwt.js';
 import { testUsers } from '../../fixtures/testUsers.js';
+
+const userStorage = {
+  getUserByUsername: jest.fn(),
+  getUserByAddress: jest.fn(),
+  saveUser: jest.fn(),
+  updateUser: jest.fn(),
+  getAllUsers: jest.fn(),
+  getUsersByRole: jest.fn(),
+};
+
+const web3 = {
+  generateMnemonic: jest.fn(),
+  validateMnemonic: jest.fn(),
+  getAddressFromMnemonic: jest.fn(),
+  encryptPrivateKey: jest.fn(),
+  decryptPrivateKey: jest.fn(),
+};
+
+const jwt = {
+  generateToken: jest.fn(),
+  verifyToken: jest.fn(),
+};
+
+jest.unstable_mockModule('../../../utils/userStorage.js', () => userStorage);
+jest.unstable_mockModule('../../../utils/web3.js', () => web3);
+jest.unstable_mockModule('../../../utils/jwt.js', () => jwt);
+
+const { default: authRoutes } = await import('../../../routes/auth.js');
 
 const app = express();
 app.use(express.json());
@@ -22,12 +46,12 @@ describe('认证流程集成测试', () => {
     const mockAddress = 'new-user-address-123';
 
     // 1. 注册
-    userStorage.getUserByUsername.mockReturnValue(null);
-    userStorage.getUserByAddress.mockReturnValue(null);
+    userStorage.getUserByUsername.mockResolvedValue(null);
+    userStorage.getUserByAddress.mockResolvedValue(null);
     web3.generateMnemonic.mockReturnValue(mockMnemonic);
     web3.getAddressFromMnemonic.mockReturnValue(mockAddress);
     web3.encryptPrivateKey.mockReturnValue('encrypted-mnemonic');
-    userStorage.saveUser.mockReturnValue({
+    userStorage.saveUser.mockResolvedValue({
       ...testUsers.regularUser,
       address: mockAddress,
       username: 'newuser',
@@ -46,7 +70,7 @@ describe('认证流程集成测试', () => {
     const token = registerResponse.body.token;
 
     // 2. 使用token获取用户信息
-    userStorage.getUserByAddress.mockReturnValue({
+    userStorage.getUserByAddress.mockResolvedValue({
       ...testUsers.regularUser,
       address: mockAddress,
       username: 'newuser',

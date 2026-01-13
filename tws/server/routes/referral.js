@@ -109,7 +109,7 @@ router.get('/leaderboard', (req, res) => {
 });
 
 // POST /api/referral/commission - 记录推荐佣金（内部调用）
-router.post('/commission', authenticate, (req, res) => {
+router.post('/commission', authenticate, async (req, res) => {
   try {
     const { userId, amount, commissionRate } = req.body;
     

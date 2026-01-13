@@ -25,7 +25,5 @@ export default {
   testTimeout: 30000,
   verbose: true,
   transform: {},
-  moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1',
-  },
+  moduleNameMapper: {},
 };

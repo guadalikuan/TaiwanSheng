@@ -1,17 +1,25 @@
 // 认证中间件测试
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { authenticate } from '../../../middleware/auth.js';
-import * as jwt from '../../../utils/jwt.js';
 import { testUsers } from '../../fixtures/testUsers.js';
 import { createMockRequest, createMockResponse, createMockNext } from '../../helpers/mocks.js';
+
+const jwt = {
+  verifyToken: jest.fn(),
+  generateToken: jest.fn(),
+};
+
+jest.unstable_mockModule('../../../utils/jwt.js', () => jwt);
+
+const { authenticate } = await import('../../../middleware/auth.js');
 
 describe('认证中间件测试', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('应该成功验证有效的token', () => {
+  it('应该成功验证有效的token', async () => {
     const req = createMockRequest({
+      path: '/api/auth/login',
       headers: {
         authorization: 'Bearer valid-token',
       },
@@ -24,25 +32,26 @@ describe('认证中间件测试', () => {
       role: testUsers.regularUser.role,
     });
 
-    authenticate(req, res, next);
+    await authenticate(req, res, next);
 
     expect(next).toHaveBeenCalled();
     expect(req.user).toBeDefined();
   });
 
-  it('应该拒绝缺少token的请求', () => {
+  it('应该拒绝缺少token的请求', async () => {
     const req = createMockRequest();
     const res = createMockResponse();
     const next = createMockNext();
 
-    authenticate(req, res, next);
+    await authenticate(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('应该拒绝无效的token', () => {
+  it('应该拒绝无效的token', async () => {
     const req = createMockRequest({
+      path: '/api/auth/login',
       headers: {
         authorization: 'Bearer invalid-token',
       },
@@ -52,7 +61,7 @@ describe('认证中间件测试', () => {
 
     jwt.verifyToken.mockReturnValue(null);
 
-    authenticate(req, res, next);
+    await authenticate(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(next).not.toHaveBeenCalled();

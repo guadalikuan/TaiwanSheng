@@ -2,15 +2,33 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
-import leaderboardRoutes from '../../routes/leaderboard.js';
-import * as leaderboardUtils from '../../utils/leaderboard.js';
+
+const leaderboardUtils = {
+  getBalanceLeaderboard: jest.fn(),
+  getTransactionLeaderboard: jest.fn(),
+  getJackpotWinLeaderboard: jest.fn(),
+  getAssetValueLeaderboard: jest.fn(),
+  getTaxPaidLeaderboard: jest.fn(),
+  getConsumptionLeaderboard: jest.fn(),
+  getReferralEarningsLeaderboard: jest.fn(),
+  getHoldingTimeLeaderboard: jest.fn(),
+  getUserRanking: jest.fn(),
+  getJackpotHistory: jest.fn(),
+  LEADERBOARD_TYPES: {
+    BALANCE: 'balance',
+  },
+  LEADERBOARD_PERIODS: {
+    ALL: 'all',
+  },
+};
+
+jest.unstable_mockModule('../../../utils/leaderboard.js', () => leaderboardUtils);
+
+const { default: leaderboardRoutes } = await import('../../../routes/leaderboard.js');
 
 const app = express();
 app.use(express.json());
 app.use('/api/leaderboard', leaderboardRoutes);
-
-// Mock leaderboard工具函数
-jest.mock('../../utils/leaderboard.js');
 
 describe('F-LB-001-v1.0: 获取持币数排行榜', () => {
   beforeEach(() => {
@@ -30,7 +48,7 @@ describe('F-LB-001-v1.0: 获取持币数排行榜', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
-    expect(Array.isArray(response.body.leaderboard)).toBe(true);
+    expect(Array.isArray(response.body.data)).toBe(true);
   });
 
   it('应该支持不同的时间维度', async () => {
@@ -65,7 +83,7 @@ describe('F-LB-010-v1.0: 获取奖池历史数据', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
-    expect(Array.isArray(response.body.history)).toBe(true);
+    expect(Array.isArray(response.body.data)).toBe(true);
   });
 });
 

@@ -23,9 +23,9 @@ const USERS_FILE = join(__dirname, '../data/users.json');
 const router = express.Router();
 
 // GET /api/users - 获取所有用户（仅管理员）
-router.get('/', authenticate, requireRole(ROLES.ADMIN), (req, res) => {
+router.get('/', authenticate, requireRole(ROLES.ADMIN), async (req, res) => {
   try {
-    const users = getAllUsers();
+    const users = await getAllUsers();
     // 不返回敏感信息（密码、助记符）
     const sanitizedUsers = users.map(user => ({
       address: user.address,
@@ -53,9 +53,9 @@ router.get('/', authenticate, requireRole(ROLES.ADMIN), (req, res) => {
 });
 
 // GET /api/users/developers - 获取所有房地产开发商账户
-router.get('/developers', authenticate, requireRole(ROLES.ADMIN), (req, res) => {
+router.get('/developers', authenticate, requireRole(ROLES.ADMIN), async (req, res) => {
   try {
-    const developers = getUsersByRole(ROLES.DEVELOPER);
+    const developers = await getUsersByRole(ROLES.DEVELOPER);
     const sanitizedDevelopers = developers.map(user => ({
       address: user.address,
       username: user.username,
@@ -114,7 +114,7 @@ router.post('/developers', authenticate, requireRole(ROLES.ADMIN), async (req, r
     }
 
     // 检查用户名是否已存在
-    const existingUser = getUserByUsername(username);
+    const existingUser = await getUserByUsername(username);
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -144,7 +144,7 @@ router.post('/developers', authenticate, requireRole(ROLES.ADMIN), async (req, r
     }
 
     // 检查地址是否已存在
-    const existingAddress = getUserByAddress(walletAddress);
+    const existingAddress = await getUserByAddress(walletAddress);
     if (existingAddress) {
       return res.status(400).json({
         success: false,
@@ -175,7 +175,7 @@ router.post('/developers', authenticate, requireRole(ROLES.ADMIN), async (req, r
     };
 
     // 保存用户
-    const savedUser = saveUser(userData);
+    const savedUser = await saveUser(userData);
 
     // 不返回敏感信息
     res.json({
@@ -207,7 +207,7 @@ router.put('/developers/:address', authenticate, requireRole(ROLES.ADMIN), async
     const { username, password, profile } = req.body;
 
     // 查找用户
-    const user = getUserByAddress(address);
+    const user = await getUserByAddress(address);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -238,7 +238,7 @@ router.put('/developers/:address', authenticate, requireRole(ROLES.ADMIN), async
       }
       
       // 检查新用户名是否已被其他用户使用
-      const existingUser = getUserByUsername(username);
+      const existingUser = await getUserByUsername(username);
       if (existingUser && existingUser.address !== address) {
         return res.status(400).json({
           success: false,
@@ -287,7 +287,7 @@ router.put('/developers/:address', authenticate, requireRole(ROLES.ADMIN), async
     }
 
     // 更新用户
-    const updatedUser = updateUser(address, updates);
+    const updatedUser = await updateUser(address, updates);
 
     res.json({
       success: true,
@@ -311,12 +311,12 @@ router.put('/developers/:address', authenticate, requireRole(ROLES.ADMIN), async
 });
 
 // DELETE /api/users/developers/:address - 删除房地产开发商账户（仅管理员）
-router.delete('/developers/:address', authenticate, requireRole(ROLES.ADMIN), (req, res) => {
+router.delete('/developers/:address', authenticate, requireRole(ROLES.ADMIN), async (req, res) => {
   try {
     const { address } = req.params;
 
     // 查找用户
-    const user = getUserByAddress(address);
+    const user = await getUserByAddress(address);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -355,10 +355,10 @@ router.delete('/developers/:address', authenticate, requireRole(ROLES.ADMIN), (r
 });
 
 // GET /api/users/:address - 获取单个用户信息（仅管理员）
-router.get('/:address', authenticate, requireRole(ROLES.ADMIN), (req, res) => {
+router.get('/:address', authenticate, requireRole(ROLES.ADMIN), async (req, res) => {
   try {
     const { address } = req.params;
-    const user = getUserByAddress(address);
+    const user = await getUserByAddress(address);
     
     if (!user) {
       return res.status(404).json({
