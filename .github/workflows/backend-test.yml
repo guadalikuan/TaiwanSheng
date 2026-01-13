@@ -32,6 +32,9 @@ on:
         required: false
         type: boolean
         default: false
+    secrets:
+      CODECOV_TOKEN:
+        required: false
 
 jobs:
   test:
@@ -58,6 +61,7 @@ jobs:
         uses: ./.github/actions/upload-coverage
         with:
           coverage-file: ./${{ inputs.working-directory }}/coverage/lcov.info
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
           flag: ${{ inputs.coverage-flag }}
           name: ${{ inputs.coverage-name }}
       

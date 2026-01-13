@@ -4,6 +4,10 @@ inputs:
   coverage-file:
     description: '覆盖率文件路径'
     required: true
+  codecov-token:
+    description: 'Codecov Token（可选）'
+    required: false
+    default: ''
   flag:
     description: 'Codecov标志'
     required: false
@@ -16,12 +20,21 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: 上传测试覆盖率
+    - name: 上传测试覆盖率（带 Token）
       uses: codecov/codecov-action@v4
-      if: always() && hashFiles('${{ inputs.coverage-file }}') != ''
+      if: always() && hashFiles('${{ inputs.coverage-file }}') != '' && inputs.codecov-token != ''
       with:
         files: ${{ inputs.coverage-file }}
         flags: ${{ inputs.flag }}
         name: ${{ inputs.name }}
         fail_ci_if_error: false
-        token: ${{ secrets.CODECOV_TOKEN }}
+        token: ${{ inputs.codecov-token }}
+
+    - name: 上传测试覆盖率（无 Token）
+      uses: codecov/codecov-action@v4
+      if: always() && hashFiles('${{ inputs.coverage-file }}') != '' && inputs.codecov-token == ''
+      with:
+        files: ${{ inputs.coverage-file }}
+        flags: ${{ inputs.flag }}
+        name: ${{ inputs.name }}
+        fail_ci_if_error: false
