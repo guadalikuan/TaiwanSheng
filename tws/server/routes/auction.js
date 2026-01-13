@@ -5,6 +5,7 @@ fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{metho
 import { get, put, getAll, getAllKeys, NAMESPACES } from '../utils/rocksdb.js';
 import { getTaiOneTokenBalance, consumeToTreasury, createAuctionOnChain, seizeAuctionOnChain } from '../utils/solanaBlockchain.js';
 import config from '../solana.config.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
