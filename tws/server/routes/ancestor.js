@@ -7,8 +7,9 @@ import crypto from 'crypto';
 import { get, put, getAll, NAMESPACES } from '../utils/rocksdb.js';
 import { authenticate } from '../middleware/auth.js';
 import solanaBlockchainService from '../utils/solanaBlockchain.js';
-import { Transaction } from '@solana/web3.js';
+import { PublicKey, Transaction } from '@solana/web3.js';
 import { consumeToTreasury } from '../utils/solanaBlockchain.js';
+import config from '../solana.config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
