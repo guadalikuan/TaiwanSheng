@@ -1,6 +1,5 @@
-import { Connection, PublicKey } from '@solana/web3.js';
-import { getAccount, getAssociatedTokenAddress } from '@solana/spl-token';
-import config from '../solana.config.js';
+import { Connection, PublicKey } from "@solana/web3.js";
+import config from "../solana.config.js";
 
 // TaiOneToken 铸造地址（从全局配置读取）
 const TaiOneToken_MINT = new PublicKey(config.TAI_ONE_TOKEN.MINT);
@@ -8,8 +7,9 @@ const TaiOneToken_MINT = new PublicKey(config.TAI_ONE_TOKEN.MINT);
 const TWSCoin_MINT = TaiOneToken_MINT;
 
 // Solana RPC端点
-const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
-const connection = new Connection(SOLANA_RPC_URL, 'confirmed');
+const SOLANA_RPC_URL =
+  process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
+const connection = new Connection(SOLANA_RPC_URL, "confirmed");
 
 // 已验证的交易缓存（防止重复验证）
 const verifiedTransactions = new Set();
@@ -26,21 +26,21 @@ export const verifyPayment = async (txSignature, expectedPayment) => {
     if (verifiedTransactions.has(txSignature)) {
       return {
         valid: false,
-        message: 'Transaction already verified',
-        txSignature
+        message: "Transaction already verified",
+        txSignature,
       };
     }
 
     // 解析交易
     const tx = await connection.getTransaction(txSignature, {
-      commitment: 'confirmed',
-      maxSupportedTransactionVersion: 0
+      commitment: "confirmed",
+      maxSupportedTransactionVersion: 0,
     });
 
     if (!tx) {
       return {
         valid: false,
-        message: 'Transaction not found on blockchain'
+        message: "Transaction not found on blockchain",
       };
     }
 
@@ -48,7 +48,7 @@ export const verifyPayment = async (txSignature, expectedPayment) => {
     if (tx.meta?.err) {
       return {
         valid: false,
-        message: `Transaction failed: ${JSON.stringify(tx.meta.err)}`
+        message: `Transaction failed: ${JSON.stringify(tx.meta.err)}`,
       };
     }
 
@@ -56,52 +56,54 @@ export const verifyPayment = async (txSignature, expectedPayment) => {
     const tokenTransfers = tx.meta?.postTokenBalances || [];
     const preTokenBalances = tx.meta?.preTokenBalances || [];
 
+    const mintStr = TaiOneToken_MINT.toString();
+
     // 查找TaiOneToken转账
     let foundTransfer = false;
-    let transferAmount = 0;
+    let transferAmount = 0n;
     let fromAddress = null;
     let toAddress = null;
 
     for (let i = 0; i < tokenTransfers.length; i++) {
       const postBalance = tokenTransfers[i];
       const preBalance = preTokenBalances.find(
-        b => b.accountIndex === postBalance.accountIndex
+        (b) => b.accountIndex === postBalance.accountIndex,
       );
 
-      if (postBalance.mint === TaiOneToken_MINT) {
-        const postAmount = parseInt(postBalance.uiTokenAmount.amount);
-        const preAmount = preBalance ? parseInt(preBalance.uiTokenAmount.amount) : 0;
-        const diff = postAmount - preAmount;
+      if (postBalance.mint !== mintStr) continue;
 
-        if (diff > 0) {
-          // 这是接收方
-          toAddress = postBalance.owner;
-          transferAmount = diff;
-        } else if (diff < 0) {
-          // 这是发送方
-          fromAddress = postBalance.owner;
-        }
+      const postAmount = BigInt(postBalance.uiTokenAmount.amount || "0");
+      const preAmount = preBalance
+        ? BigInt(preBalance.uiTokenAmount.amount || "0")
+        : 0n;
+      const diff = postAmount - preAmount;
 
-        if (fromAddress && toAddress) {
-          foundTransfer = true;
-          break;
-        }
+      if (diff > 0n) {
+        toAddress = postBalance.owner;
+        transferAmount = diff;
+      } else if (diff < 0n) {
+        fromAddress = postBalance.owner;
+      }
+
+      if (fromAddress && toAddress) {
+        foundTransfer = true;
+        break;
       }
     }
 
     if (!foundTransfer) {
       return {
         valid: false,
-        message: 'No TaiOneToken transfer found in transaction'
+        message: "No TaiOneToken transfer found in transaction",
       };
     }
 
     // 验证金额
     const expectedAmount = BigInt(Math.floor(expectedPayment.amount * 1e6)); // TaiOneToken有6位小数
-    if (BigInt(transferAmount) !== expectedAmount) {
+    if (transferAmount !== expectedAmount) {
       return {
         valid: false,
-        message: `Amount mismatch. Expected: ${expectedAmount}, Got: ${transferAmount}`
+        message: `Amount mismatch. Expected: ${expectedAmount}, Got: ${transferAmount}`,
       };
     }
 
@@ -110,21 +112,31 @@ export const verifyPayment = async (txSignature, expectedPayment) => {
       if (fromAddress !== expectedPayment.from) {
         return {
           valid: false,
-          message: `From address mismatch. Expected: ${expectedPayment.from}, Got: ${fromAddress}`
+          message: `From address mismatch. Expected: ${expectedPayment.from}, Got: ${fromAddress}`,
         };
       }
     }
 
-    // 验证接收地址（项目收款地址）
-    // 注意：这里需要根据实际的项目收款地址逻辑来验证
-    // 暂时只验证地址格式
-    try {
-      new PublicKey(toAddress);
-    } catch (error) {
-      return {
-        valid: false,
-        message: `Invalid recipient address: ${toAddress}`
-      };
+    // 验证接收地址（如果传入了可解析的公钥）
+    if (expectedPayment.to) {
+      try {
+        const expectedToPubkey = new PublicKey(expectedPayment.to);
+        if (toAddress !== expectedToPubkey.toString()) {
+          return {
+            valid: false,
+            message: `To address mismatch. Expected: ${expectedToPubkey.toString()}, Got: ${toAddress}`,
+          };
+        }
+      } catch {}
+    } else {
+      try {
+        new PublicKey(toAddress);
+      } catch (error) {
+        return {
+          valid: false,
+          message: `Invalid recipient address: ${toAddress}`,
+        };
+      }
     }
 
     // 验证交易时间（应该在合理范围内，比如最近24小时）
@@ -135,7 +147,7 @@ export const verifyPayment = async (txSignature, expectedPayment) => {
     if (now - txTime > maxAge) {
       return {
         valid: false,
-        message: 'Transaction is too old'
+        message: "Transaction is too old",
       };
     }
 
@@ -144,18 +156,18 @@ export const verifyPayment = async (txSignature, expectedPayment) => {
 
     return {
       valid: true,
-      message: 'Payment verified successfully',
+      message: "Payment verified successfully",
       txSignature,
-      amount: transferAmount / 1e6, // 转换为可读格式
+      amount: Number(transferAmount) / 1e6, // 转换为可读格式
       from: fromAddress,
       to: toAddress,
-      timestamp: txTime
+      timestamp: txTime,
     };
   } catch (error) {
-    console.error('Error verifying payment:', error);
+    console.error("Error verifying payment:", error);
     return {
       valid: false,
-      message: `Verification error: ${error.message}`
+      message: `Verification error: ${error.message}`,
     };
   }
 };
@@ -179,6 +191,5 @@ export const clearVerificationCache = () => {
 export default {
   verifyPayment,
   isTransactionVerified,
-  clearVerificationCache
+  clearVerificationCache,
 };
-

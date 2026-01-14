@@ -28,8 +28,7 @@
     "resolveJsonModule": true
   },
   "include": [
-    "client/**/*",
-    "tests/**/*"
+    "client/**/*"
   ],
   "exclude": [
     "node_modules",

@@ -14,7 +14,9 @@
     "build": "vite build",
     "build:prod": "vite build --mode production",
     "preview": "vite preview",
-    "lint": "echo \"lint script not configured\"",
+    "lint": "prettier \"package.json\" \"tws/package.json\" \"tws/server/package.json\" \"tot/src/package.json\" \"tws/server/utils/solanaBlockchain.js\" \"tws/server/utils/paymentVerifier.js\" \"tws/server/utils/rwaPaymentHandler.js\" \"tws/server/routes/{ancestor,arsenal,auction,mapActions,prediction,rwaTrade,techProject}.js\" --check",
+    "lint:fix": "prettier \"package.json\" \"tws/package.json\" \"tws/server/package.json\" \"tot/src/package.json\" \"tws/server/utils/solanaBlockchain.js\" \"tws/server/utils/paymentVerifier.js\" \"tws/server/utils/rwaPaymentHandler.js\" \"tws/server/routes/{ancestor,arsenal,auction,mapActions,prediction,rwaTrade,techProject}.js\" --write",
+    "typecheck": "npm --prefix tot/src run typecheck",
     "docker:build": "docker build -t tws-app .",
     "docker:run": "docker run -p 80:80 tws-app",
     "docker:compose": "docker-compose up -d",
@@ -43,7 +45,9 @@
     "concurrently": "^8.2.2",
     "glob": "^13.0.0",
     "postcss": "^8.4.49",
+    "prettier": "^3.3.3",
     "tailwindcss": "^3.4.15",
-    "vite": "^5.4.2"
+    "vite": "^5.4.2",
+    "yarn": "^1.22.22"
   }
 }

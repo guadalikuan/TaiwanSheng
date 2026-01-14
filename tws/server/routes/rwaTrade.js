@@ -3,38 +3,43 @@
  * 处理购买需求、推荐、锁定、购买、二级市场交易
  */
 
-import express from 'express';
-import { authenticate, requireRole } from '../middleware/auth.js';
-import { ROLES } from '../utils/roles.js';
-import { put, get, getAll, del, NAMESPACES } from '../utils/rocksdb.js';
-import { getApprovedAssets, getAssetById, updateAssetStatus, getAllAssets } from '../utils/storage.js';
-import { recommendAssets } from '../utils/rwaRecommendationEngine.js';
-import { 
-  createOrder, 
-  getOrder, 
-  getUserOrders, 
-  getOrderBook, 
+import express from "express";
+import { authenticate, requireRole } from "../middleware/auth.js";
+import { ROLES } from "../utils/roles.js";
+import { put, get, getAll, del, NAMESPACES } from "../utils/rocksdb.js";
+import {
+  getApprovedAssets,
+  getAssetById,
+  updateAssetStatus,
+  getAllAssets,
+} from "../utils/storage.js";
+import { recommendAssets } from "../utils/rwaRecommendationEngine.js";
+import {
+  createOrder,
+  getOrder,
+  getUserOrders,
+  getOrderBook,
   cancelOrder,
-  getAssetSellOrders
-} from '../utils/rwaOrderBook.js';
-import { 
-  matchOrders, 
-  getTradeHistory, 
-  getTradeStats 
-} from '../utils/rwaMatchingEngine.js';
+  getAssetSellOrders,
+} from "../utils/rwaOrderBook.js";
+import {
+  matchOrders,
+  getTradeHistory,
+  getTradeStats,
+} from "../utils/rwaMatchingEngine.js";
 import {
   createLock,
   getLock,
   getAssetLock,
   getUserLocks,
   releaseLock,
-  confirmLock
-} from '../utils/rwaLockManager.js';
+  confirmLock,
+} from "../utils/rwaLockManager.js";
 import {
   checkBalance,
   calculateLockFee,
-  verifyPaymentTransaction
-} from '../utils/rwaPaymentHandler.js';
+  verifyPaymentTransaction,
+} from "../utils/rwaPaymentHandler.js";
 import {
   recordShareHolding,
   getUserAssetShares,
@@ -42,8 +47,8 @@ import {
   getAssetHolders,
   calculateUserTotalValue,
   formatShares,
-  SHARE_PRECISION
-} from '../utils/rwaShareTracker.js';
+  SHARE_PRECISION,
+} from "../utils/rwaShareTracker.js";
 import {
   createEtfBasket,
   getEtfBasket,
@@ -52,36 +57,40 @@ import {
   calculateEtfAllocation,
   autoGenerateEtf,
   updateEtfBasket,
-  deleteEtfBasket
-} from '../utils/rwaEtfManager.js';
-import blockchainService from '../utils/blockchain.js';
-import { mintStrategicAsset, verifyStrategicAssetPurchase, consumeToTreasury } from '../utils/solanaBlockchain.js';
+  deleteEtfBasket,
+} from "../utils/rwaEtfManager.js";
+import blockchainService from "../utils/blockchain.js";
+import {
+  mintStrategicAsset,
+  verifyStrategicAssetPurchase,
+  consumeToTreasury,
+} from "../utils/solanaBlockchain.js";
 
 const router = express.Router();
 
 // ==================== 购买需求API ====================
 
 // POST /api/rwa-trade/buy-request - 创建购买需求
-router.post('/buy-request', authenticate, async (req, res) => {
+router.post("/buy-request", authenticate, async (req, res) => {
   try {
     const {
       preferredCity,
-      preferredDistrict = '',
+      preferredDistrict = "",
       minArea = 0,
       maxArea = 0,
       maxPrice = 0,
-      urgency = 'medium'
+      urgency = "medium",
     } = req.body;
-    
+
     if (!preferredCity) {
       return res.status(400).json({
         success: false,
-        error: 'preferredCity is required'
+        error: "preferredCity is required",
       });
     }
-    
+
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     const buyRequest = {
       id: `buy_req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       userId,
@@ -90,187 +99,187 @@ router.post('/buy-request', authenticate, async (req, res) => {
       minArea: Number(minArea),
       maxArea: Number(maxArea),
       maxPrice: Number(maxPrice),
-      urgency: urgency || 'medium',
-      status: 'active',
+      urgency: urgency || "medium",
+      status: "active",
       createdAt: Date.now(),
       fulfilledAt: null,
-      fulfilledAssetId: null
+      fulfilledAssetId: null,
     };
-    
+
     await put(NAMESPACES.BUY_REQUESTS, buyRequest.id, buyRequest);
-    
+
     res.json({
       success: true,
-      buyRequest
+      buyRequest,
     });
   } catch (error) {
-    console.error('Error creating buy request:', error);
+    console.error("Error creating buy request:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to create buy request',
-      message: error.message
+      error: "Failed to create buy request",
+      message: error.message,
     });
   }
 });
 
 // GET /api/rwa-trade/buy-requests - 获取我的购买需求列表
-router.get('/buy-requests', authenticate, async (req, res) => {
+router.get("/buy-requests", authenticate, async (req, res) => {
   try {
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     const allRequests = await getAll(NAMESPACES.BUY_REQUESTS);
-    const requestValues = allRequests.map(r => r.value);
-    
+    const requestValues = allRequests.map((r) => r.value);
+
     const myRequests = requestValues
-      .filter(req => req.userId === userId)
+      .filter((req) => req.userId === userId)
       .sort((a, b) => b.createdAt - a.createdAt);
-    
+
     res.json({
       success: true,
       count: myRequests.length,
-      buyRequests: myRequests
+      buyRequests: myRequests,
     });
   } catch (error) {
-    console.error('Error getting buy requests:', error);
+    console.error("Error getting buy requests:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get buy requests',
-      message: error.message
+      error: "Failed to get buy requests",
+      message: error.message,
     });
   }
 });
 
 // GET /api/rwa-trade/buy-request/:id - 获取购买需求详情
-router.get('/buy-request/:id', authenticate, async (req, res) => {
+router.get("/buy-request/:id", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     const result = await get(NAMESPACES.BUY_REQUESTS, id);
     const buyRequest = result?.value;
-    
+
     if (!buyRequest) {
       return res.status(404).json({
         success: false,
-        error: 'Buy request not found'
+        error: "Buy request not found",
       });
     }
-    
+
     // 检查权限
-    if (buyRequest.userId !== userId && req.user?.role !== 'ADMIN') {
+    if (buyRequest.userId !== userId && req.user?.role !== "ADMIN") {
       return res.status(403).json({
         success: false,
-        error: 'Unauthorized'
+        error: "Unauthorized",
       });
     }
-    
+
     res.json({
       success: true,
-      buyRequest
+      buyRequest,
     });
   } catch (error) {
-    console.error('Error getting buy request:', error);
+    console.error("Error getting buy request:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get buy request',
-      message: error.message
+      error: "Failed to get buy request",
+      message: error.message,
     });
   }
 });
 
 // PUT /api/rwa-trade/buy-request/:id - 更新购买需求
-router.put('/buy-request/:id', authenticate, async (req, res) => {
+router.put("/buy-request/:id", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     const result = await get(NAMESPACES.BUY_REQUESTS, id);
     const buyRequest = result?.value;
-    
+
     if (!buyRequest) {
       return res.status(404).json({
         success: false,
-        error: 'Buy request not found'
+        error: "Buy request not found",
       });
     }
-    
-    if (buyRequest.userId !== userId && req.user?.role !== 'ADMIN') {
+
+    if (buyRequest.userId !== userId && req.user?.role !== "ADMIN") {
       return res.status(403).json({
         success: false,
-        error: 'Unauthorized'
+        error: "Unauthorized",
       });
     }
-    
-    if (buyRequest.status !== 'active') {
+
+    if (buyRequest.status !== "active") {
       return res.status(400).json({
         success: false,
-        error: 'Can only update active buy requests'
+        error: "Can only update active buy requests",
       });
     }
-    
+
     const updatedRequest = {
       ...buyRequest,
       ...req.body,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     };
-    
+
     await put(NAMESPACES.BUY_REQUESTS, id, updatedRequest);
-    
+
     res.json({
       success: true,
-      buyRequest: updatedRequest
+      buyRequest: updatedRequest,
     });
   } catch (error) {
-    console.error('Error updating buy request:', error);
+    console.error("Error updating buy request:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to update buy request',
-      message: error.message
+      error: "Failed to update buy request",
+      message: error.message,
     });
   }
 });
 
 // DELETE /api/rwa-trade/buy-request/:id - 取消购买需求
-router.delete('/buy-request/:id', authenticate, async (req, res) => {
+router.delete("/buy-request/:id", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     const result = await get(NAMESPACES.BUY_REQUESTS, id);
     const buyRequest = result?.value;
-    
+
     if (!buyRequest) {
       return res.status(404).json({
         success: false,
-        error: 'Buy request not found'
+        error: "Buy request not found",
       });
     }
-    
-    if (buyRequest.userId !== userId && req.user?.role !== 'ADMIN') {
+
+    if (buyRequest.userId !== userId && req.user?.role !== "ADMIN") {
       return res.status(403).json({
         success: false,
-        error: 'Unauthorized'
+        error: "Unauthorized",
       });
     }
-    
+
     const updatedRequest = {
       ...buyRequest,
-      status: 'cancelled',
-      cancelledAt: Date.now()
+      status: "cancelled",
+      cancelledAt: Date.now(),
     };
-    
+
     await put(NAMESPACES.BUY_REQUESTS, id, updatedRequest);
-    
+
     res.json({
       success: true,
-      message: 'Buy request cancelled'
+      message: "Buy request cancelled",
     });
   } catch (error) {
-    console.error('Error cancelling buy request:', error);
+    console.error("Error cancelling buy request:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to cancel buy request',
-      message: error.message
+      error: "Failed to cancel buy request",
+      message: error.message,
     });
   }
 });
@@ -278,77 +287,77 @@ router.delete('/buy-request/:id', authenticate, async (req, res) => {
 // ==================== 推荐API ====================
 
 // POST /api/rwa-trade/recommend - 获取推荐房源
-router.post('/recommend', authenticate, async (req, res) => {
+router.post("/recommend", authenticate, async (req, res) => {
   try {
     const { buyRequestId, buyRequest, limit = 10 } = req.body;
-    
+
     let requestData = buyRequest;
-    
+
     // 如果提供了buyRequestId，从数据库获取
     if (buyRequestId && !buyRequest) {
       const result = await get(NAMESPACES.BUY_REQUESTS, buyRequestId);
       if (!result?.value) {
         return res.status(404).json({
           success: false,
-          error: 'Buy request not found'
+          error: "Buy request not found",
         });
       }
       requestData = result.value;
     }
-    
+
     if (!requestData) {
       return res.status(400).json({
         success: false,
-        error: 'buyRequestId or buyRequest is required'
+        error: "buyRequestId or buyRequest is required",
       });
     }
-    
+
     const recommendations = await recommendAssets(requestData, limit);
-    
+
     res.json({
       success: true,
       count: recommendations.length,
-      recommendations
+      recommendations,
     });
   } catch (error) {
-    console.error('Error getting recommendations:', error);
+    console.error("Error getting recommendations:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get recommendations',
-      message: error.message
+      error: "Failed to get recommendations",
+      message: error.message,
     });
   }
 });
 
 // GET /api/rwa-trade/recommendations/:requestId - 获取特定需求的推荐
-router.get('/recommendations/:requestId', authenticate, async (req, res) => {
+router.get("/recommendations/:requestId", authenticate, async (req, res) => {
   try {
     const { requestId } = req.params;
     const { limit = 10 } = req.query;
-    
+
     const result = await get(NAMESPACES.BUY_REQUESTS, requestId);
     const buyRequest = result?.value;
-    
+
     if (!buyRequest) {
       return res.status(404).json({
         success: false,
-        error: 'Buy request not found'
+        error: "Buy request not found",
       });
     }
-    
+
     const recommendations = await recommendAssets(buyRequest, Number(limit));
-    
+
     res.json({
       success: true,
       count: recommendations.length,
-      recommendations
+      recommendations,
     });
   } catch (error) {
-    console.error('Error getting recommendations:', error);
+    console.error("Error getting recommendations:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get recommendations',
-      message: error.message
+      error: "Failed to get recommendations",
+      message: error.message,
     });
   }
 });
@@ -356,284 +365,296 @@ router.get('/recommendations/:requestId', authenticate, async (req, res) => {
 // ==================== 锁定和购买API ====================
 
 // POST /api/rwa-trade/lock/:assetId - 锁定资产
-router.post('/lock/:assetId', authenticate, async (req, res) => {
+router.post("/lock/:assetId", authenticate, async (req, res) => {
   try {
     const { assetId } = req.params;
     const { txSignature } = req.body;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     // 获取资产数据
     const assetData = await getAssetById(assetId);
     if (!assetData.sanitized) {
       return res.status(404).json({
         success: false,
-        error: 'Asset not found'
+        error: "Asset not found",
       });
     }
-    
+
     // 检查资产状态
-    if (assetData.sanitized.status !== 'AVAILABLE') {
+    if (assetData.sanitized.status !== "AVAILABLE") {
       return res.status(400).json({
         success: false,
-        error: 'Asset is not available',
-        message: `Asset status is ${assetData.sanitized.status}`
+        error: "Asset is not available",
+        message: `Asset status is ${assetData.sanitized.status}`,
       });
     }
-    
+
     // 检查是否已被锁定
     const existingLock = await getAssetLock(assetId);
     if (existingLock) {
       return res.status(400).json({
         success: false,
-        error: 'Asset is already locked',
-        message: `Locked by ${existingLock.userId} until ${new Date(existingLock.lockExpiresAt).toISOString()}`
+        error: "Asset is already locked",
+        message: `Locked by ${existingLock.userId} until ${new Date(existingLock.lockExpiresAt).toISOString()}`,
       });
     }
-    
+
     // 计算锁定费用
-    const assetPrice = assetData.sanitized.financials?.totalTokens || 
-                      assetData.sanitized.tokenPrice || 
-                      assetData.raw?.debtAmount || 0;
+    const assetPrice =
+      assetData.sanitized.financials?.totalTokens ||
+      assetData.sanitized.tokenPrice ||
+      assetData.raw?.debtAmount ||
+      0;
     const lockFee = calculateLockFee(assetPrice);
-    
+
     // 检查余额
     const balanceCheck = await checkBalance(userId, lockFee);
     if (!balanceCheck.sufficient) {
       return res.status(400).json({
         success: false,
-        error: 'Insufficient balance',
-        message: balanceCheck.message || `需要 ${lockFee} TOT，当前余额 ${balanceCheck.balance} TOT`
+        error: "Insufficient balance",
+        message:
+          balanceCheck.message ||
+          `需要 ${lockFee} TOT，当前余额 ${balanceCheck.balance} TOT`,
       });
     }
-    
+
     // 构建支付交易（使用tot合约的consume_to_treasury，免税）
     let lockFeeTransaction = null;
     try {
       const lockFeeResult = await consumeToTreasury(userId, lockFee, 2); // ConsumeType::Other
       lockFeeTransaction = lockFeeResult.transaction;
     } catch (error) {
-      console.error('构建锁定费用交易失败:', error);
+      console.error("构建锁定费用交易失败:", error);
       // 如果tot合约不可用，可以提供降级方案或记录到队列
       return res.status(400).json({
         success: false,
-        error: '构建锁定费用交易失败',
+        error: "构建锁定费用交易失败",
         message: error.message,
-        suggestion: 'TOT合约可能未加载，请联系管理员或稍后重试'
+        suggestion: "TOT合约可能未加载，请联系管理员或稍后重试",
       });
     }
-    
+
     // 注意：不在此处创建锁定记录和更新状态，等待用户签名交易后通过验证端点创建
     // 锁定记录和状态更新将在 /api/rwa-trade/verify-lock/:assetId 端点中完成
-    
+
     res.json({
       success: true,
-      message: 'Transaction built, please sign and verify',
+      message: "Transaction built, please sign and verify",
       transaction: lockFeeTransaction, // 锁定费用交易（需要用户签名）
       assetId: assetId,
       lockFee: lockFee,
-      note: '请签名交易后调用 /api/rwa-trade/verify-lock/:assetId 端点验证并创建锁定记录'
+      note: "请签名交易后调用 /api/rwa-trade/verify-lock/:assetId 端点验证并创建锁定记录",
     });
   } catch (error) {
-    console.error('Error locking asset:', error);
+    console.error("Error locking asset:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to lock asset',
-      message: error.message
+      error: "Failed to lock asset",
+      message: error.message,
     });
   }
 });
 
 // POST /api/rwa-trade/confirm/:assetId - 确认购买（支付全款）
-router.post('/confirm/:assetId', authenticate, async (req, res) => {
+router.post("/confirm/:assetId", authenticate, async (req, res) => {
   try {
     const { assetId } = req.params;
     const { txSignature } = req.body;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     // 获取资产数据
     const assetData = await getAssetById(assetId);
     if (!assetData.sanitized) {
       return res.status(404).json({
         success: false,
-        error: 'Asset not found'
+        error: "Asset not found",
       });
     }
-    
+
     // 检查锁定状态
     const lock = await getAssetLock(assetId);
     if (!lock) {
       return res.status(400).json({
         success: false,
-        error: 'Asset is not locked'
+        error: "Asset is not locked",
       });
     }
-    
+
     if (lock.userId !== userId) {
       return res.status(403).json({
         success: false,
-        error: 'Unauthorized',
-        message: '只能确认自己锁定的资产'
+        error: "Unauthorized",
+        message: "只能确认自己锁定的资产",
       });
     }
-    
-    if (lock.status !== 'active') {
+
+    if (lock.status !== "active") {
       return res.status(400).json({
         success: false,
-        error: 'Lock is not active',
-        message: `Lock status is ${lock.status}`
+        error: "Lock is not active",
+        message: `Lock status is ${lock.status}`,
       });
     }
-    
+
     const now = Date.now();
     if (lock.lockExpiresAt < now) {
       return res.status(400).json({
         success: false,
-        error: 'Lock has expired'
+        error: "Lock has expired",
       });
     }
-    
+
     // 计算全款（资产价格 - 已支付的锁定费用）
-    const assetPrice = assetData.sanitized.financials?.totalTokens || 
-                      assetData.sanitized.tokenPrice || 
-                      assetData.raw?.debtAmount || 0;
+    const assetPrice =
+      assetData.sanitized.financials?.totalTokens ||
+      assetData.sanitized.tokenPrice ||
+      assetData.raw?.debtAmount ||
+      0;
     const remainingAmount = assetPrice - lock.lockFee;
-    
+
     // 检查余额
     const balanceCheck = await checkBalance(userId, remainingAmount);
     if (!balanceCheck.sufficient) {
       return res.status(400).json({
         success: false,
-        error: 'Insufficient balance',
-        message: `需要 ${remainingAmount} TOT，当前余额 ${balanceCheck.balance} TOT`
+        error: "Insufficient balance",
+        message: `需要 ${remainingAmount} TOT，当前余额 ${balanceCheck.balance} TOT`,
       });
     }
-    
+
     // 构建支付交易（使用tot合约的consume_to_treasury，免税）
     let purchaseTransaction = null;
     try {
-      const purchaseResult = await consumeToTreasury(userId, remainingAmount, 2); // ConsumeType::Other
+      const purchaseResult = await consumeToTreasury(
+        userId,
+        remainingAmount,
+        2,
+      ); // ConsumeType::Other
       purchaseTransaction = purchaseResult.transaction;
     } catch (error) {
-      console.error('构建购买交易失败:', error);
+      console.error("构建购买交易失败:", error);
       return res.status(400).json({
         success: false,
-        error: '构建购买交易失败',
-        message: error.message
+        error: "构建购买交易失败",
+        message: error.message,
       });
     }
-    
+
     // 注意：不在此处更新状态，等待用户签名交易后通过验证端点更新
     // 状态更新将在 /api/rwa-trade/verify-purchase/:assetId 端点中完成
-    
+
     // 可选：触发NFT铸造
     let mintResult = null;
     if (process.env.CONTRACT_ADDRESS) {
       try {
         mintResult = await blockchainService.mintAsset(assetData, userId);
-        await updateAssetStatus(assetId, 'LOCKED', {
+        await updateAssetStatus(assetId, "LOCKED", {
           nftMinted: true,
           nftTokenId: mintResult.tokenId,
           nftTxHash: mintResult.txHash,
-          nftMintedAt: Date.now()
+          nftMintedAt: Date.now(),
         });
       } catch (mintError) {
-        console.error('⚠️ NFT铸造失败（但购买已确认）:', mintError);
+        console.error("⚠️ NFT铸造失败（但购买已确认）:", mintError);
       }
     }
-    
+
     res.json({
       success: true,
-      message: 'Transaction built, please sign and verify',
+      message: "Transaction built, please sign and verify",
       transaction: purchaseTransaction, // 购买交易（需要用户签名）
       assetId: assetId,
       amount: remainingAmount,
-      note: '请签名交易后调用 /api/rwa-trade/verify-purchase/:assetId 端点验证并更新状态'
+      note: "请签名交易后调用 /api/rwa-trade/verify-purchase/:assetId 端点验证并更新状态",
     });
   } catch (error) {
-    console.error('Error confirming purchase:', error);
+    console.error("Error confirming purchase:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to confirm purchase',
-      message: error.message
+      error: "Failed to confirm purchase",
+      message: error.message,
     });
   }
 });
 
 // POST /api/rwa-trade/release/:assetId - 释放锁定
-router.post('/release/:assetId', authenticate, async (req, res) => {
+router.post("/release/:assetId", authenticate, async (req, res) => {
   try {
     const { assetId } = req.params;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     const lock = await getAssetLock(assetId);
     if (!lock) {
       return res.status(404).json({
         success: false,
-        error: 'Lock not found'
+        error: "Lock not found",
       });
     }
-    
-    if (lock.userId !== userId && req.user?.role !== 'ADMIN') {
+
+    if (lock.userId !== userId && req.user?.role !== "ADMIN") {
       return res.status(403).json({
         success: false,
-        error: 'Unauthorized'
+        error: "Unauthorized",
       });
     }
-    
+
     // 释放锁定（退还费用如果未过期）
     const now = Date.now();
     const refundFee = lock.lockExpiresAt > now;
-    
+
     await releaseLock(lock.id, refundFee);
-    
+
     res.json({
       success: true,
-      message: 'Lock released successfully',
-      refundFee: refundFee ? lock.lockFee : 0
+      message: "Lock released successfully",
+      refundFee: refundFee ? lock.lockFee : 0,
     });
   } catch (error) {
-    console.error('Error releasing lock:', error);
+    console.error("Error releasing lock:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to release lock',
-      message: error.message
+      error: "Failed to release lock",
+      message: error.message,
     });
   }
 });
 
 // GET /api/rwa-trade/locks - 获取我的锁定列表
-router.get('/locks', authenticate, async (req, res) => {
+router.get("/locks", authenticate, async (req, res) => {
   try {
     const userId = req.user?.address || req.user?.username || req.user?.id;
     const locks = await getUserLocks(userId);
-    
+
     // 获取资产信息
-    const locksWithAssets = await Promise.all(locks.map(async (lock) => {
-      try {
-        const assetData = await getAssetById(lock.assetId);
-        return {
-          ...lock,
-          asset: assetData.sanitized
-        };
-      } catch (error) {
-        return {
-          ...lock,
-          asset: null
-        };
-      }
-    }));
-    
+    const locksWithAssets = await Promise.all(
+      locks.map(async (lock) => {
+        try {
+          const assetData = await getAssetById(lock.assetId);
+          return {
+            ...lock,
+            asset: assetData.sanitized,
+          };
+        } catch (error) {
+          return {
+            ...lock,
+            asset: null,
+          };
+        }
+      }),
+    );
+
     res.json({
       success: true,
       count: locksWithAssets.length,
-      locks: locksWithAssets
+      locks: locksWithAssets,
     });
   } catch (error) {
-    console.error('Error getting locks:', error);
+    console.error("Error getting locks:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get locks',
-      message: error.message
+      error: "Failed to get locks",
+      message: error.message,
     });
   }
 });
@@ -641,230 +662,238 @@ router.get('/locks', authenticate, async (req, res) => {
 // ==================== 二级市场API ====================
 
 // POST /api/rwa-trade/sell-order - 创建卖单
-router.post('/sell-order', authenticate, async (req, res) => {
+router.post("/sell-order", authenticate, async (req, res) => {
   try {
     const { assetId, price, amount = 1, expiresAt } = req.body;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     if (!assetId || !price) {
       return res.status(400).json({
         success: false,
-        error: 'assetId and price are required'
+        error: "assetId and price are required",
       });
     }
-    
+
     // 验证资产所有权
     const assetData = await getAssetById(assetId);
     if (!assetData.sanitized) {
       return res.status(404).json({
         success: false,
-        error: 'Asset not found'
+        error: "Asset not found",
       });
     }
-    
-    if (assetData.sanitized.status !== 'LOCKED') {
+
+    if (assetData.sanitized.status !== "LOCKED") {
       return res.status(400).json({
         success: false,
-        error: 'Asset must be LOCKED to create sell order'
+        error: "Asset must be LOCKED to create sell order",
       });
     }
-    
-    if (assetData.sanitized.purchasedBy !== userId && req.user?.role !== 'ADMIN') {
+
+    if (
+      assetData.sanitized.purchasedBy !== userId &&
+      req.user?.role !== "ADMIN"
+    ) {
       return res.status(403).json({
         success: false,
-        error: 'Unauthorized',
-        message: '只能出售自己拥有的资产'
+        error: "Unauthorized",
+        message: "只能出售自己拥有的资产",
       });
     }
-    
+
     const order = await createOrder({
       id: `sell_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       assetId,
       userId,
-      orderType: 'sell',
+      orderType: "sell",
       price: Number(price),
       amount: Number(amount),
-      expiresAt: expiresAt ? Number(expiresAt) : undefined
+      expiresAt: expiresAt ? Number(expiresAt) : undefined,
     });
-    
+
     res.json({
       success: true,
-      order
+      order,
     });
   } catch (error) {
-    console.error('Error creating sell order:', error);
+    console.error("Error creating sell order:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to create sell order',
-      message: error.message
+      error: "Failed to create sell order",
+      message: error.message,
     });
   }
 });
 
 // POST /api/rwa-trade/buy-order - 创建买单
-router.post('/buy-order', authenticate, async (req, res) => {
+router.post("/buy-order", authenticate, async (req, res) => {
   try {
     const { preferredCity, maxPrice, amount = 1, expiresAt } = req.body;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     if (!preferredCity || !maxPrice) {
       return res.status(400).json({
         success: false,
-        error: 'preferredCity and maxPrice are required'
+        error: "preferredCity and maxPrice are required",
       });
     }
-    
+
     const order = await createOrder({
       id: `buy_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       userId,
-      orderType: 'buy',
+      orderType: "buy",
       preferredCity,
       price: Number(maxPrice),
       amount: Number(amount),
-      expiresAt: expiresAt ? Number(expiresAt) : undefined
+      expiresAt: expiresAt ? Number(expiresAt) : undefined,
     });
-    
+
     res.json({
       success: true,
-      order
+      order,
     });
   } catch (error) {
-    console.error('Error creating buy order:', error);
+    console.error("Error creating buy order:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to create buy order',
-      message: error.message
+      error: "Failed to create buy order",
+      message: error.message,
     });
   }
 });
 
 // GET /api/rwa-trade/order-book - 获取订单簿
-router.get('/order-book', async (req, res) => {
+router.get("/order-book", async (req, res) => {
   try {
     const { city, limit = 20 } = req.query;
     const orderBook = await getOrderBook(city || null, Number(limit));
-    
+
     res.json({
       success: true,
-      orderBook
+      orderBook,
     });
   } catch (error) {
-    console.error('Error getting order book:', error);
+    console.error("Error getting order book:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get order book',
-      message: error.message
+      error: "Failed to get order book",
+      message: error.message,
     });
   }
 });
 
 // GET /api/rwa-trade/orders - 获取我的订单
-router.get('/orders', authenticate, async (req, res) => {
+router.get("/orders", authenticate, async (req, res) => {
   try {
     const userId = req.user?.address || req.user?.username || req.user?.id;
     const { orderType, status } = req.query;
-    
+
     const orders = await getUserOrders(userId, orderType, status);
-    
+
     res.json({
       success: true,
       count: orders.length,
-      orders
+      orders,
     });
   } catch (error) {
-    console.error('Error getting orders:', error);
+    console.error("Error getting orders:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get orders',
-      message: error.message
+      error: "Failed to get orders",
+      message: error.message,
     });
   }
 });
 
 // DELETE /api/rwa-trade/order/:id - 取消订单
-router.delete('/order/:id', authenticate, async (req, res) => {
+router.delete("/order/:id", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     await cancelOrder(id, userId);
-    
+
     res.json({
       success: true,
-      message: 'Order cancelled successfully'
+      message: "Order cancelled successfully",
     });
   } catch (error) {
-    console.error('Error cancelling order:', error);
+    console.error("Error cancelling order:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to cancel order',
-      message: error.message
+      error: "Failed to cancel order",
+      message: error.message,
     });
   }
 });
 
 // POST /api/rwa-trade/match - 手动触发撮合
-router.post('/match', authenticate, requireRole(ROLES.ADMIN), async (req, res) => {
-  try {
-    const { city, maxMatches = 10 } = req.body;
-    const trades = await matchOrders({ city, maxMatches });
-    
-    res.json({
-      success: true,
-      count: trades.length,
-      trades
-    });
-  } catch (error) {
-    console.error('Error matching orders:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to match orders',
-      message: error.message
-    });
-  }
-});
+router.post(
+  "/match",
+  authenticate,
+  requireRole(ROLES.ADMIN),
+  async (req, res) => {
+    try {
+      const { city, maxMatches = 10 } = req.body;
+      const trades = await matchOrders({ city, maxMatches });
+
+      res.json({
+        success: true,
+        count: trades.length,
+        trades,
+      });
+    } catch (error) {
+      console.error("Error matching orders:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to match orders",
+        message: error.message,
+      });
+    }
+  },
+);
 
 // GET /api/rwa-trade/trades - 获取交易历史
-router.get('/trades', async (req, res) => {
+router.get("/trades", async (req, res) => {
   try {
     const { userId, assetId, limit = 50 } = req.query;
     const trades = await getTradeHistory({
       userId: userId || null,
       assetId: assetId || null,
-      limit: Number(limit)
+      limit: Number(limit),
     });
-    
+
     res.json({
       success: true,
       count: trades.length,
-      trades
+      trades,
     });
   } catch (error) {
-    console.error('Error getting trades:', error);
+    console.error("Error getting trades:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get trades',
-      message: error.message
+      error: "Failed to get trades",
+      message: error.message,
     });
   }
 });
 
 // GET /api/rwa-trade/stats - 获取交易统计
-router.get('/stats', async (req, res) => {
+router.get("/stats", async (req, res) => {
   try {
     const { timeWindow = 24 * 60 * 60 * 1000 } = req.query;
     const stats = await getTradeStats({ timeWindow: Number(timeWindow) });
-    
+
     res.json({
       success: true,
-      stats
+      stats,
     });
   } catch (error) {
-    console.error('Error getting trade stats:', error);
+    console.error("Error getting trade stats:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get trade stats',
-      message: error.message
+      error: "Failed to get trade stats",
+      message: error.message,
     });
   }
 });
@@ -872,83 +901,89 @@ router.get('/stats', async (req, res) => {
 // ==================== 份额购买API ====================
 
 // POST /api/rwa-trade/buy-shares - 直接购买指定资产的份额
-router.post('/buy-shares', authenticate, async (req, res) => {
+router.post("/buy-shares", authenticate, async (req, res) => {
   try {
     const { assetId, shares, txSignature } = req.body;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     if (!assetId || !shares) {
       return res.status(400).json({
         success: false,
-        error: 'assetId and shares are required'
+        error: "assetId and shares are required",
       });
     }
-    
+
     if (shares < SHARE_PRECISION) {
       return res.status(400).json({
         success: false,
-        error: `Shares must be at least ${SHARE_PRECISION}`
+        error: `Shares must be at least ${SHARE_PRECISION}`,
       });
     }
-    
+
     // 获取资产数据
     const assetData = await getAssetById(assetId);
     if (!assetData.sanitized && !assetData.raw) {
       return res.status(404).json({
         success: false,
-        error: 'Asset not found'
+        error: "Asset not found",
       });
     }
-    
+
     const asset = assetData.sanitized || assetData.raw;
-    
+
     // 计算资产总价和总份额
-    const totalPrice = asset.financials?.totalTokens || asset.tokenPrice || asset.debtAmount || 0;
+    const totalPrice =
+      asset.financials?.totalTokens ||
+      asset.tokenPrice ||
+      asset.debtAmount ||
+      0;
     const totalShares = asset.totalShares || 10000; // 默认10000份
     const pricePerShare = totalPrice / totalShares;
     const requiredAmount = formatShares(shares) * pricePerShare;
-    
+
     // 检查余额
     const balanceCheck = await checkBalance(userId, requiredAmount);
     if (!balanceCheck.sufficient) {
       return res.status(400).json({
         success: false,
-        error: 'Insufficient balance',
-        message: balanceCheck.message || `需要 ${requiredAmount} TOT，当前余额 ${balanceCheck.balance} TOT`
+        error: "Insufficient balance",
+        message:
+          balanceCheck.message ||
+          `需要 ${requiredAmount} TOT，当前余额 ${balanceCheck.balance} TOT`,
       });
     }
-    
+
     // 构建支付交易（使用tot合约的consume_to_treasury，免税）
     let purchaseTransaction = null;
     try {
       const purchaseResult = await consumeToTreasury(userId, requiredAmount, 2); // ConsumeType::Other
       purchaseTransaction = purchaseResult.transaction;
     } catch (error) {
-      console.error('构建份额购买交易失败:', error);
+      console.error("构建份额购买交易失败:", error);
       return res.status(400).json({
         success: false,
-        error: '构建份额购买交易失败',
-        message: error.message
+        error: "构建份额购买交易失败",
+        message: error.message,
       });
     }
-    
+
     // 注意：不在此处记录份额持有，等待用户签名交易后通过验证端点更新
     res.json({
       success: true,
-      message: 'Transaction built, please sign and verify',
+      message: "Transaction built, please sign and verify",
       transaction: purchaseTransaction, // 份额购买交易（需要用户签名）
       assetId: assetId,
       shares: formatShares(shares),
       pricePerShare,
       totalAmount: requiredAmount,
-      note: '请签名交易后调用 /api/rwa-trade/verify-shares 端点验证并更新状态'
+      note: "请签名交易后调用 /api/rwa-trade/verify-shares 端点验证并更新状态",
     });
   } catch (error) {
-    console.error('Error buying shares:', error);
+    console.error("Error buying shares:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to buy shares',
-      message: error.message
+      error: "Failed to buy shares",
+      message: error.message,
     });
   }
 });
@@ -956,62 +991,68 @@ router.post('/buy-shares', authenticate, async (req, res) => {
 // ==================== ETF购买API ====================
 
 // POST /api/rwa-trade/etf/buy - 购买ETF
-router.post('/etf/buy', authenticate, async (req, res) => {
+router.post("/etf/buy", authenticate, async (req, res) => {
   try {
     const { etfId, investmentAmount, txSignature } = req.body;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     if (!etfId || !investmentAmount) {
       return res.status(400).json({
         success: false,
-        error: 'etfId and investmentAmount are required'
+        error: "etfId and investmentAmount are required",
       });
     }
-    
+
     // 获取ETF篮子
     const etf = await getEtfBasket(etfId);
     if (!etf) {
       return res.status(404).json({
         success: false,
-        error: 'ETF not found'
+        error: "ETF not found",
       });
     }
-    
+
     // 检查最小投资额
     if (investmentAmount < etf.minInvestment) {
       return res.status(400).json({
         success: false,
-        error: `Minimum investment is ${etf.minInvestment} TOT`
+        error: `Minimum investment is ${etf.minInvestment} TOT`,
       });
     }
-    
+
     // 计算分配
     const allocations = await calculateEtfAllocation(etfId, investmentAmount);
-    
+
     // 检查余额
     const balanceCheck = await checkBalance(userId, investmentAmount);
     if (!balanceCheck.sufficient) {
       return res.status(400).json({
         success: false,
-        error: 'Insufficient balance',
-        message: balanceCheck.message || `需要 ${investmentAmount} TOT，当前余额 ${balanceCheck.balance} TOT`
+        error: "Insufficient balance",
+        message:
+          balanceCheck.message ||
+          `需要 ${investmentAmount} TOT，当前余额 ${balanceCheck.balance} TOT`,
       });
     }
-    
+
     // 构建支付交易（使用tot合约的consume_to_treasury，免税）
     let etfPurchaseTransaction = null;
     try {
-      const etfPurchaseResult = await consumeToTreasury(userId, investmentAmount, 2); // ConsumeType::Other
+      const etfPurchaseResult = await consumeToTreasury(
+        userId,
+        investmentAmount,
+        2,
+      ); // ConsumeType::Other
       etfPurchaseTransaction = etfPurchaseResult.transaction;
     } catch (error) {
-      console.error('构建ETF购买交易失败:', error);
+      console.error("构建ETF购买交易失败:", error);
       return res.status(400).json({
         success: false,
-        error: '构建ETF购买交易失败',
-        message: error.message
+        error: "构建ETF购买交易失败",
+        message: error.message,
       });
     }
-    
+
     // 为每个资产购买对应份额
     const purchaseResults = [];
     for (const allocation of allocations) {
@@ -1022,43 +1063,49 @@ router.post('/etf/buy', authenticate, async (req, res) => {
           console.error(`Asset ${allocation.assetId} not found`);
           continue;
         }
-        
+
         const asset = assetData.sanitized || assetData.raw;
-        const totalPrice = asset.financials?.totalTokens || asset.tokenPrice || asset.debtAmount || 0;
+        const totalPrice =
+          asset.financials?.totalTokens ||
+          asset.tokenPrice ||
+          asset.debtAmount ||
+          0;
         const totalShares = asset.totalShares || 10000;
         const pricePerShare = totalPrice / totalShares;
-        
+
         // 计算应购买的份额
-        const shares = formatShares(allocation.investmentAmount / pricePerShare);
-        
+        const shares = formatShares(
+          allocation.investmentAmount / pricePerShare,
+        );
+
         // 注意：不在此处记录份额持有，等待用户签名交易后通过验证端点更新
         purchaseResults.push({
           assetId: allocation.assetId,
           shares,
           investmentAmount: allocation.investmentAmount,
-          pricePerShare
+          pricePerShare,
         });
       } catch (error) {
         console.error(`Error purchasing asset ${allocation.assetId}:`, error);
         // 继续处理其他资产
       }
     }
-    
+
     res.json({
       success: true,
-      message: 'Transaction built, please sign and verify',
+      message: "Transaction built, please sign and verify",
       transaction: etfPurchaseTransaction, // ETF购买交易（需要用户签名）
       etfId: etfId,
       investmentAmount: investmentAmount,
       allocations: purchaseResults,
-      note: '请签名交易后调用 /api/rwa-trade/verify-etf 端点验证并更新状态'
+      note: "请签名交易后调用 /api/rwa-trade/verify-etf 端点验证并更新状态",
     });
   } catch (error) {
-    console.error('Error buying ETF:', error);
+    console.error("Error buying ETF:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to buy ETF',
-      message: error.message
+      error: "Failed to buy ETF",
+      message: error.message,
     });
   }
 });
@@ -1066,62 +1113,68 @@ router.post('/etf/buy', authenticate, async (req, res) => {
 // ==================== ETF管理API ====================
 
 // POST /api/rwa-trade/etf/create - 创建ETF（管理员）
-router.post('/etf/create', authenticate, requireRole(ROLES.ADMIN), async (req, res) => {
-  try {
-    const etf = await createEtfBasket(req.body);
-    
-    res.json({
-      success: true,
-      etf
-    });
-  } catch (error) {
-    console.error('Error creating ETF:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to create ETF',
-      message: error.message
-    });
-  }
-});
+router.post(
+  "/etf/create",
+  authenticate,
+  requireRole(ROLES.ADMIN),
+  async (req, res) => {
+    try {
+      const etf = await createEtfBasket(req.body);
+
+      res.json({
+        success: true,
+        etf,
+      });
+    } catch (error) {
+      console.error("Error creating ETF:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to create ETF",
+        message: error.message,
+      });
+    }
+  },
+);
 
 // GET /api/rwa-trade/etf/list - 获取ETF列表
-router.get('/etf/list', async (req, res) => {
+router.get("/etf/list", async (req, res) => {
   try {
     const { cities } = req.query;
-    const cityList = cities ? cities.split(',') : [];
-    
-    const etfs = cityList.length > 0 
-      ? await recommendEtfByCities(cityList)
-      : await getAllEtfBaskets();
-    
+    const cityList = cities ? cities.split(",") : [];
+
+    const etfs =
+      cityList.length > 0
+        ? await recommendEtfByCities(cityList)
+        : await getAllEtfBaskets();
+
     res.json({
       success: true,
       count: etfs.length,
-      etfs
+      etfs,
     });
   } catch (error) {
-    console.error('Error getting ETF list:', error);
+    console.error("Error getting ETF list:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get ETF list',
-      message: error.message
+      error: "Failed to get ETF list",
+      message: error.message,
     });
   }
 });
 
 // GET /api/rwa-trade/etf/:id - 获取ETF详情
-router.get('/etf/:id', async (req, res) => {
+router.get("/etf/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const etf = await getEtfBasket(id);
-    
+
     if (!etf) {
       return res.status(404).json({
         success: false,
-        error: 'ETF not found'
+        error: "ETF not found",
       });
     }
-    
+
     // 获取ETF中每个资产的详细信息
     const assets = await Promise.all(
       etf.assetIds.map(async (assetId) => {
@@ -1131,119 +1184,124 @@ router.get('/etf/:id', async (req, res) => {
         } catch (error) {
           return null;
         }
-      })
+      }),
     );
-    
+
     res.json({
       success: true,
       etf: {
         ...etf,
-        assets: assets.filter(a => a !== null)
-      }
+        assets: assets.filter((a) => a !== null),
+      },
     });
   } catch (error) {
-    console.error('Error getting ETF:', error);
+    console.error("Error getting ETF:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get ETF',
-      message: error.message
+      error: "Failed to get ETF",
+      message: error.message,
     });
   }
 });
 
 // POST /api/rwa-trade/etf/auto-generate - 自动生成ETF（根据城市）
-router.post('/etf/auto-generate', authenticate, requireRole(ROLES.ADMIN), async (req, res) => {
-  try {
-    const { cities, assetCount = 5 } = req.body;
-    
-    if (!cities || !Array.isArray(cities) || cities.length === 0) {
-      return res.status(400).json({
+router.post(
+  "/etf/auto-generate",
+  authenticate,
+  requireRole(ROLES.ADMIN),
+  async (req, res) => {
+    try {
+      const { cities, assetCount = 5 } = req.body;
+
+      if (!cities || !Array.isArray(cities) || cities.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: "cities array is required",
+        });
+      }
+
+      const etf = await autoGenerateEtf(cities, assetCount);
+
+      res.json({
+        success: true,
+        etf,
+      });
+    } catch (error) {
+      console.error("Error auto-generating ETF:", error);
+      res.status(500).json({
         success: false,
-        error: 'cities array is required'
+        error: "Failed to auto-generate ETF",
+        message: error.message,
       });
     }
-    
-    const etf = await autoGenerateEtf(cities, assetCount);
-    
-    res.json({
-      success: true,
-      etf
-    });
-  } catch (error) {
-    console.error('Error auto-generating ETF:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to auto-generate ETF',
-      message: error.message
-    });
-  }
-});
+  },
+);
 
 // ==================== 份额查询API ====================
 
 // GET /api/rwa-trade/holdings - 获取我的持有份额
-router.get('/holdings', authenticate, async (req, res) => {
+router.get("/holdings", authenticate, async (req, res) => {
   try {
     const userId = req.user?.address || req.user?.username || req.user?.id;
     const holdings = await getUserHoldings(userId);
     const totalValue = await calculateUserTotalValue(userId);
-    
+
     res.json({
       success: true,
       count: holdings.length,
       holdings,
-      totalValue
+      totalValue,
     });
   } catch (error) {
-    console.error('Error getting holdings:', error);
+    console.error("Error getting holdings:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get holdings',
-      message: error.message
+      error: "Failed to get holdings",
+      message: error.message,
     });
   }
 });
 
 // GET /api/rwa-trade/holdings/:assetId - 获取特定资产的持有份额
-router.get('/holdings/:assetId', authenticate, async (req, res) => {
+router.get("/holdings/:assetId", authenticate, async (req, res) => {
   try {
     const { assetId } = req.params;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     const shares = await getUserAssetShares(userId, assetId);
-    
+
     res.json({
       success: true,
       assetId,
-      shares
+      shares,
     });
   } catch (error) {
-    console.error('Error getting asset holdings:', error);
+    console.error("Error getting asset holdings:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get asset holdings',
-      message: error.message
+      error: "Failed to get asset holdings",
+      message: error.message,
     });
   }
 });
 
 // GET /api/rwa-trade/asset/:assetId/holders - 获取资产的所有持有者
-router.get('/asset/:assetId/holders', async (req, res) => {
+router.get("/asset/:assetId/holders", async (req, res) => {
   try {
     const { assetId } = req.params;
     const holders = await getAssetHolders(assetId);
-    
+
     res.json({
       success: true,
       count: holders.length,
-      holders
+      holders,
     });
   } catch (error) {
-    console.error('Error getting asset holders:', error);
+    console.error("Error getting asset holders:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get asset holders',
-      message: error.message
+      error: "Failed to get asset holders",
+      message: error.message,
     });
   }
 });
@@ -1251,40 +1309,39 @@ router.get('/asset/:assetId/holders', async (req, res) => {
 // ==================== 战略资产购买API ====================
 
 // POST /api/rwa-trade/buy-strategic/:assetId - 购买战略资产（使用TOT支付，Solana链上交易）
-router.post('/buy-strategic/:assetId', authenticate, async (req, res) => {
+router.post("/buy-strategic/:assetId", authenticate, async (req, res) => {
   try {
     const { assetId } = req.params;
     const { txSignature } = req.body;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     // 获取资产数据
     const assetData = await getAssetById(assetId);
     if (!assetData.sanitized && !assetData.raw) {
       return res.status(404).json({
         success: false,
-        error: 'Asset not found'
+        error: "Asset not found",
       });
     }
-    
+
     const asset = assetData.sanitized || assetData.raw;
-    
+
     // 检查资产类型是否为战略资产
-    const strategicAssetTypes = ['矿产', '仓库', '航船', '芯片'];
-    const assetType = asset.assetType || asset.type || '房产';
-    
+    const strategicAssetTypes = ["矿产", "仓库", "航船", "芯片"];
+    const assetType = asset.assetType || asset.type || "房产";
+
     if (!strategicAssetTypes.includes(assetType)) {
       return res.status(400).json({
         success: false,
-        error: 'Not a strategic asset',
-        message: '此接口仅支持战略资产（矿产、仓库、航船、芯片）'
+        error: "Not a strategic asset",
+        message: "此接口仅支持战略资产（矿产、仓库、航船、芯片）",
       });
     }
-    
+
     // 计算资产价格
-    const assetPrice = asset.financials?.totalTokens || 
-                      asset.tokenPrice || 
-                      asset.price || 0;
-    
+    const assetPrice =
+      asset.financials?.totalTokens || asset.tokenPrice || asset.price || 0;
+
     // 如果有交易签名，验证交易
     if (txSignature) {
       try {
@@ -1292,43 +1349,43 @@ router.post('/buy-strategic/:assetId', authenticate, async (req, res) => {
         const verificationResult = await verifyStrategicAssetPurchase(
           txSignature,
           userId,
-          assetPrice
+          assetPrice,
         );
-        
+
         if (!verificationResult.success) {
           return res.status(400).json({
             success: false,
-            error: 'Transaction verification failed',
-            message: '交易验证失败'
+            error: "Transaction verification failed",
+            message: "交易验证失败",
           });
         }
-        
+
         // 更新资产状态
-        const updatedAsset = await updateAssetStatus(assetId, 'LOCKED', {
+        const updatedAsset = await updateAssetStatus(assetId, "LOCKED", {
           purchasedBy: userId,
           purchasedAt: Date.now(),
           purchasePrice: assetPrice,
           purchaseTxHash: txSignature,
-          purchaseType: 'strategic_asset',
-          blockchain: 'solana'
+          purchaseType: "strategic_asset",
+          blockchain: "solana",
         });
-        
+
         return res.json({
           success: true,
-          message: 'Strategic asset purchase confirmed',
+          message: "Strategic asset purchase confirmed",
           asset: updatedAsset,
           blockchain: {
             txHash: txSignature,
             confirmed: verificationResult.confirmed,
-            blockTime: verificationResult.blockTime
-          }
+            blockTime: verificationResult.blockTime,
+          },
         });
       } catch (error) {
-        console.error('Error verifying transaction:', error);
+        console.error("Error verifying transaction:", error);
         return res.status(400).json({
           success: false,
-          error: 'Transaction verification error',
-          message: error.message
+          error: "Transaction verification error",
+          message: error.message,
         });
       }
     } else {
@@ -1339,225 +1396,245 @@ router.post('/buy-strategic/:assetId', authenticate, async (req, res) => {
         if (!balanceCheck.sufficient) {
           return res.status(400).json({
             success: false,
-            error: 'Insufficient balance',
-            message: `需要 ${assetPrice} TOT，当前余额 ${balanceCheck.balance} TOT`
+            error: "Insufficient balance",
+            message: `需要 ${assetPrice} TOT，当前余额 ${balanceCheck.balance} TOT`,
           });
         }
-        
+
         // 构建交易（使用TOT合约的consume_to_treasury，免税）
         // RWA购买是向TWS官方消费，所以使用免税的consume_to_treasury指令
         const transactionResult = await consumeToTreasury(
           userId,
           assetPrice,
-          2 // ConsumeType::Other（RWA购买）
+          2, // ConsumeType::Other（RWA购买）
         );
-        
+
         return res.json({
           success: true,
-          message: 'Transaction built, please sign',
+          message: "Transaction built, please sign",
           transaction: transactionResult.transaction,
           buyerAddress: transactionResult.userAddress,
           platformAddress: transactionResult.treasuryAddress,
           amount: transactionResult.amount,
-          assetId: assetData.sanitized?.id || assetData.raw?.id || 'unknown'
+          assetId: assetData.sanitized?.id || assetData.raw?.id || "unknown",
         });
       } catch (error) {
-        console.error('Error building transaction:', error);
+        console.error("Error building transaction:", error);
         return res.status(400).json({
           success: false,
-          error: 'Transaction build failed',
-          message: error.message
+          error: "Transaction build failed",
+          message: error.message,
         });
       }
     }
   } catch (error) {
-    console.error('Error in buy-strategic:', error);
+    console.error("Error in buy-strategic:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to process strategic asset purchase',
-      message: error.message
+      error: "Failed to process strategic asset purchase",
+      message: error.message,
     });
   }
 });
 
 // POST /api/rwa-trade/verify-purchase/:assetId - 验证购买交易并更新状态
-router.post('/verify-purchase/:assetId', authenticate, async (req, res) => {
+router.post("/verify-purchase/:assetId", authenticate, async (req, res) => {
   try {
     const { assetId } = req.params;
     const { txSignature } = req.body;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     if (!txSignature) {
       return res.status(400).json({
         success: false,
-        error: 'Transaction signature is required'
+        error: "Transaction signature is required",
       });
     }
-    
+
     // 获取资产数据
     const assetData = await getAssetById(assetId);
     if (!assetData.sanitized) {
       return res.status(404).json({
         success: false,
-        error: 'Asset not found'
+        error: "Asset not found",
       });
     }
-    
+
     // 检查锁定状态
     const lock = await getAssetLock(assetId);
     if (!lock || lock.userId !== userId) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid lock or unauthorized'
+        error: "Invalid lock or unauthorized",
       });
     }
-    
+
     // 验证交易
-    const { verifyStrategicAssetPurchase } = await import('../utils/solanaBlockchain.js');
-    const assetPrice = assetData.sanitized.financials?.totalTokens || 
-                      assetData.sanitized.tokenPrice || 
-                      assetData.raw?.debtAmount || 0;
+    const { verifyStrategicAssetPurchase } =
+      await import("../utils/solanaBlockchain.js");
+    const assetPrice =
+      assetData.sanitized.financials?.totalTokens ||
+      assetData.sanitized.tokenPrice ||
+      assetData.raw?.debtAmount ||
+      0;
     const remainingAmount = assetPrice - lock.lockFee;
-    
+
     try {
       const verificationResult = await verifyStrategicAssetPurchase(
         txSignature,
         userId,
-        remainingAmount
+        remainingAmount,
       );
-      
+
       if (!verificationResult.success) {
         return res.status(400).json({
           success: false,
-          error: 'Transaction verification failed',
-          message: '交易验证失败'
+          error: "Transaction verification failed",
+          message: "交易验证失败",
         });
       }
-      
+
       // 验证成功，更新状态
       await confirmLock(lock.id);
-      
-      const updatedAsset = await updateAssetStatus(assetId, 'LOCKED', {
+
+      const updatedAsset = await updateAssetStatus(assetId, "LOCKED", {
         purchasedBy: userId,
         purchasedAt: Date.now(),
         purchasePrice: assetPrice,
-        purchaseTxHash: txSignature
+        purchaseTxHash: txSignature,
       });
-      
+
       // 记录推荐佣金（不影响主流程）
       try {
-        const { recordCommission } = await import('../utils/referral.js');
-        await recordCommission(userId, remainingAmount, 0.05, { immediateTransfer: true });
-        console.log(`✅ 推荐佣金已记录: ${userId}, 金额: ${remainingAmount * 0.05} TOT`);
+        const { recordCommission } = await import("../utils/referral.js");
+        await recordCommission(userId, remainingAmount, 0.05, {
+          immediateTransfer: true,
+        });
+        console.log(
+          `✅ 推荐佣金已记录: ${userId}, 金额: ${remainingAmount * 0.05} TOT`,
+        );
       } catch (commissionError) {
-        console.error('推荐佣金记录失败（不影响主流程）:', commissionError);
+        console.error("推荐佣金记录失败（不影响主流程）:", commissionError);
       }
-      
+
       // 可选：触发NFT铸造
       let mintResult = null;
       if (process.env.CONTRACT_ADDRESS) {
         try {
           mintResult = await blockchainService.mintAsset(assetData, userId);
-          await updateAssetStatus(assetId, 'LOCKED', {
+          await updateAssetStatus(assetId, "LOCKED", {
             nftMinted: true,
             nftTokenId: mintResult.tokenId,
             nftTxHash: mintResult.txHash,
-            nftMintedAt: Date.now()
+            nftMintedAt: Date.now(),
           });
         } catch (mintError) {
-          console.error('⚠️ NFT铸造失败（但购买已确认）:', mintError);
+          console.error("⚠️ NFT铸造失败（但购买已确认）:", mintError);
         }
       }
-      
+
       res.json({
         success: true,
-        message: 'Purchase verified and confirmed successfully',
+        message: "Purchase verified and confirmed successfully",
         asset: updatedAsset,
         blockchain: {
           txHash: txSignature,
           confirmed: verificationResult.confirmed,
-          blockTime: verificationResult.blockTime
+          blockTime: verificationResult.blockTime,
         },
-        mintResult: mintResult
+        mintResult: mintResult,
       });
     } catch (error) {
-      console.error('Error verifying transaction:', error);
+      console.error("Error verifying transaction:", error);
       return res.status(400).json({
         success: false,
-        error: 'Transaction verification error',
-        message: error.message
+        error: "Transaction verification error",
+        message: error.message,
       });
     }
   } catch (error) {
-    console.error('Error verifying purchase:', error);
+    console.error("Error verifying purchase:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to verify purchase',
-      message: error.message
+      error: "Failed to verify purchase",
+      message: error.message,
     });
   }
 });
 
 // POST /api/rwa-trade/verify-shares - 验证份额购买交易并更新状态
-router.post('/verify-shares', authenticate, async (req, res) => {
+router.post("/verify-shares", authenticate, async (req, res) => {
   try {
     const { assetId, shares, txSignature } = req.body;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     if (!assetId || !shares || !txSignature) {
       return res.status(400).json({
         success: false,
-        error: 'assetId, shares, and txSignature are required'
+        error: "assetId, shares, and txSignature are required",
       });
     }
-    
+
     // 获取资产数据
     const assetData = await getAssetById(assetId);
     if (!assetData.sanitized && !assetData.raw) {
       return res.status(404).json({
         success: false,
-        error: 'Asset not found'
+        error: "Asset not found",
       });
     }
-    
+
     const asset = assetData.sanitized || assetData.raw;
-    const totalPrice = asset.financials?.totalTokens || asset.tokenPrice || asset.debtAmount || 0;
+    const totalPrice =
+      asset.financials?.totalTokens ||
+      asset.tokenPrice ||
+      asset.debtAmount ||
+      0;
     const totalShares = asset.totalShares || 10000;
     const pricePerShare = totalPrice / totalShares;
     const requiredAmount = formatShares(shares) * pricePerShare;
-    
+
     // 验证交易
-    const { verifyStrategicAssetPurchase } = await import('../utils/solanaBlockchain.js');
+    const { verifyStrategicAssetPurchase } =
+      await import("../utils/solanaBlockchain.js");
     try {
       const verificationResult = await verifyStrategicAssetPurchase(
         txSignature,
         userId,
-        requiredAmount
+        requiredAmount,
       );
-      
+
       if (!verificationResult.success) {
         return res.status(400).json({
           success: false,
-          error: 'Transaction verification failed',
-          message: '交易验证失败'
+          error: "Transaction verification failed",
+          message: "交易验证失败",
         });
       }
-      
+
       // 验证成功，记录份额持有
-      const holding = await recordShareHolding(userId, assetId, formatShares(shares));
-      
+      const holding = await recordShareHolding(
+        userId,
+        assetId,
+        formatShares(shares),
+      );
+
       // 记录推荐佣金（不影响主流程）
       try {
-        const { recordCommission } = await import('../utils/referral.js');
-        await recordCommission(userId, requiredAmount, 0.05, { immediateTransfer: true });
-        console.log(`✅ 推荐佣金已记录: ${userId}, 金额: ${requiredAmount * 0.05} TOT`);
+        const { recordCommission } = await import("../utils/referral.js");
+        await recordCommission(userId, requiredAmount, 0.05, {
+          immediateTransfer: true,
+        });
+        console.log(
+          `✅ 推荐佣金已记录: ${userId}, 金额: ${requiredAmount * 0.05} TOT`,
+        );
       } catch (commissionError) {
-        console.error('推荐佣金记录失败（不影响主流程）:', commissionError);
+        console.error("推荐佣金记录失败（不影响主流程）:", commissionError);
       }
-      
+
       res.json({
         success: true,
-        message: 'Shares purchase verified and confirmed successfully',
+        message: "Shares purchase verified and confirmed successfully",
         holding,
         shares: formatShares(shares),
         pricePerShare,
@@ -1565,57 +1642,58 @@ router.post('/verify-shares', authenticate, async (req, res) => {
         blockchain: {
           txHash: txSignature,
           confirmed: verificationResult.confirmed,
-          blockTime: verificationResult.blockTime
-        }
+          blockTime: verificationResult.blockTime,
+        },
       });
     } catch (error) {
-      console.error('Error verifying transaction:', error);
+      console.error("Error verifying transaction:", error);
       return res.status(400).json({
         success: false,
-        error: 'Transaction verification error',
-        message: error.message
+        error: "Transaction verification error",
+        message: error.message,
       });
     }
   } catch (error) {
-    console.error('Error verifying shares purchase:', error);
+    console.error("Error verifying shares purchase:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to verify shares purchase',
-      message: error.message
+      error: "Failed to verify shares purchase",
+      message: error.message,
     });
   }
 });
 
 // POST /api/rwa-trade/verify-etf - 验证ETF购买交易并更新状态
-router.post('/verify-etf', authenticate, async (req, res) => {
+router.post("/verify-etf", authenticate, async (req, res) => {
   try {
     const { etfId, investmentAmount, allocations, txSignature } = req.body;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     if (!etfId || !investmentAmount || !txSignature) {
       return res.status(400).json({
         success: false,
-        error: 'etfId, investmentAmount, and txSignature are required'
+        error: "etfId, investmentAmount, and txSignature are required",
       });
     }
-    
+
     // 验证交易
-    const { verifyStrategicAssetPurchase } = await import('../utils/solanaBlockchain.js');
+    const { verifyStrategicAssetPurchase } =
+      await import("../utils/solanaBlockchain.js");
     try {
       const verificationResult = await verifyStrategicAssetPurchase(
         txSignature,
         userId,
-        investmentAmount
+        investmentAmount,
       );
-      
+
       if (!verificationResult.success) {
         return res.status(400).json({
           success: false,
-          error: 'Transaction verification failed',
-          message: '交易验证失败'
+          error: "Transaction verification failed",
+          message: "交易验证失败",
         });
       }
-      
+
       // 验证成功，记录份额持有
       const purchaseResults = [];
       if (allocations && Array.isArray(allocations)) {
@@ -1626,167 +1704,186 @@ router.post('/verify-etf', authenticate, async (req, res) => {
               console.error(`Asset ${allocation.assetId} not found`);
               continue;
             }
-            
+
             const asset = assetData.sanitized || assetData.raw;
-            const totalPrice = asset.financials?.totalTokens || asset.tokenPrice || asset.debtAmount || 0;
+            const totalPrice =
+              asset.financials?.totalTokens ||
+              asset.tokenPrice ||
+              asset.debtAmount ||
+              0;
             const totalShares = asset.totalShares || 10000;
             const pricePerShare = totalPrice / totalShares;
-            const shares = formatShares(allocation.investmentAmount / pricePerShare);
-            
-            const holding = await recordShareHolding(userId, allocation.assetId, shares);
-            
+            const shares = formatShares(
+              allocation.investmentAmount / pricePerShare,
+            );
+
+            const holding = await recordShareHolding(
+              userId,
+              allocation.assetId,
+              shares,
+            );
+
             purchaseResults.push({
               assetId: allocation.assetId,
               shares,
               investmentAmount: allocation.investmentAmount,
               pricePerShare,
-              holding
+              holding,
             });
           } catch (error) {
-            console.error(`Error recording holding for asset ${allocation.assetId}:`, error);
+            console.error(
+              `Error recording holding for asset ${allocation.assetId}:`,
+              error,
+            );
           }
         }
       }
-      
+
       // 记录推荐佣金（不影响主流程）
       try {
-        const { recordCommission } = await import('../utils/referral.js');
-        await recordCommission(userId, investmentAmount, 0.05, { immediateTransfer: true });
-        console.log(`✅ 推荐佣金已记录: ${userId}, 金额: ${investmentAmount * 0.05} TOT`);
+        const { recordCommission } = await import("../utils/referral.js");
+        await recordCommission(userId, investmentAmount, 0.05, {
+          immediateTransfer: true,
+        });
+        console.log(
+          `✅ 推荐佣金已记录: ${userId}, 金额: ${investmentAmount * 0.05} TOT`,
+        );
       } catch (commissionError) {
-        console.error('推荐佣金记录失败（不影响主流程）:', commissionError);
+        console.error("推荐佣金记录失败（不影响主流程）:", commissionError);
       }
-      
+
       res.json({
         success: true,
-        message: 'ETF purchase verified and confirmed successfully',
+        message: "ETF purchase verified and confirmed successfully",
         etfId: etfId,
         allocations: purchaseResults,
         blockchain: {
           txHash: txSignature,
           confirmed: verificationResult.confirmed,
-          blockTime: verificationResult.blockTime
-        }
+          blockTime: verificationResult.blockTime,
+        },
       });
     } catch (error) {
-      console.error('Error verifying transaction:', error);
+      console.error("Error verifying transaction:", error);
       return res.status(400).json({
         success: false,
-        error: 'Transaction verification error',
-        message: error.message
+        error: "Transaction verification error",
+        message: error.message,
       });
     }
   } catch (error) {
-    console.error('Error verifying ETF purchase:', error);
+    console.error("Error verifying ETF purchase:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to verify ETF purchase',
-      message: error.message
+      error: "Failed to verify ETF purchase",
+      message: error.message,
     });
   }
 });
 
 // POST /api/rwa-trade/verify-lock/:assetId - 验证锁定交易并创建锁定记录
-router.post('/verify-lock/:assetId', authenticate, async (req, res) => {
+router.post("/verify-lock/:assetId", authenticate, async (req, res) => {
   try {
     const { assetId } = req.params;
     const { txSignature } = req.body;
     const userId = req.user?.address || req.user?.username || req.user?.id;
-    
+
     if (!txSignature) {
       return res.status(400).json({
         success: false,
-        error: 'Transaction signature is required'
+        error: "Transaction signature is required",
       });
     }
-    
+
     // 获取资产数据
     const assetData = await getAssetById(assetId);
     if (!assetData.sanitized) {
       return res.status(404).json({
         success: false,
-        error: 'Asset not found'
+        error: "Asset not found",
       });
     }
-    
+
     // 检查是否已被锁定
     const existingLock = await getAssetLock(assetId);
     if (existingLock) {
       return res.status(400).json({
         success: false,
-        error: 'Asset is already locked',
-        message: `Locked by ${existingLock.userId} until ${new Date(existingLock.lockExpiresAt).toISOString()}`
+        error: "Asset is already locked",
+        message: `Locked by ${existingLock.userId} until ${new Date(existingLock.lockExpiresAt).toISOString()}`,
       });
     }
-    
+
     // 计算锁定费用
-    const assetPrice = assetData.sanitized.financials?.totalTokens || 
-                      assetData.sanitized.tokenPrice || 
-                      assetData.raw?.debtAmount || 0;
+    const assetPrice =
+      assetData.sanitized.financials?.totalTokens ||
+      assetData.sanitized.tokenPrice ||
+      assetData.raw?.debtAmount ||
+      0;
     const lockFee = calculateLockFee(assetPrice);
-    
+
     // 验证交易
-    const { verifyStrategicAssetPurchase } = await import('../utils/solanaBlockchain.js');
+    const { verifyStrategicAssetPurchase } =
+      await import("../utils/solanaBlockchain.js");
     try {
       const verificationResult = await verifyStrategicAssetPurchase(
         txSignature,
         userId,
-        lockFee
+        lockFee,
       );
-      
+
       if (!verificationResult.success) {
         return res.status(400).json({
           success: false,
-          error: 'Transaction verification failed',
-          message: '交易验证失败'
+          error: "Transaction verification failed",
+          message: "交易验证失败",
         });
       }
-      
+
       // 验证成功，创建锁定记录
       const lock = await createLock({
         assetId,
         userId,
         lockFee,
         lockExpiresAt: Date.now() + 48 * 60 * 60 * 1000, // 48小时
-        txHash: txSignature
+        txHash: txSignature,
       });
-      
+
       // 更新资产状态
-      await updateAssetStatus(assetId, 'RESERVED', {
+      await updateAssetStatus(assetId, "RESERVED", {
         lockedBy: userId,
         lockedAt: Date.now(),
         lockExpiresAt: lock.lockExpiresAt,
-        lockFee: lockFee
+        lockFee: lockFee,
       });
-      
+
       res.json({
         success: true,
-        message: 'Asset locked successfully',
+        message: "Asset locked successfully",
         lock,
         lockExpiresAt: lock.lockExpiresAt,
         blockchain: {
           txHash: txSignature,
           confirmed: verificationResult.confirmed,
-          blockTime: verificationResult.blockTime
-        }
+          blockTime: verificationResult.blockTime,
+        },
       });
     } catch (error) {
-      console.error('Error verifying transaction:', error);
+      console.error("Error verifying transaction:", error);
       return res.status(400).json({
         success: false,
-        error: 'Transaction verification error',
-        message: error.message
+        error: "Transaction verification error",
+        message: error.message,
       });
     }
   } catch (error) {
-    console.error('Error verifying lock:', error);
+    console.error("Error verifying lock:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to verify lock',
-      message: error.message
+      error: "Failed to verify lock",
+      message: error.message,
     });
   }
 });
 
 export default router;
-

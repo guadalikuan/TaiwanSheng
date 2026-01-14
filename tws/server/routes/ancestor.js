@@ -1,15 +1,15 @@
-import express from 'express';
-import multer from 'multer';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
-import crypto from 'crypto';
-import { get, put, getAll, NAMESPACES } from '../utils/rocksdb.js';
-import { authenticate } from '../middleware/auth.js';
-import solanaBlockchainService from '../utils/solanaBlockchain.js';
-import { PublicKey, Transaction } from '@solana/web3.js';
-import { consumeToTreasury } from '../utils/solanaBlockchain.js';
-import config from '../solana.config.js';
+import express from "express";
+import multer from "multer";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+import { existsSync, mkdirSync } from "fs";
+import crypto from "crypto";
+import { get, put, getAll, NAMESPACES } from "../utils/rocksdb.js";
+import { authenticate } from "../middleware/auth.js";
+import solanaBlockchainService from "../utils/solanaBlockchain.js";
+import { PublicKey, Transaction } from "@solana/web3.js";
+import { consumeToTreasury } from "../utils/solanaBlockchain.js";
+import config from "../solana.config.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -17,7 +17,7 @@ const __dirname = dirname(__filename);
 const router = express.Router();
 
 // 配置 multer 存储（复用arsenal.js的逻辑）
-const uploadsDir = join(__dirname, '../uploads');
+const uploadsDir = join(__dirname, "../uploads");
 if (!existsSync(uploadsDir)) {
   mkdirSync(uploadsDir, { recursive: true });
 }
@@ -27,28 +27,30 @@ const storage = multer.diskStorage({
     cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = file.originalname.split('.').pop();
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = file.originalname.split(".").pop();
     cb(null, `ancestor-${uniqueSuffix}.${ext}`);
-  }
+  },
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB
+    fileSize: 10 * 1024 * 1024, // 10MB
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|pdf/;
-    const extname = allowedTypes.test(file.originalname.toLowerCase().split('.').pop());
+    const extname = allowedTypes.test(
+      file.originalname.toLowerCase().split(".").pop(),
+    );
     const mimetype = allowedTypes.test(file.mimetype);
-    
+
     if (extname && mimetype) {
       cb(null, true);
     } else {
-      cb(new Error('只支持 JPG、PNG 和 PDF 文件'));
+      cb(new Error("只支持 JPG、PNG 和 PDF 文件"));
     }
-  }
+  },
 });
 
 // TaiOneToken 配置
@@ -58,16 +60,17 @@ const MARKING_FEE = 100; // 100 TaiOneToken
 const MARKING_FEE_RAW = BigInt(MARKING_FEE * Math.pow(10, TAI_ONE_DECIMALS));
 
 // 财库地址（接收Token消耗）
-const TREASURY_ADDRESS = 'TaiOneTreasury111111111111111111111111111111';
+const TREASURY_ADDRESS = "TaiOneTreasury111111111111111111111111111111";
 
 /**
  * 计算数据哈希
  */
 function calculateDataHash(data) {
   // 排除上链相关字段
-  const { dataHash, chainTxHash, chainTimestamp, chainAddress, ...dataToHash } = data;
+  const { dataHash, chainTxHash, chainTimestamp, chainAddress, ...dataToHash } =
+    data;
   const dataString = JSON.stringify(dataToHash, Object.keys(dataToHash).sort());
-  return crypto.createHash('sha256').update(dataString).digest('hex');
+  return crypto.createHash("sha256").update(dataString).digest("hex");
 }
 
 /**
@@ -79,16 +82,18 @@ async function buildConsumeTokenTransaction(userAddress) {
     const amount = 100;
     // 使用ConsumeType::AncestorMarking（类型1）
     const consumeType = 1;
-    
+
     // 调用TOT合约的consume_to_treasury指令
     const result = await consumeToTreasury(userAddress, amount, consumeType);
-    
+
     // 反序列化交易以便返回
-    const transaction = Transaction.from(Buffer.from(result.transaction, 'base64'));
-    
+    const transaction = Transaction.from(
+      Buffer.from(result.transaction, "base64"),
+    );
+
     return transaction;
   } catch (error) {
-    console.error('构建Token消耗交易失败:', error);
+    console.error("构建Token消耗交易失败:", error);
     // 如果TOT合约调用失败，可以fallback到标准SPL Token转账
     // 这里暂时抛出错误，后续可以添加fallback逻辑
     throw error;
@@ -98,7 +103,7 @@ async function buildConsumeTokenTransaction(userAddress) {
 /**
  * POST /api/ancestor/consume-token - 消耗100 TaiOneToken并返回交易
  */
-router.post('/consume-token', authenticate, async (req, res) => {
+router.post("/consume-token", authenticate, async (req, res) => {
   try {
     const { walletAddress } = req.body;
     const userAddress = walletAddress || req.user?.address;
@@ -106,7 +111,7 @@ router.post('/consume-token', authenticate, async (req, res) => {
     if (!userAddress) {
       return res.status(400).json({
         success: false,
-        error: 'Wallet address is required'
+        error: "Wallet address is required",
       });
     }
 
@@ -114,19 +119,21 @@ router.post('/consume-token', authenticate, async (req, res) => {
     const transaction = await buildConsumeTokenTransaction(userAddress);
 
     // 序列化交易
-    const serialized = transaction.serialize({ requireAllSignatures: false }).toString('base64');
+    const serialized = transaction
+      .serialize({ requireAllSignatures: false })
+      .toString("base64");
 
     res.json({
       success: true,
       transaction: serialized,
       fee: MARKING_FEE,
-      message: '交易已构建，请签名并发送'
+      message: "交易已构建，请签名并发送",
     });
   } catch (error) {
-    console.error('消耗Token失败:', error);
+    console.error("消耗Token失败:", error);
     res.status(500).json({
       success: false,
-      error: error.message || '消耗Token失败'
+      error: error.message || "消耗Token失败",
     });
   }
 });
@@ -134,34 +141,34 @@ router.post('/consume-token', authenticate, async (req, res) => {
 /**
  * POST /api/ancestor/upload - 上传证明文件
  */
-router.post('/upload', authenticate, upload.single('file'), (req, res) => {
+router.post("/upload", authenticate, upload.single("file"), (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'No file uploaded',
-        message: '请选择要上传的文件' 
+        error: "No file uploaded",
+        message: "请选择要上传的文件",
       });
     }
 
     const fileUrl = `/uploads/${req.file.filename}`;
-    
+
     res.json({
       success: true,
-      message: 'File uploaded successfully',
+      message: "File uploaded successfully",
       file: {
         filename: req.file.filename,
         originalName: req.file.originalname,
         size: req.file.size,
-        url: fileUrl
-      }
+        url: fileUrl,
+      },
     });
   } catch (error) {
-    console.error('Error uploading file:', error);
-    res.status(500).json({ 
+    console.error("Error uploading file:", error);
+    res.status(500).json({
       success: false,
-      error: 'Failed to upload file',
-      message: error.message 
+      error: "Failed to upload file",
+      message: error.message,
     });
   }
 });
@@ -169,7 +176,7 @@ router.post('/upload', authenticate, upload.single('file'), (req, res) => {
 /**
  * POST /api/ancestor/mark-origin - 标记祖籍
  */
-router.post('/mark-origin', authenticate, async (req, res) => {
+router.post("/mark-origin", authenticate, async (req, res) => {
   try {
     const {
       walletAddress,
@@ -183,14 +190,14 @@ router.post('/mark-origin', authenticate, async (req, res) => {
       ancestorName,
       migrationHistory,
       proofFiles = [],
-      txSignature // Token消耗的交易签名
+      txSignature, // Token消耗的交易签名
     } = req.body;
 
     const userAddress = walletAddress || req.user?.address;
     if (!userAddress) {
       return res.status(400).json({
         success: false,
-        error: 'Wallet address is required'
+        error: "Wallet address is required",
       });
     }
 
@@ -198,7 +205,7 @@ router.post('/mark-origin', authenticate, async (req, res) => {
     if (!location || !location.lat || !location.lng) {
       return res.status(400).json({
         success: false,
-        error: 'Location (lat, lng) is required'
+        error: "Location (lat, lng) is required",
       });
     }
 
@@ -211,23 +218,23 @@ router.post('/mark-origin', authenticate, async (req, res) => {
     // 创建祖籍数据
     const originData = {
       id: `origin_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      type: 'origin',
+      type: "origin",
       walletAddress: userAddress,
-      province: province || '',
-      city: city || '',
-      district: district || '',
-      address: address || '',
+      province: province || "",
+      city: city || "",
+      district: district || "",
+      address: address || "",
       location: {
         lat: Number(location.lat),
-        lng: Number(location.lng)
+        lng: Number(location.lng),
       },
-      familyName: familyName || '',
-      generation: generation || '',
-      ancestorName: ancestorName || '',
-      migrationHistory: migrationHistory || '',
+      familyName: familyName || "",
+      generation: generation || "",
+      ancestorName: ancestorName || "",
+      migrationHistory: migrationHistory || "",
       proofFiles: Array.isArray(proofFiles) ? proofFiles : [],
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     // 计算数据哈希
@@ -235,9 +242,9 @@ router.post('/mark-origin', authenticate, async (req, res) => {
     originData.dataHash = dataHash;
 
     // 上链存储哈希（尝试）
-    let chainTxHash = '';
+    let chainTxHash = "";
     let chainTimestamp = 0;
-    let chainAddress = '';
+    let chainAddress = "";
 
     try {
       // 使用Solana存储哈希
@@ -248,11 +255,11 @@ router.post('/mark-origin', authenticate, async (req, res) => {
         // 生成PDA地址
         const [pda] = PublicKey.findProgramAddressSync(
           [
-            Buffer.from('ancestor_origin'),
+            Buffer.from("ancestor_origin"),
             Buffer.from(originData.id),
-            new PublicKey(userAddress).toBuffer()
+            new PublicKey(userAddress).toBuffer(),
           ],
-          PublicKey.default // 使用默认程序ID，实际应该使用项目程序ID
+          PublicKey.default, // 使用默认程序ID，实际应该使用项目程序ID
         );
         chainAddress = pda.toString();
         chainTimestamp = Date.now();
@@ -260,7 +267,7 @@ router.post('/mark-origin', authenticate, async (req, res) => {
         // 为了简化，我们暂时只记录地址
       }
     } catch (error) {
-      console.warn('上链失败，但数据仍会保存到数据库:', error);
+      console.warn("上链失败，但数据仍会保存到数据库:", error);
     }
 
     originData.chainTxHash = chainTxHash;
@@ -273,13 +280,13 @@ router.post('/mark-origin', authenticate, async (req, res) => {
     res.json({
       success: true,
       data: originData,
-      message: '祖籍标记成功'
+      message: "祖籍标记成功",
     });
   } catch (error) {
-    console.error('标记祖籍失败:', error);
+    console.error("标记祖籍失败:", error);
     res.status(500).json({
       success: false,
-      error: error.message || '标记祖籍失败'
+      error: error.message || "标记祖籍失败",
     });
   }
 });
@@ -287,7 +294,7 @@ router.post('/mark-origin', authenticate, async (req, res) => {
 /**
  * POST /api/ancestor/mark-property - 标记祖产
  */
-router.post('/mark-property', authenticate, async (req, res) => {
+router.post("/mark-property", authenticate, async (req, res) => {
   try {
     const {
       walletAddress,
@@ -303,14 +310,14 @@ router.post('/mark-property', authenticate, async (req, res) => {
       currentStatus,
       estimatedValue,
       proofFiles = [],
-      txSignature // Token消耗的交易签名
+      txSignature, // Token消耗的交易签名
     } = req.body;
 
     const userAddress = walletAddress || req.user?.address;
     if (!userAddress) {
       return res.status(400).json({
         success: false,
-        error: 'Wallet address is required'
+        error: "Wallet address is required",
       });
     }
 
@@ -318,32 +325,32 @@ router.post('/mark-property', authenticate, async (req, res) => {
     if (!location || !location.lat || !location.lng) {
       return res.status(400).json({
         success: false,
-        error: 'Location (lat, lng) is required'
+        error: "Location (lat, lng) is required",
       });
     }
 
     // 创建祖产数据
     const propertyData = {
       id: `property_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      type: 'property',
+      type: "property",
       walletAddress: userAddress,
-      province: province || '',
-      city: city || '',
-      district: district || '',
-      address: address || '',
+      province: province || "",
+      city: city || "",
+      district: district || "",
+      address: address || "",
       location: {
         lat: Number(location.lat),
-        lng: Number(location.lng)
+        lng: Number(location.lng),
       },
-      propertyType: propertyType || '',
+      propertyType: propertyType || "",
       area: area ? Number(area) : 0,
-      propertyName: propertyName || '',
-      ownershipInfo: ownershipInfo || '',
-      currentStatus: currentStatus || '',
+      propertyName: propertyName || "",
+      ownershipInfo: ownershipInfo || "",
+      currentStatus: currentStatus || "",
       estimatedValue: estimatedValue ? Number(estimatedValue) : 0,
       proofFiles: Array.isArray(proofFiles) ? proofFiles : [],
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     // 计算数据哈希
@@ -351,9 +358,9 @@ router.post('/mark-property', authenticate, async (req, res) => {
     propertyData.dataHash = dataHash;
 
     // 上链存储哈希（尝试）
-    let chainTxHash = '';
+    let chainTxHash = "";
     let chainTimestamp = 0;
-    let chainAddress = '';
+    let chainAddress = "";
 
     try {
       const connection = solanaBlockchainService.connection;
@@ -361,17 +368,17 @@ router.post('/mark-property', authenticate, async (req, res) => {
         // 生成PDA地址
         const [pda] = PublicKey.findProgramAddressSync(
           [
-            Buffer.from('ancestor_property'),
+            Buffer.from("ancestor_property"),
             Buffer.from(propertyData.id),
-            new PublicKey(userAddress).toBuffer()
+            new PublicKey(userAddress).toBuffer(),
           ],
-          PublicKey.default
+          PublicKey.default,
         );
         chainAddress = pda.toString();
         chainTimestamp = Date.now();
       }
     } catch (error) {
-      console.warn('上链失败，但数据仍会保存到数据库:', error);
+      console.warn("上链失败，但数据仍会保存到数据库:", error);
     }
 
     propertyData.chainTxHash = chainTxHash;
@@ -384,13 +391,13 @@ router.post('/mark-property', authenticate, async (req, res) => {
     res.json({
       success: true,
       data: propertyData,
-      message: '祖产标记成功'
+      message: "祖产标记成功",
     });
   } catch (error) {
-    console.error('标记祖产失败:', error);
+    console.error("标记祖产失败:", error);
     res.status(500).json({
       success: false,
-      error: error.message || '标记祖产失败'
+      error: error.message || "标记祖产失败",
     });
   }
 });
@@ -398,7 +405,7 @@ router.post('/mark-property', authenticate, async (req, res) => {
 /**
  * GET /api/ancestor/list - 获取用户的标记列表（支持所有类型）
  */
-router.get('/list', authenticate, async (req, res) => {
+router.get("/list", authenticate, async (req, res) => {
   try {
     const { walletAddress, type } = req.query;
     const userAddress = (walletAddress || req.user?.address)?.toLowerCase();
@@ -406,7 +413,7 @@ router.get('/list', authenticate, async (req, res) => {
     if (!userAddress) {
       return res.status(400).json({
         success: false,
-        error: 'Wallet address is required'
+        error: "Wallet address is required",
       });
     }
 
@@ -414,7 +421,7 @@ router.get('/list', authenticate, async (req, res) => {
 
     // 从统一命名空间获取所有标记
     const allMarks = await getAll(NAMESPACES.MAP_MARKS);
-    allMarks.forEach(item => {
+    allMarks.forEach((item) => {
       const data = item.value;
       if (data.walletAddress?.toLowerCase() === userAddress) {
         if (!type || data.type === type) {
@@ -426,9 +433,9 @@ router.get('/list', authenticate, async (req, res) => {
     // 向后兼容：从旧命名空间获取（如果统一命名空间没有数据）
     if (results.length === 0) {
       // 获取祖籍标记
-      if (!type || type === 'origin') {
+      if (!type || type === "origin") {
         const origins = await getAll(NAMESPACES.ANCESTOR_ORIGINS);
-        origins.forEach(item => {
+        origins.forEach((item) => {
           const data = item.value;
           if (data.walletAddress?.toLowerCase() === userAddress) {
             results.push(data);
@@ -437,9 +444,9 @@ router.get('/list', authenticate, async (req, res) => {
       }
 
       // 获取祖产标记
-      if (!type || type === 'property') {
+      if (!type || type === "property") {
         const properties = await getAll(NAMESPACES.ANCESTOR_PROPERTIES);
-        properties.forEach(item => {
+        properties.forEach((item) => {
           const data = item.value;
           if (data.walletAddress?.toLowerCase() === userAddress) {
             results.push(data);
@@ -458,13 +465,13 @@ router.get('/list', authenticate, async (req, res) => {
     res.json({
       success: true,
       data: results,
-      count: results.length
+      count: results.length,
     });
   } catch (error) {
-    console.error('获取标记列表失败:', error);
+    console.error("获取标记列表失败:", error);
     res.status(500).json({
       success: false,
-      error: error.message || '获取标记列表失败'
+      error: error.message || "获取标记列表失败",
     });
   }
 });
@@ -475,31 +482,31 @@ router.get('/list', authenticate, async (req, res) => {
 function generatePDAAddress(type, id, walletAddress) {
   try {
     const connection = solanaBlockchainService.connection;
-    if (!connection) return '';
-    
+    if (!connection) return "";
+
     const typeMap = {
-      'origin': 'map_mark_origin',
-      'property': 'map_mark_property',
-      'refuge': 'map_mark_refuge',
-      'relative': 'map_mark_relative',
-      'memory': 'map_mark_memory',
-      'resource': 'map_mark_resource',
-      'contact': 'map_mark_contact',
-      'future': 'map_mark_future'
+      origin: "map_mark_origin",
+      property: "map_mark_property",
+      refuge: "map_mark_refuge",
+      relative: "map_mark_relative",
+      memory: "map_mark_memory",
+      resource: "map_mark_resource",
+      contact: "map_mark_contact",
+      future: "map_mark_future",
     };
-    
+
     const [pda] = PublicKey.findProgramAddressSync(
       [
-        Buffer.from(typeMap[type] || 'map_mark'),
+        Buffer.from(typeMap[type] || "map_mark"),
         Buffer.from(id),
-        new PublicKey(walletAddress).toBuffer()
+        new PublicKey(walletAddress).toBuffer(),
       ],
-      PublicKey.default
+      PublicKey.default,
     );
     return pda.toString();
   } catch (error) {
-    console.warn('生成PDA地址失败:', error);
-    return '';
+    console.warn("生成PDA地址失败:", error);
+    return "";
   }
 }
 
@@ -524,7 +531,7 @@ async function handleMarkSubmission(type, req, res) {
     if (!userAddress) {
       return res.status(400).json({
         success: false,
-        error: 'Wallet address is required'
+        error: "Wallet address is required",
       });
     }
 
@@ -532,7 +539,7 @@ async function handleMarkSubmission(type, req, res) {
     if (!location || !location.lat || !location.lng) {
       return res.status(400).json({
         success: false,
-        error: 'Location (lat, lng) is required'
+        error: "Location (lat, lng) is required",
       });
     }
 
@@ -541,18 +548,18 @@ async function handleMarkSubmission(type, req, res) {
       id: `${type}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       type: type,
       walletAddress: userAddress,
-      province: province || '',
-      city: city || '',
-      district: district || '',
-      address: address || '',
+      province: province || "",
+      city: city || "",
+      district: district || "",
+      address: address || "",
       location: {
         lat: Number(location.lat),
-        lng: Number(location.lng)
+        lng: Number(location.lng),
       },
       proofFiles: Array.isArray(proofFiles) ? proofFiles : [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      ...typeSpecificFields // 添加类型特定字段
+      ...typeSpecificFields, // 添加类型特定字段
     };
 
     // 计算数据哈希
@@ -560,15 +567,15 @@ async function handleMarkSubmission(type, req, res) {
     markData.dataHash = dataHash;
 
     // 上链存储哈希
-    let chainTxHash = '';
+    let chainTxHash = "";
     let chainTimestamp = 0;
-    let chainAddress = '';
+    let chainAddress = "";
 
     try {
       chainAddress = generatePDAAddress(type, markData.id, userAddress);
       chainTimestamp = Date.now();
     } catch (error) {
-      console.warn('上链失败，但数据仍会保存到数据库:', error);
+      console.warn("上链失败，但数据仍会保存到数据库:", error);
     }
 
     markData.chainTxHash = chainTxHash;
@@ -577,35 +584,35 @@ async function handleMarkSubmission(type, req, res) {
 
     // 保存到统一命名空间
     await put(NAMESPACES.MAP_MARKS, markData.id, markData);
-    
+
     // 同时保存到旧命名空间（向后兼容）
-    if (type === 'origin') {
+    if (type === "origin") {
       await put(NAMESPACES.ANCESTOR_ORIGINS, markData.id, markData);
-    } else if (type === 'property') {
+    } else if (type === "property") {
       await put(NAMESPACES.ANCESTOR_PROPERTIES, markData.id, markData);
     }
 
     const typeNames = {
-      'origin': '祖籍',
-      'property': '祖产',
-      'refuge': '避难所',
-      'relative': '亲属位置',
-      'memory': '历史记忆',
-      'resource': '资源点',
-      'contact': '联络节点',
-      'future': '未来规划'
+      origin: "祖籍",
+      property: "祖产",
+      refuge: "避难所",
+      relative: "亲属位置",
+      memory: "历史记忆",
+      resource: "资源点",
+      contact: "联络节点",
+      future: "未来规划",
     };
 
     res.json({
       success: true,
       data: markData,
-      message: `${typeNames[type] || '标记'}标记成功`
+      message: `${typeNames[type] || "标记"}标记成功`,
     });
   } catch (error) {
     console.error(`标记${type}失败:`, error);
     res.status(500).json({
       success: false,
-      error: error.message || `标记${type}失败`
+      error: error.message || `标记${type}失败`,
     });
   }
 }
@@ -613,14 +620,23 @@ async function handleMarkSubmission(type, req, res) {
 /**
  * POST /api/ancestor/mark/:type - 统一标记接口（支持所有类型）
  */
-router.post('/mark/:type', authenticate, async (req, res) => {
+router.post("/mark/:type", authenticate, async (req, res) => {
   const { type } = req.params;
-  const validTypes = ['origin', 'property', 'refuge', 'relative', 'memory', 'resource', 'contact', 'future'];
-  
+  const validTypes = [
+    "origin",
+    "property",
+    "refuge",
+    "relative",
+    "memory",
+    "resource",
+    "contact",
+    "future",
+  ];
+
   if (!validTypes.includes(type)) {
     return res.status(400).json({
       success: false,
-      error: `Invalid mark type. Valid types: ${validTypes.join(', ')}`
+      error: `Invalid mark type. Valid types: ${validTypes.join(", ")}`,
     });
   }
 
@@ -630,13 +646,13 @@ router.post('/mark/:type', authenticate, async (req, res) => {
 /**
  * GET /api/ancestor/:id - 获取单个标记详情
  */
-router.get('/:id', authenticate, async (req, res) => {
+router.get("/:id", authenticate, async (req, res) => {
   try {
     const { id } = req.params;
 
     // 优先从统一命名空间查找
     let data = await get(NAMESPACES.MAP_MARKS, id);
-    
+
     // 如果没找到，尝试从旧命名空间查找（向后兼容）
     if (!data) {
       data = await get(NAMESPACES.ANCESTOR_ORIGINS, id);
@@ -648,19 +664,19 @@ router.get('/:id', authenticate, async (req, res) => {
     if (!data) {
       return res.status(404).json({
         success: false,
-        error: 'Mark not found'
+        error: "Mark not found",
       });
     }
 
     res.json({
       success: true,
-      data: data
+      data: data,
     });
   } catch (error) {
-    console.error('获取标记详情失败:', error);
+    console.error("获取标记详情失败:", error);
     res.status(500).json({
       success: false,
-      error: error.message || '获取标记详情失败'
+      error: error.message || "获取标记详情失败",
     });
   }
 });
@@ -668,7 +684,7 @@ router.get('/:id', authenticate, async (req, res) => {
 /**
  * POST /api/ancestor/verify-token - 验证祖籍标记交易
  */
-router.post('/verify-token', authenticate, async (req, res) => {
+router.post("/verify-token", authenticate, async (req, res) => {
   try {
     const { txSignature } = req.body;
     const userAddress = req.user?.address || req.body.walletAddress;
@@ -676,60 +692,60 @@ router.post('/verify-token', authenticate, async (req, res) => {
     if (!userAddress) {
       return res.status(400).json({
         success: false,
-        error: 'Wallet address is required'
+        error: "Wallet address is required",
       });
     }
 
     if (!txSignature) {
       return res.status(400).json({
         success: false,
-        error: 'Transaction signature is required'
+        error: "Transaction signature is required",
       });
     }
 
     // 验证交易
-    const { verifyStrategicAssetPurchase } = await import('../utils/solanaBlockchain.js');
+    const { verifyStrategicAssetPurchase } =
+      await import("../utils/solanaBlockchain.js");
     try {
       const verificationResult = await verifyStrategicAssetPurchase(
         txSignature,
         userAddress,
-        MARKING_FEE
+        MARKING_FEE,
       );
 
       if (!verificationResult.success) {
         return res.status(400).json({
           success: false,
-          error: 'Transaction verification failed',
-          message: '交易验证失败'
+          error: "Transaction verification failed",
+          message: "交易验证失败",
         });
       }
 
       res.json({
         success: true,
-        message: 'Transaction verified successfully',
+        message: "Transaction verified successfully",
         fee: MARKING_FEE,
         blockchain: {
           txHash: txSignature,
           confirmed: verificationResult.confirmed,
-          blockTime: verificationResult.blockTime
-        }
+          blockTime: verificationResult.blockTime,
+        },
       });
     } catch (error) {
-      console.error('Error verifying transaction:', error);
+      console.error("Error verifying transaction:", error);
       return res.status(400).json({
         success: false,
-        error: 'Transaction verification error',
-        message: error.message
+        error: "Transaction verification error",
+        message: error.message,
       });
     }
   } catch (error) {
-    console.error('验证Token消耗失败:', error);
+    console.error("验证Token消耗失败:", error);
     res.status(500).json({
       success: false,
-      error: error.message || '验证交易失败'
+      error: error.message || "验证交易失败",
     });
   }
 });
 
 export default router;
-

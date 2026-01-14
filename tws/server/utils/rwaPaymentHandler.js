@@ -3,8 +3,8 @@
  * 处理TOT代币支付、余额检查、交易验证
  */
 
-import { verifyPayment } from './paymentVerifier.js';
-import { getTaiOneTokenBalance } from './solanaBlockchain.js';
+import { verifyPayment } from "./paymentVerifier.js";
+import { getTaiOneTokenBalance } from "./solanaBlockchain.js";
 
 /**
  * 检查用户余额
@@ -14,23 +14,26 @@ import { getTaiOneTokenBalance } from './solanaBlockchain.js';
  */
 export const checkBalance = async (userAddress, requiredAmount) => {
   try {
-    const balance = await getTaiOneTokenBalance(userAddress);
+    const balanceData = await getTaiOneTokenBalance(userAddress);
+    const raw = BigInt(balanceData?.balance || "0");
+    const decimals = Number(balanceData?.decimals ?? 6);
+    const balance = Number(raw) / Math.pow(10, decimals);
     const sufficient = balance >= requiredAmount;
-    
+
     return {
       sufficient,
       balance,
       required: requiredAmount,
-      shortfall: sufficient ? 0 : (requiredAmount - balance)
+      shortfall: sufficient ? 0 : requiredAmount - balance,
     };
   } catch (error) {
-    console.error('Error checking balance:', error);
+    console.error("Error checking balance:", error);
     return {
       sufficient: false,
       balance: 0,
       required: requiredAmount,
       shortfall: requiredAmount,
-      error: error.message
+      error: error.message,
     };
   }
 };
@@ -47,21 +50,21 @@ export const verifyPaymentTransaction = async (txSignature, paymentInfo) => {
       from: paymentInfo.from,
       to: paymentInfo.to,
       amount: paymentInfo.amount,
-      ...paymentInfo.extra
+      ...paymentInfo.extra,
     });
-    
+
     return {
       valid: verification.valid,
       message: verification.message,
-      txHash: verification.txHash || txSignature,
-      amount: verification.amount || paymentInfo.amount
+      txHash: verification.txSignature || txSignature,
+      amount: verification.amount || paymentInfo.amount,
     };
   } catch (error) {
-    console.error('Error verifying payment:', error);
+    console.error("Error verifying payment:", error);
     return {
       valid: false,
       message: error.message,
-      txHash: null
+      txHash: null,
     };
   }
 };
@@ -94,57 +97,57 @@ export const calculateTradeFee = (tradeAmount, feeRate = 0.02) => {
  */
 export const processPayment = async (paymentData) => {
   const { userAddress, amount, txSignature, paymentType } = paymentData;
-  
+
   try {
     // 1. 检查余额
     const balanceCheck = await checkBalance(userAddress, amount);
     if (!balanceCheck.sufficient) {
       return {
         success: false,
-        error: 'Insufficient balance',
-        message: `余额不足，需要 ${amount} TOT，当前余额 ${balanceCheck.balance} TOT`
+        error: "Insufficient balance",
+        message: `余额不足，需要 ${amount} TOT，当前余额 ${balanceCheck.balance} TOT`,
       };
     }
-    
+
     // 2. 验证交易（如果提供了交易签名）
     if (txSignature) {
       const verification = await verifyPaymentTransaction(txSignature, {
         from: userAddress,
-        to: paymentData.to || 'platform',
+        to: paymentData.to || "platform",
         amount: amount,
-        ...paymentData.extra
+        ...paymentData.extra,
       });
-      
+
       if (!verification.valid) {
         return {
           success: false,
-          error: 'Payment verification failed',
-          message: verification.message
+          error: "Payment verification failed",
+          message: verification.message,
         };
       }
-      
+
       return {
         success: true,
         txHash: verification.txHash,
         amount: verification.amount,
-        paymentType
+        paymentType,
       };
     }
-    
+
     // 如果没有交易签名，假设是链下记录（开发/测试环境）
     return {
       success: true,
       txHash: `mock_${Date.now()}`,
       amount: amount,
       paymentType,
-      note: 'Mock payment (no blockchain verification)'
+      note: "Mock payment (no blockchain verification)",
     };
   } catch (error) {
-    console.error('Error processing payment:', error);
+    console.error("Error processing payment:", error);
     return {
       success: false,
-      error: 'Payment processing failed',
-      message: error.message
+      error: "Payment processing failed",
+      message: error.message,
     };
   }
 };
@@ -160,7 +163,6 @@ export const recordPayment = async (paymentRecord) => {
   return {
     id: paymentRecord.id || `payment_${Date.now()}`,
     ...paymentRecord,
-    recordedAt: Date.now()
+    recordedAt: Date.now(),
   };
 };
-

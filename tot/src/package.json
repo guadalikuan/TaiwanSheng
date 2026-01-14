@@ -9,6 +9,7 @@
     "test:report": "anchor test --skip-local-validator && npm run test:generate-report",
     "test:generate-report": "mochawesome-merge ../tests/reports/mochawesome/*.json -o ../tests/reports/report.json 2>/dev/null || echo 'No test results to merge' && mochawesome-report-generator ../tests/reports/report.json -o ../tests/reports 2>/dev/null || echo 'Report generation skipped'",
     "test:full": "npm run test && npm run test:generate-report",
+    "typecheck": "tsc --noEmit -p ../tsconfig.json",
     "deploy": "ts-node ../client/deploy.ts",
     "initialize": "ts-node ../client/initialize.ts",
     "mint": "ts-node ../client/mint_to_pools.ts"

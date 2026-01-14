@@ -1,28 +1,23 @@
-// #region agent log
-fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'utils/solanaBlockchain.js:1',message:'开始导入Solana依赖',data:{moduleResolvePaths:process.env.NODE_PATH||'default',__dirname:import.meta.url},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C'})}).catch(()=>{});
-// #endregion
-import { Connection, PublicKey, Keypair, Transaction } from '@solana/web3.js';
-// #region agent log
-fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'utils/solanaBlockchain.js:2',message:'@solana/web3.js导入成功',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-// #endregion
-import { getAssociatedTokenAddress, createTransferInstruction, getAccount, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
-// #region agent log
-fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'utils/solanaBlockchain.js:3',message:'@solana/spl-token导入成功',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
-// #endregion
-import anchor from '@coral-xyz/anchor';
-// #region agent log
-fetch('http://127.0.0.1:7243/ingest/4a4faaed-19c7-42a1-9aa5-d33580d7c144',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'utils/solanaBlockchain.js:4',message:'@coral-xyz/anchor导入成功',data:{anchorVersion:anchor?.Program?.version||'loaded'},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'A'})}).catch(()=>{});
-// #endregion
-import { readFileSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { createRequire } from 'module';
+import { Connection, PublicKey, Keypair, Transaction } from "@solana/web3.js";
+import {
+  getAssociatedTokenAddress,
+  createTransferInstruction,
+  getAccount,
+  createAssociatedTokenAccountInstruction,
+  TOKEN_2022_PROGRAM_ID,
+} from "@solana/spl-token";
+import anchor from "@coral-xyz/anchor";
+import { readFileSync, existsSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+import { createRequire } from "module";
+import { verifyPayment } from "./paymentVerifier.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const require = createRequire(import.meta.url);
 
-import config from '../solana.config.js';
+import config from "../solana.config.js";
 
 // TaiOneToken 铸造地址（从全局配置读取）
 const TaiOneToken_MINT = new PublicKey(config.TAI_ONE_TOKEN.MINT);
@@ -40,12 +35,41 @@ class SolanaBlockchainService {
     this.programId = null;
     this.totProgram = null; // TOT合约程序
     this.totProgramId = null; // TOT合约程序ID
+    this.totIdl = null;
     this.wallet = null;
+    this.taiOneTokenProgramId = anchor.utils.token.TOKEN_PROGRAM_ID;
     // 使用统一配置
     this.cluster = config.CLUSTER;
     this.rpcUrl = config.getRpcUrl();
-    
+
     this.initialize();
+  }
+
+  async getTaiOneTokenAssociatedTokenAddress(
+    ownerPubkey,
+    allowOwnerOffCurve = false,
+    tokenProgramId = null,
+  ) {
+    const programId = tokenProgramId ?? this.taiOneTokenProgramId;
+    return await getAssociatedTokenAddress(
+      TaiOneToken_MINT,
+      ownerPubkey,
+      allowOwnerOffCurve,
+      programId,
+    );
+  }
+
+  async detectTaiOneTokenProgramId() {
+    try {
+      if (!this.connection) return;
+      const mintAccountInfo =
+        await this.connection.getAccountInfo(TaiOneToken_MINT);
+      if (mintAccountInfo?.owner?.equals?.(TOKEN_2022_PROGRAM_ID)) {
+        this.taiOneTokenProgramId = TOKEN_2022_PROGRAM_ID;
+      } else if (mintAccountInfo?.owner) {
+        this.taiOneTokenProgramId = mintAccountInfo.owner;
+      }
+    } catch {}
   }
 
   /**
@@ -56,18 +80,30 @@ class SolanaBlockchainService {
       // 创建连接
       // 优先使用配置中的 RPC URL，如果为空则使用 clusterApiUrl 或其他默认值
       // 注意: server端 config.getRpcUrl() 已经处理了 process.env.SOLANA_RPC_URL 的读取
-      this.connection = new Connection(this.rpcUrl, 'confirmed');
+      this.connection = new Connection(this.rpcUrl, "confirmed");
       console.log(`✅ Solana 连接已建立: ${this.cluster}`);
       console.log(`   RPC 端点: ${this.rpcUrl}`);
 
+      // 加载钱包（如果有私钥）
+      if (process.env.SOLANA_PRIVATE_KEY) {
+        const privateKey = JSON.parse(process.env.SOLANA_PRIVATE_KEY);
+        this.wallet = Keypair.fromSecretKey(Buffer.from(privateKey));
+        console.log("💰 钱包已加载:", this.wallet.publicKey.toString());
+      }
+
+      await this.detectTaiOneTokenProgramId();
+
       // 加载程序 ID
-      const deploymentFile = join(__dirname, '../../deployments/solana-' + this.cluster + '.json');
+      const deploymentFile = join(
+        __dirname,
+        "../../deployments/solana-" + this.cluster + ".json",
+      );
       if (existsSync(deploymentFile)) {
-        const deployment = JSON.parse(readFileSync(deploymentFile, 'utf-8'));
+        const deployment = JSON.parse(readFileSync(deploymentFile, "utf-8"));
         this.programId = new PublicKey(deployment.programId);
-        console.log('📦 程序 ID:', this.programId.toString());
+        console.log("📦 程序 ID:", this.programId.toString());
       } else {
-        console.warn('⚠️  部署信息文件不存在，请先部署程序');
+        console.warn("⚠️  部署信息文件不存在，请先部署程序");
       }
 
       // 加载 IDL 和程序
@@ -77,15 +113,8 @@ class SolanaBlockchainService {
 
       // 加载 TOT 合约程序
       await this.loadTotProgram();
-
-      // 加载钱包（如果有私钥）
-      if (process.env.SOLANA_PRIVATE_KEY) {
-        const privateKey = JSON.parse(process.env.SOLANA_PRIVATE_KEY);
-        this.wallet = Keypair.fromSecretKey(Buffer.from(privateKey));
-        console.log('💰 钱包已加载:', this.wallet.publicKey.toString());
-      }
     } catch (error) {
-      console.error('❌ Solana 服务初始化失败:', error);
+      console.error("❌ Solana 服务初始化失败:", error);
     }
   }
 
@@ -94,30 +123,25 @@ class SolanaBlockchainService {
    */
   async loadProgram() {
     try {
-      const idlPath = join(__dirname, '../../target/idl/tws_asset.json');
+      const idlPath = join(__dirname, "../../target/idl/tws_asset.json");
       if (!existsSync(idlPath)) {
-        console.warn('⚠️  IDL 文件不存在，请先构建程序');
+        console.warn("⚠️  IDL 文件不存在，请先构建程序");
         return;
       }
 
-      const idl = JSON.parse(readFileSync(idlPath, 'utf-8'));
-      
-      if (!this.wallet) {
-        console.warn('⚠️  钱包未配置，无法创建程序实例');
-        return;
-      }
-
-      const provider = new anchor.AnchorProvider(
-        this.connection,
-        new anchor.Wallet(this.wallet),
-        { commitment: 'confirmed' }
-      );
-      anchor.setProvider(provider);
+      const idl = JSON.parse(readFileSync(idlPath, "utf-8"));
+      const provider = this.wallet
+        ? new anchor.AnchorProvider(
+            this.connection,
+            new anchor.Wallet(this.wallet),
+            { commitment: "confirmed" },
+          )
+        : this.createReadonlyProvider(Keypair.generate().publicKey);
 
       this.program = new anchor.Program(idl, this.programId, provider);
-      console.log('✅ 程序已加载');
+      console.log("✅ 程序已加载");
     } catch (error) {
-      console.error('❌ 加载程序失败:', error);
+      console.error("❌ 加载程序失败:", error);
     }
   }
 
@@ -126,42 +150,76 @@ class SolanaBlockchainService {
    */
   async loadTotProgram() {
     try {
-      // TOT合约IDL路径（在tot项目的target/idl目录下）
-      const totIdlPath = join(__dirname, '../../../tot/target/idl/tot_token.json');
+      const totIdlPath = join(__dirname, "../../../tot/IDL/idl.json");
       if (!existsSync(totIdlPath)) {
-        console.warn('⚠️  TOT合约IDL文件不存在，请先构建tot项目');
+        console.warn("⚠️  TOT合约IDL文件不存在:", totIdlPath);
         return;
       }
 
-      const totIdl = JSON.parse(readFileSync(totIdlPath, 'utf-8'));
-      
-      // 从IDL中获取程序ID
-      if (totIdl.metadata && totIdl.metadata.address) {
-        this.totProgramId = new PublicKey(totIdl.metadata.address);
-      } else {
-        // 如果没有在IDL中，尝试从环境变量或配置中读取
-        const totProgramIdStr = process.env.TOT_PROGRAM_ID || 'ToT1111111111111111111111111111111111111111';
-        this.totProgramId = new PublicKey(totProgramIdStr);
-      }
+      const totIdl = JSON.parse(readFileSync(totIdlPath, "utf-8"));
+      this.totIdl = totIdl;
 
-      if (!this.wallet) {
-        console.warn('⚠️  钱包未配置，无法创建TOT程序实例');
+      const totProgramIdStr =
+        config.TOT?.PROGRAM_ID || process.env.TOT_PROGRAM_ID;
+      if (!totProgramIdStr) {
+        console.warn("⚠️  TOT_PROGRAM_ID 未配置，无法加载TOT合约程序");
         return;
       }
+      this.totProgramId = new PublicKey(totProgramIdStr);
 
-      const provider = new anchor.AnchorProvider(
-        this.connection,
-        new anchor.Wallet(this.wallet),
-        { commitment: 'confirmed' }
-      );
-
+      const provider = this.wallet
+        ? new anchor.AnchorProvider(
+            this.connection,
+            new anchor.Wallet(this.wallet),
+            { commitment: "confirmed" },
+          )
+        : this.createReadonlyProvider(Keypair.generate().publicKey);
       this.totProgram = new anchor.Program(totIdl, this.totProgramId, provider);
-      console.log('✅ TOT合约程序已加载');
-      console.log('   TOT程序ID:', this.totProgramId.toString());
+
+      console.log("✅ TOT合约程序已加载");
+      console.log("   TOT程序ID:", this.totProgramId.toString());
     } catch (error) {
-      console.warn('⚠️  加载TOT合约程序失败（将使用标准SPL Token转账）:', error.message);
+      console.warn(
+        "⚠️  加载TOT合约程序失败（将使用标准SPL Token转账）:",
+        error.message,
+      );
       // 不抛出错误，允许fallback到标准SPL Token转账
     }
+  }
+
+  createReadonlyProvider(walletPublicKey) {
+    const wallet = {
+      publicKey: walletPublicKey,
+      signTransaction: async (tx) => tx,
+      signAllTransactions: async (txs) => txs,
+    };
+
+    return new anchor.AnchorProvider(this.connection, wallet, {
+      commitment: "confirmed",
+    });
+  }
+
+  getTotProgramForFeePayer(feePayerPubkey) {
+    if (!this.totIdl || !this.totProgramId) {
+      throw new Error("TOT合约未加载（缺少IDL或ProgramId）");
+    }
+    const provider = this.createReadonlyProvider(feePayerPubkey);
+    return new anchor.Program(this.totIdl, this.totProgramId, provider);
+  }
+
+  getTotProgramForPlatform() {
+    if (!this.totIdl || !this.totProgramId) {
+      throw new Error("TOT合约未加载（缺少IDL或ProgramId）");
+    }
+    if (!this.wallet) {
+      throw new Error("Platform wallet not loaded");
+    }
+    const provider = new anchor.AnchorProvider(
+      this.connection,
+      new anchor.Wallet(this.wallet),
+      { commitment: "confirmed" },
+    );
+    return new anchor.Program(this.totIdl, this.totProgramId, provider);
   }
 
   /**
@@ -170,7 +228,7 @@ class SolanaBlockchainService {
   async checkConnection() {
     try {
       if (!this.connection) {
-        throw new Error('Connection not initialized');
+        throw new Error("Connection not initialized");
       }
       const slot = await this.connection.getSlot();
       return { connected: true, slot };
@@ -185,20 +243,23 @@ class SolanaBlockchainService {
   async initializeBunker(bunkerId, sectorCode, totalShares, authority) {
     try {
       if (!this.program) {
-        throw new Error('Program not loaded');
+        throw new Error("Program not loaded");
       }
 
       // 计算 PDA
       const [bunkerPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('bunker'), Buffer.from(bunkerId.toString().padStart(8, '0'))],
-        this.programId
+        [
+          Buffer.from("bunker"),
+          Buffer.from(bunkerId.toString().padStart(8, "0")),
+        ],
+        this.programId,
       );
 
       const tx = await this.program.methods
         .initializeBunker(
           new anchor.BN(bunkerId),
           sectorCode,
-          new anchor.BN(totalShares)
+          new anchor.BN(totalShares),
         )
         .accounts({
           bunker: bunkerPda,
@@ -214,7 +275,7 @@ class SolanaBlockchainService {
         bunkerAddress: bunkerPda.toString(),
       };
     } catch (error) {
-      console.error('❌ 初始化地堡失败:', error);
+      console.error("❌ 初始化地堡失败:", error);
       throw error;
     }
   }
@@ -225,28 +286,28 @@ class SolanaBlockchainService {
   async mintBunkerShares(bunkerId, amount, userAddress) {
     try {
       if (!this.program) {
-        throw new Error('Program not loaded');
+        throw new Error("Program not loaded");
       }
 
       const userPubkey = new PublicKey(userAddress);
-      
+
       // 计算 PDA
       const [bunkerPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('bunker'), Buffer.from(bunkerId.toString().padStart(8, '0'))],
-        this.programId
+        [
+          Buffer.from("bunker"),
+          Buffer.from(bunkerId.toString().padStart(8, "0")),
+        ],
+        this.programId,
       );
 
       // 获取关联代币账户地址
-      const userTokenAccount = await getAssociatedTokenAddress(
-        TaiOneToken_MINT,
-        userPubkey
+      const userTokenAccount = await this.getTaiOneTokenAssociatedTokenAddress(
+        userPubkey,
+        false,
       );
 
-      const bunkerTokenAccount = await getAssociatedTokenAddress(
-        TaiOneToken_MINT,
-        bunkerPda,
-        true // allowOwnerOffCurve
-      );
+      const bunkerTokenAccount =
+        await this.getTaiOneTokenAssociatedTokenAddress(bunkerPda, true);
 
       const tx = await this.program.methods
         .mintBunkerShares(new anchor.BN(amount))
@@ -265,7 +326,7 @@ class SolanaBlockchainService {
         txHash: tx,
       };
     } catch (error) {
-      console.error('❌ 铸造份额失败:', error);
+      console.error("❌ 铸造份额失败:", error);
       throw error;
     }
   }
@@ -276,12 +337,15 @@ class SolanaBlockchainService {
   async triggerUnification(bunkerId, authority) {
     try {
       if (!this.program) {
-        throw new Error('Program not loaded');
+        throw new Error("Program not loaded");
       }
 
       const [bunkerPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('bunker'), Buffer.from(bunkerId.toString().padStart(8, '0'))],
-        this.programId
+        [
+          Buffer.from("bunker"),
+          Buffer.from(bunkerId.toString().padStart(8, "0")),
+        ],
+        this.programId,
       );
 
       const tx = await this.program.methods
@@ -297,7 +361,7 @@ class SolanaBlockchainService {
         txHash: tx,
       };
     } catch (error) {
-      console.error('❌ 触发统一事件失败:', error);
+      console.error("❌ 触发统一事件失败:", error);
       throw error;
     }
   }
@@ -308,26 +372,26 @@ class SolanaBlockchainService {
   async redeemProperty(bunkerId, amount, userAddress) {
     try {
       if (!this.program) {
-        throw new Error('Program not loaded');
+        throw new Error("Program not loaded");
       }
 
       const userPubkey = new PublicKey(userAddress);
-      
+
       const [bunkerPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('bunker'), Buffer.from(bunkerId.toString().padStart(8, '0'))],
-        this.programId
+        [
+          Buffer.from("bunker"),
+          Buffer.from(bunkerId.toString().padStart(8, "0")),
+        ],
+        this.programId,
       );
 
-      const userTokenAccount = await getAssociatedTokenAddress(
-        TaiOneToken_MINT,
-        userPubkey
+      const userTokenAccount = await this.getTaiOneTokenAssociatedTokenAddress(
+        userPubkey,
+        false,
       );
 
-      const bunkerTokenAccount = await getAssociatedTokenAddress(
-        TaiOneToken_MINT,
-        bunkerPda,
-        true
-      );
+      const bunkerTokenAccount =
+        await this.getTaiOneTokenAssociatedTokenAddress(bunkerPda, true);
 
       const tx = await this.program.methods
         .redeemProperty(new anchor.BN(amount))
@@ -346,7 +410,7 @@ class SolanaBlockchainService {
         txHash: tx,
       };
     } catch (error) {
-      console.error('❌ 赎回资产失败:', error);
+      console.error("❌ 赎回资产失败:", error);
       throw error;
     }
   }
@@ -357,16 +421,19 @@ class SolanaBlockchainService {
   async getBunkerInfo(bunkerId) {
     try {
       if (!this.program) {
-        throw new Error('Program not loaded');
+        throw new Error("Program not loaded");
       }
 
       const [bunkerPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('bunker'), Buffer.from(bunkerId.toString().padStart(8, '0'))],
-        this.programId
+        [
+          Buffer.from("bunker"),
+          Buffer.from(bunkerId.toString().padStart(8, "0")),
+        ],
+        this.programId,
       );
 
       const bunkerAccount = await this.program.account.bunker.fetch(bunkerPda);
-      
+
       return {
         authority: bunkerAccount.authority.toString(),
         bunkerId: bunkerAccount.bunkerId.toString(),
@@ -380,7 +447,7 @@ class SolanaBlockchainService {
         twscoinMint: bunkerAccount.twscoinMint.toString(),
       };
     } catch (error) {
-      console.error('❌ 查询地堡信息失败:', error);
+      console.error("❌ 查询地堡信息失败:", error);
       throw error;
     }
   }
@@ -391,13 +458,13 @@ class SolanaBlockchainService {
   async getTaiOneTokenBalance(userAddress) {
     try {
       if (!this.connection) {
-        throw new Error('Connection not initialized');
+        throw new Error("Connection not initialized");
       }
 
       const userPubkey = new PublicKey(userAddress);
-      const tokenAccount = await getAssociatedTokenAddress(
-        TaiOneToken_MINT,
-        userPubkey
+      const tokenAccount = await this.getTaiOneTokenAssociatedTokenAddress(
+        userPubkey,
+        false,
       );
 
       try {
@@ -408,10 +475,10 @@ class SolanaBlockchainService {
         };
       } catch (error) {
         // 账户不存在，返回 0
-        return { balance: '0', decimals: TAI_ONE_DECIMALS };
+        return { balance: "0", decimals: TAI_ONE_DECIMALS };
       }
     } catch (error) {
-      console.error('❌ 查询余额失败:', error);
+      console.error("❌ 查询余额失败:", error);
       throw error;
     }
   }
@@ -424,14 +491,19 @@ class SolanaBlockchainService {
    * @param {string} projectTreasuryAddress - 项目收款地址（PDA）
    * @returns {Promise<Transaction>} 构建好的交易对象（需要用户签名）
    */
-  async buildInvestmentTransaction(projectId, amount, investorAddress, projectTreasuryAddress = null) {
+  async buildInvestmentTransaction(
+    projectId,
+    amount,
+    investorAddress,
+    projectTreasuryAddress = null,
+  ) {
     try {
       if (!this.connection) {
-        throw new Error('Connection not initialized');
+        throw new Error("Connection not initialized");
       }
 
       const investorPubkey = new PublicKey(investorAddress);
-      
+
       // 生成项目收款地址（PDA）
       let treasuryPubkey;
       if (projectTreasuryAddress) {
@@ -439,23 +511,19 @@ class SolanaBlockchainService {
       } else {
         // 如果没有提供，生成基于项目ID的PDA
         const [projectPda] = PublicKey.findProgramAddressSync(
-          [Buffer.from('tech_project'), Buffer.from(projectId)],
-          this.programId || anchor.web3.SystemProgram.programId
+          [Buffer.from("tech_project"), Buffer.from(projectId)],
+          this.programId || anchor.web3.SystemProgram.programId,
         );
         treasuryPubkey = projectPda;
       }
 
       // 获取投资者的TWSCoin关联代币账户
-      const investorTokenAccount = await getAssociatedTokenAddress(
-        TaiOneToken_MINT,
-        investorPubkey
-      );
+      const investorTokenAccount =
+        await this.getTaiOneTokenAssociatedTokenAddress(investorPubkey, false);
 
       // 获取项目收款账户（如果不存在需要创建）
-      const treasuryTokenAccount = await getAssociatedTokenAddress(
-        TaiOneToken_MINT,
-        treasuryPubkey
-      );
+      const treasuryTokenAccount =
+        await this.getTaiOneTokenAssociatedTokenAddress(treasuryPubkey, true);
 
       // 构建转账交易
       const transaction = new Transaction();
@@ -465,18 +533,21 @@ class SolanaBlockchainService {
         await getAccount(this.connection, treasuryTokenAccount);
       } catch (error) {
         // 账户不存在，需要创建（这里简化处理，实际应该由项目创建者预先创建）
-        console.warn('⚠️  项目收款账户不存在，需要先创建');
+        console.warn("⚠️  项目收款账户不存在，需要先创建");
       }
 
       // 添加转账指令
-      const amountRaw = BigInt(Math.floor(amount * Math.pow(10, 6))); // TaiOneToken有6位小数
+      const numericAmount = Number(amount);
+      const amountRaw = BigInt(
+        Math.floor(numericAmount * Math.pow(10, TAI_ONE_DECIMALS)),
+      );
       const transferInstruction = createTransferInstruction(
         investorTokenAccount, // 发送方
         treasuryTokenAccount, // 接收方
         investorPubkey, // 授权账户
         amountRaw, // 金额（转换为最小单位）
         [],
-        TWSCoin_MINT
+        this.taiOneTokenProgramId,
       );
 
       transaction.add(transferInstruction);
@@ -485,16 +556,17 @@ class SolanaBlockchainService {
       transaction.feePayer = investorPubkey;
 
       // 获取最近的区块哈希
-      const { blockhash } = await this.connection.getLatestBlockhash('confirmed');
+      const { blockhash } =
+        await this.connection.getLatestBlockhash("confirmed");
       transaction.recentBlockhash = blockhash;
 
       return {
         transaction,
         treasuryAddress: treasuryPubkey.toString(),
-        treasuryTokenAccount: treasuryTokenAccount.toString()
+        treasuryTokenAccount: treasuryTokenAccount.toString(),
       };
     } catch (error) {
-      console.error('❌ 构建投资交易失败:', error);
+      console.error("❌ 构建投资交易失败:", error);
       throw error;
     }
   }
@@ -508,22 +580,22 @@ class SolanaBlockchainService {
     try {
       // 生成基于项目ID的PDA
       const [projectPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('tech_project'), Buffer.from(projectId)],
-        this.programId || anchor.web3.SystemProgram.programId
+        [Buffer.from("tech_project"), Buffer.from(projectId)],
+        this.programId || anchor.web3.SystemProgram.programId,
       );
 
       // 获取关联代币账户地址
       const tokenAccount = await getAssociatedTokenAddress(
         TaiOneToken_MINT,
-        projectPda
+        projectPda,
       );
 
       return {
         address: projectPda.toString(),
-        tokenAccount: tokenAccount.toString()
+        tokenAccount: tokenAccount.toString(),
       };
     } catch (error) {
-      console.error('❌ 生成项目收款地址失败:', error);
+      console.error("❌ 生成项目收款地址失败:", error);
       throw error;
     }
   }
@@ -531,23 +603,32 @@ class SolanaBlockchainService {
   /**
    * 初始化拍卖资产
    */
-  async initializeAuction(assetId, startPrice, tauntMessage, authority, treasury) {
+  async initializeAuction(
+    assetId,
+    startPrice,
+    tauntMessage,
+    authority,
+    treasury,
+  ) {
     try {
       if (!this.program) {
-        throw new Error('Program not loaded');
+        throw new Error("Program not loaded");
       }
 
       // 计算 PDA
       const [auctionPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('auction'), Buffer.from(assetId.toString().padStart(8, '0'))],
-        this.programId
+        [
+          Buffer.from("auction"),
+          Buffer.from(assetId.toString().padStart(8, "0")),
+        ],
+        this.programId,
       );
 
       const tx = await this.program.methods
         .initializeAuction(
           new anchor.BN(assetId),
           new anchor.BN(startPrice),
-          tauntMessage
+          tauntMessage,
         )
         .accounts({
           auction: auctionPda,
@@ -564,7 +645,7 @@ class SolanaBlockchainService {
         auctionAddress: auctionPda.toString(),
       };
     } catch (error) {
-      console.error('❌ 初始化拍卖失败:', error);
+      console.error("❌ 初始化拍卖失败:", error);
       throw error;
     }
   }
@@ -579,41 +660,48 @@ class SolanaBlockchainService {
   async seizeAsset(assetId, bidMessage, userAddress, treasuryAddress = null) {
     try {
       if (!this.program) {
-        throw new Error('Program not loaded');
+        throw new Error("Program not loaded");
       }
 
       const userPubkey = new PublicKey(userAddress);
       // TaiOne财库地址就是TaiOneToken的铸造地址
-      const treasuryPubkey = treasuryAddress ? new PublicKey(treasuryAddress) : TaiOneToken_MINT;
-      
+      const treasuryPubkey = treasuryAddress
+        ? new PublicKey(treasuryAddress)
+        : TaiOneToken_MINT;
+
       // 计算 PDA
       const [auctionPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('auction'), Buffer.from(assetId.toString().padStart(8, '0'))],
-        this.programId
+        [
+          Buffer.from("auction"),
+          Buffer.from(assetId.toString().padStart(8, "0")),
+        ],
+        this.programId,
       );
 
       // 获取拍卖信息以确定当前价格和旧房主
-      const auctionAccount = await this.program.account.auctionAsset.fetch(auctionPda);
+      const auctionAccount =
+        await this.program.account.auctionAsset.fetch(auctionPda);
       const oldOwner = auctionAccount.owner;
       const currentPrice = auctionAccount.price;
 
       // 计算最低出价（当前价格 * 1.1）
-      const minRequired = BigInt(currentPrice.toString()) * BigInt(110) / BigInt(100);
+      const minRequired =
+        (BigInt(currentPrice.toString()) * BigInt(110)) / BigInt(100);
 
       // 获取关联代币账户地址
       const userTokenAccount = await getAssociatedTokenAddress(
         TaiOneToken_MINT,
-        userPubkey
+        userPubkey,
       );
 
       const oldOwnerTokenAccount = await getAssociatedTokenAddress(
         TaiOneToken_MINT,
-        oldOwner
+        oldOwner,
       );
 
       const treasuryTokenAccount = await getAssociatedTokenAddress(
         TaiOneToken_MINT,
-        treasuryPubkey
+        treasuryPubkey,
       );
 
       const tx = await this.program.methods
@@ -636,7 +724,7 @@ class SolanaBlockchainService {
         newPrice: minRequired.toString(),
       };
     } catch (error) {
-      console.error('❌ 夺取资产失败:', error);
+      console.error("❌ 夺取资产失败:", error);
       throw error;
     }
   }
@@ -647,33 +735,41 @@ class SolanaBlockchainService {
   async getAuctionInfo(assetId) {
     try {
       if (!this.program) {
-        throw new Error('Program not loaded');
+        throw new Error("Program not loaded");
       }
 
       const [auctionPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('auction'), Buffer.from(assetId.toString().padStart(8, '0'))],
-        this.programId
+        [
+          Buffer.from("auction"),
+          Buffer.from(assetId.toString().padStart(8, "0")),
+        ],
+        this.programId,
       );
 
-      const auctionAccount = await this.program.account.auctionAsset.fetch(auctionPda);
-      
+      const auctionAccount =
+        await this.program.account.auctionAsset.fetch(auctionPda);
+
       // 计算最低出价
       const currentPrice = BigInt(auctionAccount.price.toString());
-      const minRequired = currentPrice * BigInt(110) / BigInt(100);
-      
+      const minRequired = (currentPrice * BigInt(110)) / BigInt(100);
+
       return {
         owner: auctionAccount.owner.toString(),
         price: auctionAccount.price.toString(),
         minRequired: minRequired.toString(),
         tauntMessage: auctionAccount.tauntMessage,
         assetId: auctionAccount.assetId.toString(),
-        createdAt: new Date(Number(auctionAccount.createdAt) * 1000).toISOString(),
-        lastSeizedAt: new Date(Number(auctionAccount.lastSeizedAt) * 1000).toISOString(),
+        createdAt: new Date(
+          Number(auctionAccount.createdAt) * 1000,
+        ).toISOString(),
+        lastSeizedAt: new Date(
+          Number(auctionAccount.lastSeizedAt) * 1000,
+        ).toISOString(),
         twscoinMint: auctionAccount.twscoinMint.toString(),
         treasury: auctionAccount.treasury.toString(),
       };
     } catch (error) {
-      console.error('❌ 查询拍卖信息失败:', error);
+      console.error("❌ 查询拍卖信息失败:", error);
       throw error;
     }
   }
@@ -688,11 +784,11 @@ class SolanaBlockchainService {
     }
 
     const results = [];
-    
+
     // 获取财库的 TWS 代币账户
-    const sourceTokenAccount = await getAssociatedTokenAddress(
-      TWSCoin_MINT,
-      this.wallet.publicKey
+    const sourceTokenAccount = await this.getTaiOneTokenAssociatedTokenAddress(
+      this.wallet.publicKey,
+      false,
     );
 
     console.log(`开始分发奖励，共 ${distributions.length} 笔...`);
@@ -700,21 +796,24 @@ class SolanaBlockchainService {
     for (const dist of distributions) {
       try {
         const recipientPubkey = new PublicKey(dist.wallet);
-        
+
         // 获取接收者的 TWS 代币账户
-        const destinationTokenAccount = await getAssociatedTokenAddress(
-          TaiOneToken_MINT,
-          recipientPubkey
-        );
+        const destinationTokenAccount =
+          await this.getTaiOneTokenAssociatedTokenAddress(
+            recipientPubkey,
+            false,
+          );
 
         // 构建转账交易
         const transaction = new Transaction();
-        
+
         // 注意：这里假设用户参与过预测，因此已经有代币账户。
         // 如果没有，转账会失败。为了简化流程，我们不在此处自动创建账户（因为需要支付 SOL）。
-        
+
         // 转换金额为最小单位 (9位小数)
-        const rawAmount = Math.floor(dist.amount * 1_000_000_000);
+        const rawAmount = BigInt(
+          Math.floor(dist.amount * Math.pow(10, TAI_ONE_DECIMALS)),
+        );
 
         transaction.add(
           createTransferInstruction(
@@ -722,35 +821,39 @@ class SolanaBlockchainService {
             destinationTokenAccount,
             this.wallet.publicKey,
             rawAmount,
-            []
-          )
+            [],
+            this.taiOneTokenProgramId,
+          ),
         );
 
         // 发送交易
-        const signature = await this.connection.sendTransaction(transaction, [this.wallet]);
-        
+        const signature = await this.connection.sendTransaction(transaction, [
+          this.wallet,
+        ]);
+
         // 等待确认
         await this.connection.confirmTransaction(signature);
-        
-        console.log(`✅ 已分发 ${dist.amount} TWS 到 ${dist.wallet}, Tx: ${signature}`);
-        
+
+        console.log(
+          `✅ 已分发 ${dist.amount} TWS 到 ${dist.wallet}, Tx: ${signature}`,
+        );
+
         results.push({
           wallet: dist.wallet,
           success: true,
           txHash: signature,
-          amount: dist.amount
+          amount: dist.amount,
         });
-        
       } catch (error) {
         console.error(`❌ 分发失败 ${dist.wallet}:`, error);
         results.push({
           wallet: dist.wallet,
           success: false,
-          error: error.message
+          error: error.message,
         });
       }
     }
-    
+
     return results;
   }
 
@@ -771,18 +874,17 @@ class SolanaBlockchainService {
 
     try {
       const recipientPubkey = new PublicKey(userWalletAddress);
-      
+
       // 获取平台钱包的TOT代币账户
-      const sourceTokenAccount = await getAssociatedTokenAddress(
-        TaiOneToken_MINT,
-        this.wallet.publicKey
-      );
+      const sourceTokenAccount =
+        await this.getTaiOneTokenAssociatedTokenAddress(
+          this.wallet.publicKey,
+          false,
+        );
 
       // 获取用户钱包的TOT代币账户
-      const destinationTokenAccount = await getAssociatedTokenAddress(
-        TaiOneToken_MINT,
-        recipientPubkey
-      );
+      const destinationTokenAccount =
+        await this.getTaiOneTokenAssociatedTokenAddress(recipientPubkey, false);
 
       // 检查用户是否已有TOT代币账户
       let needsAccountCreation = false;
@@ -791,7 +893,11 @@ class SolanaBlockchainService {
         // 账户存在
       } catch (error) {
         // 账户不存在，需要创建
-        if (error.message && (error.message.includes('InvalidAccount') || error.message.includes('could not find account'))) {
+        if (
+          error.message &&
+          (error.message.includes("InvalidAccount") ||
+            error.message.includes("could not find account"))
+        ) {
           needsAccountCreation = true;
         } else {
           throw error;
@@ -803,19 +909,24 @@ class SolanaBlockchainService {
 
       // 如果需要，先创建用户的TOT代币账户
       if (needsAccountCreation) {
-        console.log(`[TOT Transfer] 为用户创建TOT代币账户: ${userWalletAddress}`);
+        console.log(
+          `[TOT Transfer] 为用户创建TOT代币账户: ${userWalletAddress}`,
+        );
         transaction.add(
           createAssociatedTokenAccountInstruction(
             this.wallet.publicKey, // 支付账户创建费用的账户
             destinationTokenAccount,
             recipientPubkey,
-            TaiOneToken_MINT
-          )
+            TaiOneToken_MINT,
+            this.taiOneTokenProgramId,
+          ),
         );
       }
 
       // 转换金额为最小单位（根据代币精度）
-      const rawAmount = Math.floor(totAmount * Math.pow(10, TAI_ONE_DECIMALS));
+      const rawAmount = BigInt(
+        Math.floor(totAmount * Math.pow(10, TAI_ONE_DECIMALS)),
+      );
 
       // 添加转账指令
       transaction.add(
@@ -824,38 +935,49 @@ class SolanaBlockchainService {
           destinationTokenAccount,
           this.wallet.publicKey,
           rawAmount,
-          []
-        )
+          [],
+          this.taiOneTokenProgramId,
+        ),
       );
 
       // 获取最新的区块哈希
-      const { blockhash } = await this.connection.getLatestBlockhash('confirmed');
+      const { blockhash } =
+        await this.connection.getLatestBlockhash("confirmed");
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = this.wallet.publicKey;
 
       // 发送交易
-      const signature = await this.connection.sendTransaction(transaction, [this.wallet], {
-        skipPreflight: false,
-        preflightCommitment: 'confirmed'
-      });
+      const signature = await this.connection.sendTransaction(
+        transaction,
+        [this.wallet],
+        {
+          skipPreflight: false,
+          preflightCommitment: "confirmed",
+        },
+      );
 
       console.log(`[TOT Transfer] 交易已发送: ${signature}`);
 
       // 等待确认
-      const confirmation = await this.connection.confirmTransaction(signature, 'confirmed');
-      
+      const confirmation = await this.connection.confirmTransaction(
+        signature,
+        "confirmed",
+      );
+
       if (confirmation.value.err) {
         throw new Error(`交易失败: ${JSON.stringify(confirmation.value.err)}`);
       }
 
-      console.log(`✅ 已转账 ${totAmount} TOT 到 ${userWalletAddress}, Tx: ${signature}`);
+      console.log(
+        `✅ 已转账 ${totAmount} TOT 到 ${userWalletAddress}, Tx: ${signature}`,
+      );
 
       return {
         success: true,
         txHash: signature,
         amount: totAmount,
         recipient: userWalletAddress,
-        accountCreated: needsAccountCreation
+        accountCreated: needsAccountCreation,
       };
     } catch (error) {
       console.error(`❌ TOT转账失败 ${userWalletAddress}:`, error);
@@ -871,44 +993,53 @@ class SolanaBlockchainService {
    * @param {string} platformWalletAddress - 平台收款钱包地址（可选，默认使用this.wallet）
    * @returns {Promise<Object>} 交易结果
    */
-  async mintStrategicAsset(assetData, buyerAddress, totAmount, platformWalletAddress = null) {
+  async mintStrategicAsset(
+    assetData,
+    buyerAddress,
+    totAmount,
+    platformWalletAddress = null,
+  ) {
     if (!this.connection) {
-      throw new Error('Solana connection not initialized');
+      throw new Error("Solana connection not initialized");
     }
 
     if (!this.wallet && !platformWalletAddress) {
-      throw new Error('Platform wallet not loaded');
+      throw new Error("Platform wallet not loaded");
     }
 
     try {
       const buyerPubkey = new PublicKey(buyerAddress);
-      const platformPubkey = platformWalletAddress 
+      const platformPubkey = platformWalletAddress
         ? new PublicKey(platformWalletAddress)
         : this.wallet.publicKey;
 
       // 获取买家的TOT代币账户
-      const buyerTokenAccount = await getAssociatedTokenAddress(
-        TaiOneToken_MINT,
-        buyerPubkey
+      const buyerTokenAccount = await this.getTaiOneTokenAssociatedTokenAddress(
+        buyerPubkey,
+        false,
       );
 
       // 获取平台钱包的TOT代币账户
-      const platformTokenAccount = await getAssociatedTokenAddress(
-        TaiOneToken_MINT,
-        platformPubkey
-      );
+      const platformTokenAccount =
+        await this.getTaiOneTokenAssociatedTokenAddress(platformPubkey, false);
 
       // 检查买家余额
       try {
-        const buyerAccount = await getAccount(this.connection, buyerTokenAccount);
-        const buyerBalance = Number(buyerAccount.amount) / Math.pow(10, TAI_ONE_DECIMALS);
+        const buyerAccount = await getAccount(
+          this.connection,
+          buyerTokenAccount,
+        );
+        const buyerBalance =
+          Number(buyerAccount.amount) / Math.pow(10, TAI_ONE_DECIMALS);
         const requiredAmount = totAmount;
 
         if (buyerBalance < requiredAmount) {
-          throw new Error(`余额不足: 需要 ${requiredAmount} TOT，当前余额 ${buyerBalance} TOT`);
+          throw new Error(
+            `余额不足: 需要 ${requiredAmount} TOT，当前余额 ${buyerBalance} TOT`,
+          );
         }
       } catch (error) {
-        if (error.message.includes('余额不足')) {
+        if (error.message.includes("余额不足")) {
           throw error;
         }
         // 账户不存在，余额为0
@@ -919,7 +1050,9 @@ class SolanaBlockchainService {
       const transaction = new Transaction();
 
       // 转换金额为最小单位
-      const rawAmount = Math.floor(totAmount * Math.pow(10, TAI_ONE_DECIMALS));
+      const rawAmount = BigInt(
+        Math.floor(totAmount * Math.pow(10, TAI_ONE_DECIMALS)),
+      );
 
       // 添加转账指令（从买家到平台）
       transaction.add(
@@ -928,33 +1061,35 @@ class SolanaBlockchainService {
           platformTokenAccount,
           buyerPubkey,
           rawAmount,
-          []
-        )
+          [],
+          this.taiOneTokenProgramId,
+        ),
       );
 
       // 获取最新的区块哈希
-      const { blockhash } = await this.connection.getLatestBlockhash('confirmed');
+      const { blockhash } =
+        await this.connection.getLatestBlockhash("confirmed");
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = buyerPubkey;
 
       // 序列化交易（返回给前端让用户签名）
       const serializedTransaction = transaction.serialize({
         requireAllSignatures: false,
-        verifySignatures: false
+        verifySignatures: false,
       });
 
-      console.log(`✅ 战略资产购买交易已构建: ${assetData.id || 'unknown'}`);
+      console.log(`✅ 战略资产购买交易已构建: ${assetData.id || "unknown"}`);
       console.log(`   买家: ${buyerAddress}`);
       console.log(`   金额: ${totAmount} TOT`);
 
       return {
         success: true,
-        transaction: serializedTransaction.toString('base64'),
+        transaction: serializedTransaction.toString("base64"),
         buyerAddress,
         platformAddress: platformPubkey.toString(),
         amount: totAmount,
         rawAmount,
-        assetId: assetData.id || assetData.sanitized?.id || 'unknown'
+        assetId: assetData.id || assetData.sanitized?.id || "unknown",
       };
     } catch (error) {
       console.error(`❌ 战略资产铸造失败:`, error);
@@ -969,43 +1104,36 @@ class SolanaBlockchainService {
    * @param {number} expectedAmount - 预期金额
    * @returns {Promise<Object>} 验证结果
    */
-  async verifyStrategicAssetPurchase(txSignature, buyerAddress, expectedAmount) {
+  async verifyStrategicAssetPurchase(
+    txSignature,
+    buyerAddress,
+    expectedAmount,
+  ) {
     if (!this.connection) {
-      throw new Error('Solana connection not initialized');
+      throw new Error("Solana connection not initialized");
     }
 
     try {
-      // 获取交易详情
-      const tx = await this.connection.getTransaction(txSignature, {
-        commitment: 'confirmed',
-        maxSupportedTransactionVersion: 0
+      const buyerPubkey = new PublicKey(buyerAddress);
+      const treasuryAddress = process.env.TWS_TREASURY_ADDRESS;
+      const expectedTo = treasuryAddress ? treasuryAddress : undefined;
+      const verification = await verifyPayment(txSignature, {
+        from: buyerPubkey.toString(),
+        to: expectedTo,
+        amount: expectedAmount,
       });
 
-      if (!tx) {
-        throw new Error('交易未找到');
+      if (!verification.valid) {
+        throw new Error(verification.message || "交易验证失败");
       }
-
-      if (tx.meta?.err) {
-        throw new Error(`交易失败: ${JSON.stringify(tx.meta.err)}`);
-      }
-
-      // 验证交易签名者
-      const buyerPubkey = new PublicKey(buyerAddress);
-      if (!tx.transaction.signatures.some(sig => sig.equals(buyerPubkey))) {
-        throw new Error('交易签名验证失败');
-      }
-
-      // 验证转账金额（简化验证，实际应该检查具体的转账指令）
-      const expectedRawAmount = Math.floor(expectedAmount * Math.pow(10, TAI_ONE_DECIMALS));
-
-      console.log(`✅ 战略资产购买交易已验证: ${txSignature}`);
 
       return {
         success: true,
         txHash: txSignature,
         confirmed: true,
-        blockTime: tx.blockTime,
-        slot: tx.slot
+        blockTime: verification.timestamp
+          ? Math.floor(verification.timestamp / 1000)
+          : null,
       };
     } catch (error) {
       console.error(`❌ 交易验证失败:`, error);
@@ -1018,8 +1146,8 @@ class SolanaBlockchainService {
    * @param {string} userAddress - 用户钱包地址
    * @param {number} amount - 消费金额（TOT数量，不是最小单位）
    * @param {number} consumeType - 消费类型：
-   *   0=MapAction(地图操作), 
-   *   1=AncestorMarking(祖籍标记), 
+   *   0=MapAction(地图操作),
+   *   1=AncestorMarking(祖籍标记),
    *   2=Other(其他),
    *   3=AuctionCreate(拍卖创建费),
    *   4=AuctionFee(拍卖手续费),
@@ -1028,67 +1156,73 @@ class SolanaBlockchainService {
    * @returns {Promise<Object>} 交易结果（需要用户签名）
    */
   async consumeToTreasury(userAddress, amount, consumeType = 0) {
-    // 检查tot合约是否可用
-    if (!this.totProgram) {
-      console.warn('⚠️ TOT合约程序未加载，尝试使用fallback机制');
-      // 可以在这里添加fallback逻辑，比如记录到队列稍后处理
-      // 或者使用标准SPL Token转账（但会收税）
-      throw new Error('TOT合约程序未加载，请先构建tot项目。如需降级方案，请联系管理员。');
-    }
-
     if (!this.connection) {
-      throw new Error('Solana connection not initialized');
+      throw new Error("Solana connection not initialized");
     }
 
     try {
       const userPubkey = new PublicKey(userAddress);
-      
+      const totProgram = this.getTotProgramForFeePayer(userPubkey);
+
       // 获取用户的TOT代币账户
       const userTokenAccount = await getAssociatedTokenAddress(
         TaiOneToken_MINT,
-        userPubkey
+        userPubkey,
+        false,
+        TOKEN_2022_PROGRAM_ID,
       );
 
       // 计算config账户PDA（用于验证）
       const [configPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('tot_config')],
-        this.totProgramId
+        [Buffer.from("tot_config")],
+        this.totProgramId,
       );
 
       // 获取TWS财库地址
-      // 优先从环境变量读取，如果没有则使用默认值（需要管理员先配置）
       let treasuryAddress = process.env.TWS_TREASURY_ADDRESS;
       if (!treasuryAddress) {
-        // 如果没有配置，尝试从链上读取config账户（需要先连接）
-        // 这里简化处理，要求必须配置环境变量
-        throw new Error('TWS财库地址未配置，请设置TWS_TREASURY_ADDRESS环境变量或先调用set_tws_treasury指令');
+        try {
+          const cfg = await totProgram.account.totConfig.fetch(configPda);
+          treasuryAddress = cfg.treasury?.toString?.() ?? null;
+        } catch {
+          treasuryAddress = null;
+        }
+      }
+      if (!treasuryAddress) {
+        throw new Error("TWS财库地址未配置，且无法从链上读取config.treasury");
       }
       const treasuryPubkey = new PublicKey(treasuryAddress);
       const treasuryTokenAccount = await getAssociatedTokenAddress(
         TaiOneToken_MINT,
-        treasuryPubkey
+        treasuryPubkey,
+        false,
+        TOKEN_2022_PROGRAM_ID,
       );
 
       // 转换金额为最小单位
       const rawAmount = Math.floor(amount * Math.pow(10, TAI_ONE_DECIMALS));
 
       // 构建消费类型枚举（支持所有7种类型）
-      const consumeTypeEnum = 
-        consumeType === 0 ? { mapAction: {} } :
-        consumeType === 1 ? { ancestorMarking: {} } :
-        consumeType === 2 ? { other: {} } :
-        consumeType === 3 ? { auctionCreate: {} } :
-        consumeType === 4 ? { auctionFee: {} } :
-        consumeType === 5 ? { predictionBet: {} } :
-        consumeType === 6 ? { predictionFee: {} } :
-        { other: {} }; // 默认值，兼容未知类型
+      const consumeTypeEnum =
+        consumeType === 0
+          ? { mapAction: {} }
+          : consumeType === 1
+            ? { ancestorMarking: {} }
+            : consumeType === 2
+              ? { other: {} }
+              : consumeType === 3
+                ? { auctionCreate: {} }
+                : consumeType === 4
+                  ? { auctionFee: {} }
+                  : consumeType === 5
+                    ? { predictionBet: {} }
+                    : consumeType === 6
+                      ? { predictionFee: {} }
+                      : { other: {} }; // 默认值，兼容未知类型
 
       // 构建交易（需要用户签名）
-      const transaction = await this.totProgram.methods
-        .consumeToTreasury(
-          new anchor.BN(rawAmount),
-          consumeTypeEnum
-        )
+      const transaction = await totProgram.methods
+        .consumeToTreasury(new anchor.BN(rawAmount), consumeTypeEnum)
         .accounts({
           user: userPubkey,
           userTokenAccount: userTokenAccount,
@@ -1096,19 +1230,20 @@ class SolanaBlockchainService {
           mint: TaiOneToken_MINT,
           config: configPda,
           userHolderInfo: null, // 可选，如果不存在则为null
-          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .transaction();
 
       // 获取最新的区块哈希
-      const { blockhash } = await this.connection.getLatestBlockhash('confirmed');
+      const { blockhash } =
+        await this.connection.getLatestBlockhash("confirmed");
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = userPubkey;
 
       // 序列化交易（返回给前端让用户签名）
       const serializedTransaction = transaction.serialize({
         requireAllSignatures: false,
-        verifySignatures: false
+        verifySignatures: false,
       });
 
       console.log(`✅ 消费交易已构建: ${amount} TOT, 类型: ${consumeType}`);
@@ -1117,12 +1252,12 @@ class SolanaBlockchainService {
 
       return {
         success: true,
-        transaction: serializedTransaction.toString('base64'),
+        transaction: serializedTransaction.toString("base64"),
         userAddress,
         treasuryAddress,
         amount: amount,
         rawAmount,
-        consumeType
+        consumeType,
       };
     } catch (error) {
       console.error(`❌ 构建消费交易失败:`, error);
@@ -1140,73 +1275,78 @@ class SolanaBlockchainService {
    */
   async mintAssetOnChain(assetData, toAddress) {
     if (!this.totProgram) {
-      throw new Error('TOT合约程序未加载，请先构建tot项目');
+      throw new Error("TOT合约程序未加载，请先构建tot项目");
     }
 
     if (!this.wallet) {
-      throw new Error('Platform wallet not loaded');
+      throw new Error("Platform wallet not loaded");
     }
 
     if (!this.connection) {
-      throw new Error('Solana connection not initialized');
+      throw new Error("Solana connection not initialized");
     }
 
     try {
       const { sanitized } = assetData;
       const ownerPubkey = new PublicKey(toAddress);
-      
+
       // 计算资产账户PDA
-      const assetIdBytes = Buffer.from(sanitized.id || sanitized.codeName || 'unknown');
+      const assetIdBytes = Buffer.from(
+        sanitized.id || sanitized.codeName || "unknown",
+      );
       const [assetPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('tot_asset'), assetIdBytes],
-        this.totProgramId
+        [Buffer.from("tot_asset"), assetIdBytes],
+        this.totProgramId,
       );
 
       // 计算config账户PDA
       const [configPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('tot_config')],
-        this.totProgramId
+        [Buffer.from("tot_config")],
+        this.totProgramId,
       );
 
       // 构建AssetLocation
       const location = {
         latitude: sanitized.location?.lat || sanitized.coordinates?.lat || 0,
         longitude: sanitized.location?.lng || sanitized.coordinates?.lng || 0,
-        province: sanitized.province || sanitized.locationTag?.split(' ')[0] || '',
-        city: sanitized.city || sanitized.locationTag?.split(' ')[1] || '',
+        province:
+          sanitized.province || sanitized.locationTag?.split(" ")[0] || "",
+        city: sanitized.city || sanitized.locationTag?.split(" ")[1] || "",
         district: sanitized.district || null,
         address: sanitized.address || null,
       };
 
       // 确定资产类型（根据资产类型字符串映射到数字）
       const assetTypeMap = {
-        '房产': 0,
-        '农田': 1,
-        '科创': 2,
-        '酒水': 3,
-        '文创': 4,
-        '矿产': 5,
-        '仓库': 6,
-        '航船': 7,
-        '芯片': 8,
+        房产: 0,
+        农田: 1,
+        科创: 2,
+        酒水: 3,
+        文创: 4,
+        矿产: 5,
+        仓库: 6,
+        航船: 7,
+        芯片: 8,
       };
-      const assetType = assetTypeMap[sanitized.assetType] || assetTypeMap[sanitized.type] || 0;
+      const assetType =
+        assetTypeMap[sanitized.assetType] || assetTypeMap[sanitized.type] || 0;
 
       // 获取资产价值（转换为基础单位）
-      const value = sanitized.financials?.totalTokens || 
-                   sanitized.tokenPrice || 
-                   sanitized.debtAmount || 
-                   0;
+      const value =
+        sanitized.financials?.totalTokens ||
+        sanitized.tokenPrice ||
+        sanitized.debtAmount ||
+        0;
 
       // 执行资产上链
       const tx = await this.totProgram.methods
         .mintAsset(
-          sanitized.id || sanitized.codeName || 'unknown',
+          sanitized.id || sanitized.codeName || "unknown",
           assetType,
           ownerPubkey,
           location,
           new anchor.BN(value),
-          sanitized.metadataUri || null
+          sanitized.metadataUri || null,
         )
         .accounts({
           authority: this.wallet.publicKey,
@@ -1216,7 +1356,9 @@ class SolanaBlockchainService {
         })
         .rpc();
 
-      console.log(`✅ 资产已上链到Solana: ${sanitized.id || sanitized.codeName}`);
+      console.log(
+        `✅ 资产已上链到Solana: ${sanitized.id || sanitized.codeName}`,
+      );
       console.log(`   交易哈希: ${tx}`);
       console.log(`   资产账户: ${assetPda.toString()}`);
 
@@ -1241,45 +1383,53 @@ class SolanaBlockchainService {
    */
   async createAuctionOnChain(auctionData, creatorAddress) {
     if (!this.totProgram) {
-      throw new Error('TOT合约程序未加载，请先构建tot项目');
+      throw new Error("TOT合约程序未加载，请先构建tot项目");
     }
 
     if (!this.connection) {
-      throw new Error('Solana connection not initialized');
+      throw new Error("Solana connection not initialized");
     }
 
     try {
       const creatorPubkey = new PublicKey(creatorAddress);
-      
+
       // 计算拍卖账户PDA
-      const assetId = auctionData.assetId || auctionData.asset_id || 'unknown';
+      const assetId = auctionData.assetId || auctionData.asset_id || "unknown";
       const assetIdBytes = Buffer.from(assetId.toString());
       const [auctionPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('tot_auction'), assetIdBytes],
-        this.totProgramId
+        [Buffer.from("tot_auction"), assetIdBytes],
+        this.totProgramId,
       );
 
       // 计算config账户PDA
       const [configPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('tot_config')],
-        this.totProgramId
+        [Buffer.from("tot_config")],
+        this.totProgramId,
       );
 
       // 获取起拍价（转换为基础单位）
-      const startPrice = auctionData.startPrice || auctionData.start_price || auctionData.price || 0;
-      const startPriceRaw = typeof startPrice === 'string' 
-        ? BigInt(startPrice)
-        : BigInt(Math.floor(startPrice * Math.pow(10, TAI_ONE_DECIMALS)));
+      const startPrice =
+        auctionData.startPrice ||
+        auctionData.start_price ||
+        auctionData.price ||
+        0;
+      const startPriceRaw =
+        typeof startPrice === "string"
+          ? BigInt(startPrice)
+          : BigInt(Math.floor(startPrice * Math.pow(10, TAI_ONE_DECIMALS)));
 
       // 获取留言
-      const tauntMessage = auctionData.tauntMessage || auctionData.taunt_message || '此资产已被TaiOne接管';
+      const tauntMessage =
+        auctionData.tauntMessage ||
+        auctionData.taunt_message ||
+        "此资产已被TaiOne接管";
 
       // 执行拍卖上链
       const tx = await this.totProgram.methods
         .createAuction(
           assetId.toString(),
           new anchor.BN(startPriceRaw.toString()),
-          tauntMessage
+          tauntMessage,
         )
         .accounts({
           creator: creatorPubkey,
@@ -1314,63 +1464,72 @@ class SolanaBlockchainService {
    */
   async seizeAuctionOnChain(assetId, bidMessage, userAddress) {
     if (!this.totProgram) {
-      throw new Error('TOT合约程序未加载，请先构建tot项目');
+      throw new Error("TOT合约程序未加载，请先构建tot项目");
     }
 
     if (!this.connection) {
-      throw new Error('Solana connection not initialized');
+      throw new Error("Solana connection not initialized");
     }
 
     try {
       const userPubkey = new PublicKey(userAddress);
-      
+
       // 计算拍卖账户PDA
       const assetIdBytes = Buffer.from(assetId.toString());
       const [auctionPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('tot_auction'), assetIdBytes],
-        this.totProgramId
+        [Buffer.from("tot_auction"), assetIdBytes],
+        this.totProgramId,
       );
 
       // 获取拍卖信息以确定当前价格和旧所有者
-      const auctionAccount = await this.totProgram.account.auctionAccount.fetch(auctionPda);
+      const auctionAccount =
+        await this.totProgram.account.auctionAccount.fetch(auctionPda);
       const oldOwner = auctionAccount.owner;
       const currentPrice = auctionAccount.price;
-      
+
       // 计算最低出价（当前价格 + 10%）
-      const minRequired = BigInt(currentPrice.toString()) * BigInt(110) / BigInt(100);
+      const minRequired =
+        (BigInt(currentPrice.toString()) * BigInt(110)) / BigInt(100);
 
       // 获取代币账户
-      const userTokenAccount = await getAssociatedTokenAddress(
-        TaiOneToken_MINT,
-        userPubkey
+      const userTokenAccount = await this.getTaiOneTokenAssociatedTokenAddress(
+        userPubkey,
+        false,
+        TOKEN_2022_PROGRAM_ID,
       );
 
-      const oldOwnerTokenAccount = await getAssociatedTokenAddress(
-        TaiOneToken_MINT,
-        oldOwner
-      );
+      const oldOwnerTokenAccount =
+        await this.getTaiOneTokenAssociatedTokenAddress(
+          oldOwner,
+          false,
+          TOKEN_2022_PROGRAM_ID,
+        );
 
       // 获取TWS财库地址
       const treasuryAddress = process.env.TWS_TREASURY_ADDRESS;
       if (!treasuryAddress) {
-        throw new Error('TWS财库地址未配置，请设置TWS_TREASURY_ADDRESS环境变量');
+        throw new Error(
+          "TWS财库地址未配置，请设置TWS_TREASURY_ADDRESS环境变量",
+        );
       }
       const treasuryPubkey = new PublicKey(treasuryAddress);
-      const treasuryTokenAccount = await getAssociatedTokenAddress(
-        TaiOneToken_MINT,
-        treasuryPubkey
-      );
+      const treasuryTokenAccount =
+        await this.getTaiOneTokenAssociatedTokenAddress(
+          treasuryPubkey,
+          false,
+          TOKEN_2022_PROGRAM_ID,
+        );
 
       // 计算config账户PDA
       const [configPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('tot_config')],
-        this.totProgramId
+        [Buffer.from("tot_config")],
+        this.totProgramId,
       );
 
       // 计算新所有者持有者信息PDA（可选）
       const [holderPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from('tot_holder'), userPubkey.toBuffer()],
-        this.totProgramId
+        [Buffer.from("tot_holder"), userPubkey.toBuffer()],
+        this.totProgramId,
       );
 
       // 构建交易（需要用户签名）
@@ -1385,19 +1544,20 @@ class SolanaBlockchainService {
           mint: TaiOneToken_MINT,
           config: configPda,
           newOwnerHolderInfo: null, // 可选，如果不存在则为null
-          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
         })
         .transaction();
 
       // 获取最新的区块哈希
-      const { blockhash } = await this.connection.getLatestBlockhash('confirmed');
+      const { blockhash } =
+        await this.connection.getLatestBlockhash("confirmed");
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = userPubkey;
 
       // 序列化交易（返回给前端让用户签名）
       const serializedTransaction = transaction.serialize({
         requireAllSignatures: false,
-        verifySignatures: false
+        verifySignatures: false,
       });
 
       console.log(`✅ 拍卖夺取交易已构建: ${assetId}`);
@@ -1406,7 +1566,7 @@ class SolanaBlockchainService {
 
       return {
         success: true,
-        transaction: serializedTransaction.toString('base64'),
+        transaction: serializedTransaction.toString("base64"),
         userAddress,
         assetId: assetId.toString(),
         minRequired: minRequired.toString(),
@@ -1426,7 +1586,12 @@ class SolanaBlockchainService {
    * @param {string} direction - 下注方向（'YES'或'NO'，可选）
    * @returns {Promise<Object>} 交易结果（需要用户签名）
    */
-  async placePredictionBet(userAddress, amount, marketId = null, direction = null) {
+  async placePredictionBet(
+    userAddress,
+    amount,
+    marketId = null,
+    direction = null,
+  ) {
     // 使用consumeToTreasury，类型为PredictionBet（5）
     return await this.consumeToTreasury(userAddress, amount, 5); // ConsumeType::PredictionBet
   }
@@ -1444,8 +1609,18 @@ export default solanaBlockchainService;
 export const distributePredictionRewards = (distributions) =>
   solanaBlockchainService.distributePredictionRewards(distributions);
 
-export const initializeBunker = (bunkerId, sectorCode, totalShares, authority) =>
-  solanaBlockchainService.initializeBunker(bunkerId, sectorCode, totalShares, authority);
+export const initializeBunker = (
+  bunkerId,
+  sectorCode,
+  totalShares,
+  authority,
+) =>
+  solanaBlockchainService.initializeBunker(
+    bunkerId,
+    sectorCode,
+    totalShares,
+    authority,
+  );
 
 export const mintBunkerShares = (bunkerId, amount, userAddress) =>
   solanaBlockchainService.mintBunkerShares(bunkerId, amount, userAddress);
@@ -1465,11 +1640,28 @@ export const getTaiOneTokenBalance = (userAddress) =>
 // 向后兼容：导出旧函数名
 export const getTWSCoinBalance = getTaiOneTokenBalance;
 
-export const initializeAuction = (assetId, startPrice, tauntMessage, authority, treasury) =>
-  solanaBlockchainService.initializeAuction(assetId, startPrice, tauntMessage, authority, treasury);
+export const initializeAuction = (
+  assetId,
+  startPrice,
+  tauntMessage,
+  authority,
+  treasury,
+) =>
+  solanaBlockchainService.initializeAuction(
+    assetId,
+    startPrice,
+    tauntMessage,
+    authority,
+    treasury,
+  );
 
 export const seizeAsset = (assetId, bidMessage, userAddress, treasuryAddress) =>
-  solanaBlockchainService.seizeAsset(assetId, bidMessage, userAddress, treasuryAddress);
+  solanaBlockchainService.seizeAsset(
+    assetId,
+    bidMessage,
+    userAddress,
+    treasuryAddress,
+  );
 
 export const getAuctionInfo = (assetId) =>
   solanaBlockchainService.getAuctionInfo(assetId);
@@ -1477,17 +1669,45 @@ export const getAuctionInfo = (assetId) =>
 export const transferTOTToUser = (userWalletAddress, totAmount) =>
   solanaBlockchainService.transferTOTToUser(userWalletAddress, totAmount);
 
-export const buildInvestmentTransaction = (projectId, amount, investorAddress, projectTreasuryAddress) =>
-  solanaBlockchainService.buildInvestmentTransaction(projectId, amount, investorAddress, projectTreasuryAddress);
+export const buildInvestmentTransaction = (
+  projectId,
+  amount,
+  investorAddress,
+  projectTreasuryAddress,
+) =>
+  solanaBlockchainService.buildInvestmentTransaction(
+    projectId,
+    amount,
+    investorAddress,
+    projectTreasuryAddress,
+  );
 
 export const generateProjectTreasury = (projectId) =>
   solanaBlockchainService.generateProjectTreasury(projectId);
 
-export const mintStrategicAsset = (assetData, buyerAddress, totAmount, platformWalletAddress) =>
-  solanaBlockchainService.mintStrategicAsset(assetData, buyerAddress, totAmount, platformWalletAddress);
+export const mintStrategicAsset = (
+  assetData,
+  buyerAddress,
+  totAmount,
+  platformWalletAddress,
+) =>
+  solanaBlockchainService.mintStrategicAsset(
+    assetData,
+    buyerAddress,
+    totAmount,
+    platformWalletAddress,
+  );
 
-export const verifyStrategicAssetPurchase = (txSignature, buyerAddress, expectedAmount) =>
-  solanaBlockchainService.verifyStrategicAssetPurchase(txSignature, buyerAddress, expectedAmount);
+export const verifyStrategicAssetPurchase = (
+  txSignature,
+  buyerAddress,
+  expectedAmount,
+) =>
+  solanaBlockchainService.verifyStrategicAssetPurchase(
+    txSignature,
+    buyerAddress,
+    expectedAmount,
+  );
 
 export const consumeToTreasury = (userAddress, amount, consumeType) =>
   solanaBlockchainService.consumeToTreasury(userAddress, amount, consumeType);
@@ -1502,7 +1722,12 @@ export const seizeAuctionOnChain = (assetId, bidMessage, userAddress) =>
   solanaBlockchainService.seizeAuctionOnChain(assetId, bidMessage, userAddress);
 
 export const placePredictionBet = (userAddress, amount, marketId, direction) =>
-  solanaBlockchainService.placePredictionBet(userAddress, amount, marketId, direction);
+  solanaBlockchainService.placePredictionBet(
+    userAddress,
+    amount,
+    marketId,
+    direction,
+  );
 
 /**
  * 平台向用户转账（使用tot合约的platform_transfer，免税）
@@ -1513,40 +1738,44 @@ export const placePredictionBet = (userAddress, amount, marketId, direction) =>
 export const platformTransfer = async (userAddress, amount) => {
   // 检查tot合约是否可用
   if (!solanaBlockchainService.totProgram) {
-    console.warn('⚠️ TOT合约程序未加载，platformTransfer无法执行');
-    throw new Error('TOT合约程序未加载，请先构建tot项目');
+    console.warn("⚠️ TOT合约程序未加载，platformTransfer无法执行");
+    throw new Error("TOT合约程序未加载，请先构建tot项目");
   }
 
   if (!solanaBlockchainService.wallet) {
-    console.warn('⚠️ 平台钱包未加载，platformTransfer无法执行');
+    console.warn("⚠️ 平台钱包未加载，platformTransfer无法执行");
     // 可以添加队列机制，将转账任务加入队列，稍后处理
-    throw new Error('Platform wallet not loaded');
+    throw new Error("Platform wallet not loaded");
   }
 
   if (!solanaBlockchainService.connection) {
-    throw new Error('Solana connection not initialized');
+    throw new Error("Solana connection not initialized");
   }
 
   try {
     const userPubkey = new PublicKey(userAddress);
     const platformPubkey = solanaBlockchainService.wallet.publicKey;
-    
+
     // 获取平台代币账户
     const platformTokenAccount = await getAssociatedTokenAddress(
       TaiOneToken_MINT,
-      platformPubkey
+      platformPubkey,
+      false,
+      TOKEN_2022_PROGRAM_ID,
     );
 
     // 获取用户代币账户
     const userTokenAccount = await getAssociatedTokenAddress(
       TaiOneToken_MINT,
-      userPubkey
+      userPubkey,
+      false,
+      TOKEN_2022_PROGRAM_ID,
     );
 
     // 计算config账户PDA
     const [configPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from('tot_config')],
-      solanaBlockchainService.totProgramId
+      [Buffer.from("tot_config")],
+      solanaBlockchainService.totProgramId,
     );
 
     // 转换金额为最小单位
@@ -1562,7 +1791,7 @@ export const platformTransfer = async (userAddress, amount) => {
         mint: TaiOneToken_MINT,
         config: configPda,
         userHolderInfo: null, // 可选
-        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
       })
       .rpc();
 
@@ -1591,37 +1820,43 @@ export const platformTransfer = async (userAddress, amount) => {
  */
 export const transferPlatformFeeToTreasury = async (amount) => {
   if (!solanaBlockchainService.wallet) {
-    throw new Error('Platform wallet not loaded');
+    throw new Error("Platform wallet not loaded");
   }
 
   if (!solanaBlockchainService.connection) {
-    throw new Error('Solana connection not initialized');
+    throw new Error("Solana connection not initialized");
   }
 
   try {
     const platformPubkey = solanaBlockchainService.wallet.publicKey;
-    
+
     // 获取TWS财库地址
     const treasuryAddress = process.env.TWS_TREASURY_ADDRESS;
     if (!treasuryAddress) {
-      throw new Error('TWS财库地址未配置，请设置TWS_TREASURY_ADDRESS环境变量');
+      throw new Error("TWS财库地址未配置，请设置TWS_TREASURY_ADDRESS环境变量");
     }
     const treasuryPubkey = new PublicKey(treasuryAddress);
 
     // 获取平台代币账户
     const platformTokenAccount = await getAssociatedTokenAddress(
       TaiOneToken_MINT,
-      platformPubkey
+      platformPubkey,
+      false,
+      TOKEN_2022_PROGRAM_ID,
     );
 
     // 获取财库代币账户
     const treasuryTokenAccount = await getAssociatedTokenAddress(
       TaiOneToken_MINT,
-      treasuryPubkey
+      treasuryPubkey,
+      false,
+      TOKEN_2022_PROGRAM_ID,
     );
 
     // 转换金额为最小单位
-    const rawAmount = Math.floor(amount * Math.pow(10, TAI_ONE_DECIMALS));
+    const rawAmount = BigInt(
+      Math.floor(amount * Math.pow(10, TAI_ONE_DECIMALS)),
+    );
 
     // 构建转账交易
     const transaction = new Transaction();
@@ -1631,12 +1866,14 @@ export const transferPlatformFeeToTreasury = async (amount) => {
         treasuryTokenAccount,
         platformPubkey,
         rawAmount,
-        []
-      )
+        [],
+        TOKEN_2022_PROGRAM_ID,
+      ),
     );
 
     // 获取最新的区块哈希
-    const { blockhash } = await solanaBlockchainService.connection.getLatestBlockhash('confirmed');
+    const { blockhash } =
+      await solanaBlockchainService.connection.getLatestBlockhash("confirmed");
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = platformPubkey;
 
@@ -1646,12 +1883,15 @@ export const transferPlatformFeeToTreasury = async (amount) => {
       [solanaBlockchainService.wallet],
       {
         skipPreflight: false,
-        preflightCommitment: 'confirmed'
-      }
+        preflightCommitment: "confirmed",
+      },
     );
 
     // 等待确认
-    await solanaBlockchainService.connection.confirmTransaction(signature, 'confirmed');
+    await solanaBlockchainService.connection.confirmTransaction(
+      signature,
+      "confirmed",
+    );
 
     console.log(`✅ 平台费用转账成功: ${amount} TOT 到财库`);
     console.log(`   交易哈希: ${signature}`);
@@ -1667,4 +1907,3 @@ export const transferPlatformFeeToTreasury = async (amount) => {
     throw error;
   }
 };
-

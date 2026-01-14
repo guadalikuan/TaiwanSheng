@@ -5,12 +5,6 @@
 
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { PublicKey, Keypair, SystemProgram } from "@solana/web3.js";
-import { 
-    TOKEN_2022_PROGRAM_ID,
-    getAssociatedTokenAddress,
-    createAssociatedTokenAccountInstruction,
-} from "@solana/spl-token";
 
 /**
  * 部署TOT代币程序
