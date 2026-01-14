@@ -3,11 +3,11 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-tot_token = "ToT1111111111111111111111111111111111111111"
+tot_token = "4vmeK6y6FuU8pW1mMkV8Yq1XYM6V1snzCUaWnseJyQHS"
 # 注意：transfer hook已合并到主程序，主程序ID同时作为transfer hook program ID
 
 [programs.mainnet-beta]
-tot_token = "ToT1111111111111111111111111111111111111111"
+tot_token = "4vmeK6y6FuU8pW1mMkV8Yq1XYM6V1snzCUaWnseJyQHS"
 # 注意：transfer hook已合并到主程序，主程序ID同时作为transfer hook program ID
 
 [registry]
